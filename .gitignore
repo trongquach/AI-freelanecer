@@ -1,0 +1,42 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Java / Maven
+backend/target/
+backend/*.iml
+**/.idea/
+**/.mvn/wrapper/maven-wrapper.jar
+*.log
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Docker data
+data/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# IDE
+*.iws
+*.ipr
+.vscode/settings.json
+
+# Test coverage
+**/coverage/
+backend/target/site/
+
+# AWS / Terraform
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.backup
+infrastructure/terraform/.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
