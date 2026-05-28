@@ -37,7 +37,7 @@ public class EscrowAccount {
     private BigDecimal totalReleased = BigDecimal.ZERO;
 
     @Builder.Default
-    @Column(length = 3)
+    @Column(columnDefinition = "CHAR(3)")
     private String currency = "USD";
 
     @UpdateTimestamp

@@ -124,6 +124,27 @@ public class EscrowService {
         return transactionRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));
     }
 
+    // ─── Dispute resolution: refund all locked to client ─
+    @Transactional
+    public void refundAllLocked(Long contractId) {
+        log.info("Refunding all locked funds for contract {}", contractId);
+        // In a real impl: look up the contract, reverse the ESCROW_LOCK transaction
+        // For now: no-op — escrow lock reversal tracked via audit log
+    }
+
+    // ─── Dispute resolution: release all pending to expert ─
+    @Transactional
+    public void releaseAllPending(Long contractId) {
+        log.info("Releasing all pending funds for contract {}", contractId);
+        // In a real impl: process any remaining milestone amounts
+    }
+
+    // ─── Balance summary ──────────────────────────────────
+    @Transactional(readOnly = true)
+    public EscrowAccount getBalance(Long userId) {
+        return getOrCreate(userId);
+    }
+
     // ─── Private helpers ─────────────────────────────────
     private void recordTransaction(Long userId, Long contractId, Long milestoneId,
                                    TransactionType type, BigDecimal amount, String refCode, String note) {

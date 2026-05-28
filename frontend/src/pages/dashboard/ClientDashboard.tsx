@@ -18,7 +18,7 @@ export default function ClientDashboard() {
     { label: 'Tổng việc đăng',    value: myJobs?.totalElements ?? 0, icon: Briefcase,   color: 'text-primary-400' },
     { label: 'Đang tuyển',         value: myJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500' },
     { label: 'Đang thực hiện',    value: myJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400' },
-    { label: 'Hoàn thành',        value: myJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500' },
+    { label: 'Completed',        value: myJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500' },
   ]
 
   return (
@@ -29,10 +29,10 @@ export default function ClientDashboard() {
           <h1 className="section-title">
             Xin chào, {user?.fullName ?? user?.email}! 👋
           </h1>
-          <p className="section-subtitle">Quản lý dự án và tìm chuyên gia AI</p>
+          <p className="section-subtitle">Manage dự án và tìm chuyên gia AI</p>
         </div>
         <Link to="/jobs/new" className="btn-gradient btn-md shrink-0">
-          <Plus className="w-4 h-4" /> Đăng việc mới
+          <Plus className="w-4 h-4" /> Post a Job mới
         </Link>
       </div>
 
@@ -43,35 +43,59 @@ export default function ClientDashboard() {
             <div className="flex items-center justify-between mb-3">
               <Icon className={`w-5 h-5 ${color}`} />
             </div>
-            <p className="text-2xl font-bold text-white">{value}</p>
-            <p className="text-xs text-slate-500 mt-1">{label}</p>
+            <p className="text-2xl font-bold text-slate-900">{value}</p>
+            <p className="text-xs text-slate-400 mt-1">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Recent Jobs */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white">Việc làm gần đây</h2>
-          <Link to="/jobs/my" className="text-sm text-primary-400 hover:text-primary-300">
-            Xem tất cả →
-          </Link>
-        </div>
-        {isLoading ? (
-          <div className="flex justify-center py-12"><LoadingSpinner size="lg" /></div>
-        ) : !myJobs?.content.length ? (
-          <div className="card p-12 text-center">
-            <Briefcase className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 mb-4">Bạn chưa đăng việc nào</p>
-            <Link to="/jobs/new" className="btn-gradient btn-md">
-              <Plus className="w-4 h-4" /> Đăng việc đầu tiên
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">Jobs gần đây</h2>
+            <Link to="/jobs/my" className="text-sm text-primary-400 hover:text-primary-300">
+              Xem tất cả →
             </Link>
           </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {myJobs.content.map(job => <JobCard key={job.id} job={job} compact />)}
+          {isLoading ? (
+            <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
+          ) : !myJobs?.content.length ? (
+            <div className="card p-12 text-center">
+              <Briefcase className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-400 mb-4">Bạn chưa đăng việc nào</p>
+              <Link to="/jobs/new" className="btn-gradient btn-sm">
+                <Plus className="w-4 h-4" /> Post a Job đầu tiên
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {myJobs.content.slice(0, 3).map(job => (
+                <div key={job.id} className="bg-white border border-slate-200 p-4 rounded-xl border border-slate-300 flex justify-between items-center">
+                  <div>
+                    <h3 className="text-slate-900 font-medium">{job.title}</h3>
+                    <p className="text-xs text-slate-500">{job.status} • {job.viewCount} views</p>
+                  </div>
+                  <Link to={`/jobs/${job.id}/proposals`} className="btn-secondary btn-sm">Proposals</Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Active Contracts Placeholder */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">Contracts đang chạy</h2>
+            <Link to="/contracts" className="text-sm text-primary-400 hover:text-primary-300">
+              Xem tất cả →
+            </Link>
           </div>
-        )}
+          <div className="bg-white border border-slate-200 p-8 rounded-xl border border-slate-300 text-center">
+             <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+             <p className="text-slate-500 text-sm">Các hợp đồng đang thực hiện sẽ hiển thị ở đây.</p>
+          </div>
+        </div>
       </div>
 
       {/* Quick links */}
@@ -81,8 +105,8 @@ export default function ClientDashboard() {
             <DollarSign className="w-5 h-5 text-primary-400" />
           </div>
           <div>
-            <p className="font-semibold text-white">Duyệt Marketplace</p>
-            <p className="text-sm text-slate-500">Tìm dịch vụ AI sẵn có</p>
+            <p className="font-semibold text-slate-900">Duyệt Marketplace</p>
+            <p className="text-sm text-slate-400">Tìm AI Services sẵn có</p>
           </div>
         </Link>
         <Link to="/wallet" className="card-hover p-5 flex items-center gap-4">
@@ -90,8 +114,8 @@ export default function ClientDashboard() {
             <TrendingUp className="w-5 h-5 text-success-400" />
           </div>
           <div>
-            <p className="font-semibold text-white">Ví của tôi</p>
-            <p className="text-sm text-slate-500">Quản lý thanh toán</p>
+            <p className="font-semibold text-slate-900">My Wallet</p>
+            <p className="text-sm text-slate-400">Manage thanh toán</p>
           </div>
         </Link>
       </div>

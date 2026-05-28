@@ -22,9 +22,14 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 const ClientDashboard  = lazy(() => import('@/pages/dashboard/ClientDashboard'))
 const ExpertDashboard  = lazy(() => import('@/pages/dashboard/ExpertDashboard'))
 const AdminDashboard   = lazy(() => import('@/pages/dashboard/AdminDashboard'))
+const UsersPage        = lazy(() => import('@/pages/dashboard/admin/UsersPage'))
+const ServiceModerationPage = lazy(() => import('@/pages/dashboard/admin/ServiceModerationPage'))
 const JobDetailPage    = lazy(() => import('@/pages/jobs/JobDetailPage'))
 const CreateJobPage    = lazy(() => import('@/pages/jobs/CreateJobPage'))
+const ProposalListPage = lazy(() => import('@/pages/proposals/ProposalListPage'))
+const ProposalFormPage = lazy(() => import('@/pages/proposals/ProposalFormPage'))
 const ServiceDetailPage= lazy(() => import('@/pages/marketplace/ServiceDetailPage'))
+const CreateServicePage= lazy(() => import('@/pages/marketplace/CreateServicePage'))
 const ContractPage     = lazy(() => import('@/pages/contracts/ContractPage'))
 const WalletPage       = lazy(() => import('@/pages/wallet/WalletPage'))
 const ProfilePage      = lazy(() => import('@/pages/profile/ProfilePage'))
@@ -42,7 +47,7 @@ const queryClient = new QueryClient({
 
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-950">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <LoadingSpinner size="lg" />
     </div>
   )
@@ -56,10 +61,8 @@ export default function App() {
   }, [])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Toaster richColors position="top-right" />
-        <Suspense fallback={<PageLoader />}>
+    <>
+      <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public routes */}
             <Route path="/"                  element={<LandingPage />} />
@@ -89,6 +92,7 @@ export default function App() {
               <Route element={<MainLayout />}>
                 <Route path="/dashboard/client"      element={<ClientDashboard />} />
                 <Route path="/jobs/new"              element={<CreateJobPage />} />
+                <Route path="/jobs/:id/proposals"    element={<ProposalListPage />} />
               </Route>
             </Route>
 
@@ -96,6 +100,8 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['EXPERT']} />}>
               <Route element={<MainLayout />}>
                 <Route path="/dashboard/expert"      element={<ExpertDashboard />} />
+                <Route path="/jobs/:id/proposals/new" element={<ProposalFormPage />} />
+                <Route path="/services/new"          element={<CreateServicePage />} />
               </Route>
             </Route>
 
@@ -103,15 +109,16 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
               <Route element={<MainLayout />}>
                 <Route path="/admin/dashboard"       element={<AdminDashboard />} />
+                <Route path="/admin/users"           element={<UsersPage />} />
+                <Route path="/admin/services"        element={<ServiceModerationPage />} />
               </Route>
             </Route>
 
             {/* Fallbacks */}
-            <Route path="/403" element={<div className="min-h-screen flex items-center justify-center text-white text-2xl">403 — Không có quyền truy cập</div>} />
+            <Route path="/403" element={<div className="min-h-screen flex items-center justify-center text-slate-900 text-2xl">403 — Access Denied</div>} />
             <Route path="*"    element={<NotFoundPage />} />
           </Routes>
         </Suspense>
-      </BrowserRouter>
-    </QueryClientProvider>
+    </>
   )
 }

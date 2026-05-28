@@ -6,15 +6,9 @@
 
 /* ─── CSS Variables ──────────────────────────────────── */
 :root {
-  --color-primary-400: #a78bfa;
-  --color-primary-500: #8b5cf6;
-  --color-primary-600: #7c3aed;
-  --color-accent-500: #06b6d4;
-  --color-surface-950: #0a0a0f;
-  --color-surface-900: #111118;
-  --color-surface-800: #1c1c27;
-  --color-surface-700: #2a2a3a;
-  --shadow-glow-primary: 0 0 20px rgba(139, 92, 246, 0.35);
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --shadow-glow-primary: 0 0 20px rgba(37, 99, 235, 0.25);
 }
 
 /* ─── Base ───────────────────────────────────────────── */
@@ -24,16 +18,16 @@
   html { @apply scroll-smooth; }
 
   body {
-    @apply bg-surface-950 text-slate-300 font-sans antialiased;
+    @apply bg-slate-50 text-slate-800 font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 { @apply text-white font-semibold; }
+  h1, h2, h3, h4, h5, h6 { @apply text-slate-900 font-semibold; }
 
   ::-webkit-scrollbar       { @apply w-1.5; }
-  ::-webkit-scrollbar-track  { @apply bg-surface-900; }
-  ::-webkit-scrollbar-thumb  { @apply bg-surface-700 rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-surface-600; }
+  ::-webkit-scrollbar-track  { @apply bg-slate-100; }
+  ::-webkit-scrollbar-thumb  { @apply bg-slate-300 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400; }
 }
 
 /* ─── Components ─────────────────────────────────────── */
@@ -41,36 +35,34 @@
 
   /* Cards */
   .card {
-    @apply bg-surface-900 border border-surface-800 rounded-2xl;
+    @apply bg-white border border-slate-200 rounded-2xl shadow-soft;
   }
   .card-hover {
-    @apply card transition-all duration-200 hover:border-surface-700 hover:shadow-lg cursor-pointer;
+    @apply card transition-all duration-200 hover:border-slate-300 hover:shadow-soft-lg cursor-pointer hover:-translate-y-1;
   }
 
   /* Buttons */
   .btn-base {
     @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl
            transition-all duration-200 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed;
+           focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
-    @apply btn-base bg-primary-600 hover:bg-primary-500 text-white
-           hover:shadow-[0_0_16px_rgba(139,92,246,0.4)];
+    @apply btn-base bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow-md;
   }
   .btn-gradient {
-    @apply btn-base bg-gradient-primary text-white
-           hover:shadow-[0_0_20px_rgba(139,92,246,0.45)];
+    @apply btn-base bg-gradient-primary text-white shadow-sm hover:shadow-md hover:shadow-primary-500/20;
   }
   .btn-secondary {
-    @apply btn-base bg-surface-800 hover:bg-surface-700 text-slate-300
-           border border-surface-700 hover:border-surface-600;
+    @apply btn-base bg-white hover:bg-slate-50 text-slate-700
+           border border-slate-200 hover:border-slate-300 shadow-sm;
   }
   .btn-ghost {
-    @apply btn-base text-slate-400 hover:text-white hover:bg-surface-800;
+    @apply btn-base text-slate-500 hover:text-slate-900 hover:bg-slate-100;
   }
   .btn-danger {
-    @apply btn-base bg-danger-600 hover:bg-danger-500 text-white;
+    @apply btn-base bg-danger-600 hover:bg-danger-700 text-white shadow-sm;
   }
 
   /* Button sizes */
@@ -81,10 +73,10 @@
 
   /* Inputs */
   .input {
-    @apply w-full bg-surface-800 border border-surface-700 rounded-xl px-4 py-2.5
-           text-sm text-white placeholder:text-slate-600
+    @apply w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5
+           text-sm text-slate-900 placeholder:text-slate-400
            focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500
-           transition-colors;
+           transition-colors shadow-sm;
   }
   .input-error {
     @apply border-danger-500 focus:border-danger-500 focus:ring-danger-500;
@@ -92,28 +84,28 @@
 
   /* Badges */
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border;
   }
-  .badge-primary { @apply bg-primary-500/15 text-primary-300 border border-primary-500/20; }
-  .badge-success { @apply bg-success-500/15 text-success-400 border border-success-500/20; }
-  .badge-warning { @apply bg-warning-500/15 text-warning-400 border border-warning-500/20; }
-  .badge-danger  { @apply bg-danger-500/15  text-danger-400  border border-danger-500/20; }
-  .badge-neutral { @apply bg-surface-700    text-slate-400   border border-surface-600; }
+  .badge-primary { @apply bg-primary-50 text-primary-700 border-primary-200; }
+  .badge-success { @apply bg-success-50 text-success-700 border-success-200; }
+  .badge-warning { @apply bg-warning-50 text-warning-700 border-warning-200; }
+  .badge-danger  { @apply bg-danger-50  text-danger-700  border-danger-200; }
+  .badge-neutral { @apply bg-slate-100  text-slate-600   border-slate-200; }
 
   /* Section headings */
-  .section-title    { @apply text-2xl font-bold text-white; }
-  .section-subtitle { @apply text-slate-400 mt-1; }
+  .section-title    { @apply text-2xl font-bold text-slate-900; }
+  .section-subtitle { @apply text-slate-500 mt-1; }
 
   /* Gradient text */
   .text-gradient {
-    @apply bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent;
   }
 }
 
 /* ─── Utilities ──────────────────────────────────────── */
 @layer utilities {
-  .bg-gradient-primary { background: linear-gradient(135deg, #7c3aed, #06b6d4); }
-  .bg-gradient-dark    { background: linear-gradient(135deg, #0f0f1a 0%, #1a0a2e 100%); }
+  .bg-gradient-primary { background: linear-gradient(135deg, #2563eb, #0ea5e9); }
+  .bg-gradient-dark    { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); }
   .shadow-glow-primary { box-shadow: var(--shadow-glow-primary); }
 
   .animate-slide-up {
@@ -135,6 +127,6 @@
   /* Scrollbar for chat */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #2a2a3a #111118;
+    scrollbar-color: #cbd5e1 #f8fafc;
   }
 }

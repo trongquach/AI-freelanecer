@@ -37,7 +37,7 @@ public class Transaction {
     private BigDecimal amount;
 
     @Builder.Default
-    @Column(length = 3)
+    @Column(columnDefinition = "CHAR(3)")
     private String currency = "USD";
 
     @Builder.Default

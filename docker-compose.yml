@@ -17,7 +17,7 @@ services:
     container_name: aimarket-mysql
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_DATABASE: aimarket_db
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}

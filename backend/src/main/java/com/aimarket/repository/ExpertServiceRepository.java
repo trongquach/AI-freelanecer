@@ -42,4 +42,5 @@ public interface ExpertServiceRepository extends JpaRepository<ExpertService, Lo
     List<ExpertService> findTopRated(Pageable pageable);
 
     List<ExpertService> findByStatus(ServiceStatus status);
+    Page<ExpertService> findByStatus(ServiceStatus status, Pageable pageable);
 }

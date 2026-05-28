@@ -13,8 +13,8 @@ const statusColors: Record<string, string> = {
   CANCELLED: 'badge-danger',
 }
 const statusLabels: Record<string, string> = {
-  OPEN: 'Đang tuyển', DRAFT: 'Nháp', IN_PROGRESS: 'Đang làm',
-  COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy',
+  OPEN: 'Đang tuyển', DRAFT: 'Nháp', IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed', CANCELLED: 'Đã hủy',
 }
 
 interface JobCardProps {
@@ -29,11 +29,11 @@ export default function JobCard({ job, compact }: JobCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white group-hover:text-primary-300 transition-colors line-clamp-2 mb-1">
+            <h3 className="font-semibold text-slate-900 group-hover:text-primary-300 transition-colors line-clamp-2 mb-1">
               {job.title}
             </h3>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span>{job.client.fullName ?? 'Khách hàng ẩn danh'}</span>
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <span>{job.client.fullName ?? 'Client ẩn danh'}</span>
               {job.client.rating > 0 && (
                 <span className="flex items-center gap-0.5 text-warning-500">
                   ★ {job.client.rating.toFixed(1)}
@@ -64,7 +64,7 @@ export default function JobCard({ job, compact }: JobCardProps) {
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-surface-800">
+        <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-200">
           <div className="flex items-center gap-4">
             {(job.budgetMin || job.budgetMax) && (
               <span className="flex items-center gap-1 text-success-500 font-semibold">

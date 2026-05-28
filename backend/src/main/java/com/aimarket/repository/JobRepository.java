@@ -19,6 +19,7 @@ import java.util.Optional;
 public interface JobRepository extends JpaRepository<Job, Long> {
 
     @EntityGraph(attributePaths = {"client", "client.profile", "skills"})
+    @Query("SELECT j FROM Job j WHERE j.id = :id")
     Optional<Job> findByIdWithDetails(@Param("id") Long id);
 
     @Query("""

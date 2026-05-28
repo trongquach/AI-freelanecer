@@ -35,14 +35,14 @@ export default function JobsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="section-title">Tìm việc AI</h1>
+          <h1 className="section-title">Find Jobs AI</h1>
           <p className="section-subtitle">
-            {data ? `${data.totalElements.toLocaleString()} dự án đang tuyển` : 'Đang tải...'}
+            {data ? `${data.totalElements.toLocaleString()} dự án đang tuyển` : 'Loading...'}
           </p>
         </div>
         {isAuthenticated && isClient() && (
           <Link to="/jobs/new" className="btn-gradient btn-md shrink-0">
-            <Plus className="w-4 h-4" /> Đăng việc
+            <Plus className="w-4 h-4" /> Post a Job
           </Link>
         )}
       </div>
@@ -50,7 +50,7 @@ export default function JobsPage() {
       {/* Search bar */}
       <div className="flex gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             className="input pl-10 pr-4"
             placeholder="Tìm theo tên, kỹ năng, mô tả..."
@@ -70,13 +70,13 @@ export default function JobsPage() {
       {showFilters && (
         <div className="card p-4 mb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Ngân sách tối thiểu ($)</label>
+            <label className="block text-xs text-slate-400 mb-1">Budget tối thiểu ($)</label>
             <input type="number" className="input" placeholder="e.g. 100"
               defaultValue={minBudget}
               onChange={e => setParam('minBudget', e.target.value || undefined)} />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Ngân sách tối đa ($)</label>
+            <label className="block text-xs text-slate-400 mb-1">Budget tối đa ($)</label>
             <input type="number" className="input" placeholder="e.g. 5000"
               defaultValue={maxBudget}
               onChange={e => setParam('maxBudget', e.target.value || undefined)} />
@@ -84,7 +84,7 @@ export default function JobsPage() {
           <div className="sm:col-span-2 flex items-end">
             <button onClick={() => { setSearchParams(new URLSearchParams()); setShowFilters(false) }}
               className="btn-ghost btn-md gap-1.5 text-slate-400">
-              <X className="w-4 h-4" /> Xóa bộ lọc
+              <X className="w-4 h-4" /> Clear filters
             </button>
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function JobsPage() {
       ) : !data?.content.length ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">🔍</div>
-          <p className="text-slate-400 text-lg">Không tìm thấy việc làm phù hợp</p>
+          <p className="text-slate-400 text-lg">Not Found việc làm phù hợp</p>
           <p className="text-slate-600 text-sm mt-1">Thử thay đổi từ khóa hoặc bộ lọc</p>
         </div>
       ) : (
@@ -111,14 +111,14 @@ export default function JobsPage() {
             <div className="flex items-center justify-center gap-2 mt-10">
               <button onClick={() => setParam('page', String(page - 1))}
                 disabled={data.first} className="btn-secondary btn-sm disabled:opacity-40">
-                ← Trước
+                ← Prev
               </button>
               <span className="text-sm text-slate-400 px-3">
                 Trang {page + 1} / {data.totalPages}
               </span>
               <button onClick={() => setParam('page', String(page + 1))}
                 disabled={data.last} className="btn-secondary btn-sm disabled:opacity-40">
-                Tiếp →
+                Next →
               </button>
             </div>
           )}
