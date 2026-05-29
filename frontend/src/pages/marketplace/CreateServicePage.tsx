@@ -12,10 +12,10 @@ import { aiApi } from '@/api/aiApi'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 const schema = z.object({
-  title:       z.string().min(10, 'Title must be at least 10 characters').max(255),
-  description: z.string().min(50, 'Description must be at least 50 characters'),
-  price:       z.number().positive('Price must be greater than 0'),
-  deliveryTime:z.number().positive('Delivery time must be greater than 0'),
+  title:        z.string().min(10, 'Title must be at least 10 characters').max(255),
+  description:  z.string().min(100, 'Description must be at least 100 characters'),
+  price:        z.number().positive('Price must be greater than 0'),
+  deliveryDays: z.number().int().min(1, 'Delivery time must be at least 1 day').max(365),
 })
 type FormData = z.infer<typeof schema>
 
@@ -28,12 +28,24 @@ export default function CreateServicePage() {
   const titleValue = watch('title')
   
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: FormData) => serviceApi.create(data),
+    mutationFn: (data: FormData) => {
+      const payload = {
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        deliveryDays: data.deliveryDays,
+        tags: skills.split(',').map(s => s.trim()).filter(Boolean),
+      }
+      return serviceApi.create(payload)
+    },
     onSuccess: (svc: any) => {
       toast.success('Service created successfully!')
       navigate(`/marketplace/${svc.id}`)
     },
-    onError: () => toast.error('Failed to create service, try again'),
+    onError: (err: any) => {
+      const msg = err?.response?.data?.detail || err?.response?.data?.message || 'Failed to create service, please try again'
+      toast.error(msg)
+    },
   })
 
   const generateMutation = useMutation({
@@ -90,7 +102,7 @@ export default function CreateServicePage() {
             </div>
             <textarea {...register('description')} rows={8}
               className={`input resize-none ${errors.description ? 'input-error' : ''}`}
-              placeholder="Detailed Description những gì bạn sẽ cung cấp trong dịch vụ này..." />
+              placeholder="Describe in detail what you will provide in this service..." />
             {errors.description && <p className="mt-1 text-xs text-danger-500">{errors.description.message}</p>}
           </div>
 
@@ -101,9 +113,9 @@ export default function CreateServicePage() {
               {errors.price && <p className="mt-1 text-xs text-danger-500">{errors.price.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">Thời gian giao hàng (Ngày) *</label>
-              <input type="number" {...register('deliveryTime', { valueAsNumber: true })} className="input" placeholder="7" />
-              {errors.deliveryTime && <p className="mt-1 text-xs text-danger-500">{errors.deliveryTime.message}</p>}
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Delivery Time (Days) *</label>
+              <input type="number" {...register('deliveryDays', { valueAsNumber: true })} className="input" placeholder="7" />
+              {errors.deliveryDays && <p className="mt-1 text-xs text-danger-500">{errors.deliveryDays.message}</p>}
             </div>
           </div>
 

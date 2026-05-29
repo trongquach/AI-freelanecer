@@ -49,15 +49,24 @@ Tài liệu này bao gồm danh sách các kịch bản kiểm thử (test cases
 
 ## 4. Module Đề Xuất & Hợp Đồng (Proposal & Contract - S3)
 
-### 4.1 Gửi đề xuất (Submit Proposal - Expert)
-- **TC-PROP-01:** Expert gửi đề xuất thành công cho một Job `OPEN`. (Nhập giá và thời gian hoàn thành).
-- **TC-PROP-02:** Expert không thể gửi 2 đề xuất cho cùng một Job.
-- **TC-PROP-03:** Client nhận được thông báo ngay lập tức khi có Proposal mới.
+### 4.1 Gửi & Quản lý đề xuất (Proposal - Expert)
+- **TC-PROP-01:** Expert (role EXPERT) gửi đề xuất thành công cho một Job đang ở trạng thái `OPEN`. (Yêu cầu nhập price > 0, timelineDays hợp lệ và coverLetter >= 50 ký tự). Proposal mới sinh ra có status `PENDING`.
+- **TC-PROP-02:** Expert bị từ chối gửi đề xuất thứ 2 cho cùng một Job (unique check trên cặp job_id và expert_id).
+- **TC-PROP-03:** Rút lại đề xuất (Withdraw). Expert chỉ có thể withdraw proposal khi nó đang ở trạng thái `PENDING`.
+- **TC-PROP-04:** Quyền xem danh sách đề xuất. Chỉ có Client (owner của Job) mới có thể gọi API `listProposalsForJob(jobId)`. Kết quả trả về kèm theo thông tin profile của các Expert (rating, avatar). Truy cập trái phép sẽ nhận lỗi `403 Forbidden`.
 
 ### 4.2 Ký hợp đồng (Create Contract - Client)
-- **TC-CONT-01:** Client xem danh sách Proposals và bấm "Chấp nhận" một Proposal.
-- **TC-CONT-02:** Màn hình tạo Hợp đồng (Contract) hiển thị, Client tạo các Cột mốc (Milestones).
-- **TC-CONT-03:** Khi tạo Hợp đồng, tiền trong tài khoản Client bị trừ (Escrow lock). Job chuyển sang trạng thái `IN_PROGRESS`. Các Proposal khác tự động bị chuyển sang `REJECTED`.
+- **TC-CONT-01:** (Luồng chuẩn) Client owner tạo Hợp đồng thành công bằng cách chấp nhận 1 Proposal và truyền danh sách Milestones. Các xử lý Transaction tự động thành công bao gồm:
+  1. Contract mới được tạo với trạng thái `ACTIVE`.
+  2. Proposal được chọn chuyển thành `ACCEPTED`.
+  3. Tất cả các Proposal khác của cùng Job đó tự động chuyển thành `REJECTED`.
+  4. Trạng thái Job tự động chuyển thành `IN_PROGRESS`.
+  5. Hệ thống gọi `EscrowService.lockFunds()` để khóa đúng số tiền tổng (`totalAmount`) từ số dư của Client.
+  6. Milestone được tạo thành công vào DB.
+  7. Gửi Notification thành công cho Expert trúng thầu.
+- **TC-CONT-02:** Validate quyền: Chỉ Client owner của Job mới có quyền tạo hợp đồng từ Proposal.
+- **TC-CONT-03:** Validate trạng thái: Không thể tạo hợp đồng nếu Proposal không ở trạng thái `PENDING` hoặc Job không ở trạng thái `OPEN`.
+- **TC-CONT-04:** Phân quyền xem hợp đồng: API `getContract(id)` chỉ trả về kết quả 200 OK nếu người dùng (Client hoặc Expert) chính là thành viên có mặt trong hợp đồng đó.
 
 ---
 

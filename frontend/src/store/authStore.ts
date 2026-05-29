@@ -33,7 +33,6 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true })
         try {
           const data = await authApi.login(credentials)
-          // accessToken in sessionStorage (memory-like), refreshToken in localStorage
           sessionStorage.setItem('accessToken', data.accessToken)
           localStorage.setItem('refreshToken', data.refreshToken)
           set({
@@ -42,6 +41,8 @@ export const useAuthStore = create<AuthState>()(
             refreshToken: data.refreshToken,
             isAuthenticated: true,
           })
+        } catch (error) {
+          throw error
         } finally {
           set({ isLoading: false })
         }
@@ -59,6 +60,8 @@ export const useAuthStore = create<AuthState>()(
             refreshToken: response.refreshToken,
             isAuthenticated: true,
           })
+        } catch (error) {
+          throw error
         } finally {
           set({ isLoading: false })
         }

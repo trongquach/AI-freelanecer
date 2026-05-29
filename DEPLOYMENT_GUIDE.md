@@ -80,3 +80,5 @@ Thay vì chạy MySQL và Redis cục bộ (bằng Docker) như môi trường D
 - **Lỗi SSH "UNPROTECTED PRIVATE KEY FILE":** Trên Windows, file `.pem` bắt buộc phải xóa hết quyền thừa hưởng và chỉ cấp quyền Read cho đúng 1 user hiện tại. (Đã dùng lệnh `icacls` để fix trong lần cài đặt đầu).
 - **Lỗi hết RAM (Killed / Exit Code 137):** Nếu khi chạy `npm run build` hoặc `mvn package` mà quá trình bị chết ngang, đó là do server hết RAM. Kiểm tra lại Swap bằng lệnh `free -h` xem Swap 2GB có đang hoạt động hay không.
 - **Không truy cập được IP:** Kiểm tra lại Inbound Rules của Security Group gắn vào EC2 xem Port 80 đã được cấp phép (0.0.0.0/0) chưa.
+
+dia chi ip hiện tại 54.206.116.105

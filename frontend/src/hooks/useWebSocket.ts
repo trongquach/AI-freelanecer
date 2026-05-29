@@ -3,7 +3,7 @@ import { Client, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuthStore } from '@/store/authStore';
 
-const WS_URL = 'http://localhost:8080/ws';
+const WS_URL = `${window.location.protocol}//${window.location.host}/ws`;
 
 export function useWebSocket() {
   const { accessToken } = useAuthStore();

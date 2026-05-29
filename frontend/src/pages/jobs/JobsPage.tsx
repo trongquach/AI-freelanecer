@@ -94,12 +94,12 @@ export default function JobsPage() {
       {isLoading ? (
         <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>
       ) : isError ? (
-        <div className="text-center py-20 text-danger-500">Không thể tải danh sách việc làm. Thử lại sau.</div>
+        <div className="text-center py-20 text-danger-500">Failed to load jobs. Please try again later.</div>
       ) : !data?.content.length ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">🔍</div>
-          <p className="text-slate-400 text-lg">Not Found việc làm phù hợp</p>
-          <p className="text-slate-600 text-sm mt-1">Thử thay đổi từ khóa hoặc bộ lọc</p>
+          <p className="text-slate-400 text-lg">No suitable jobs found</p>
+          <p className="text-slate-600 text-sm mt-1">Try changing keywords or filters</p>
         </div>
       ) : (
         <>
@@ -114,7 +114,7 @@ export default function JobsPage() {
                 ← Prev
               </button>
               <span className="text-sm text-slate-400 px-3">
-                Trang {page + 1} / {data.totalPages}
+                Page {page + 1} / {data.totalPages}
               </span>
               <button onClick={() => setParam('page', String(page + 1))}
                 disabled={data.last} className="btn-secondary btn-sm disabled:opacity-40">

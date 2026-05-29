@@ -10,8 +10,8 @@ import { useAuth } from '@/hooks/useAuth'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 const schema = z.object({
-  email: z.string().email('Email không hợp lệ'),
-  password: z.string().min(8, 'Password ít nhất 8 ký tự'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 })
 type FormData = z.infer<typeof schema>
 
@@ -37,10 +37,15 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     try {
       await login(data)
-      toast.success('Sign In thành công!')
+      toast.success('Signed in successfully!')
     } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Email hoặc mật khẩu không đúng'
-      toast.error(msg)
+      const status = err?.response?.status
+      if (status === 401) {
+        toast.error('Invalid email or password. Please try again.')
+      } else {
+        const msg = err?.response?.data?.detail || err?.response?.data?.message || 'Login failed. Please try again.'
+        toast.error(msg)
+      }
     }
   }
 
@@ -57,12 +62,12 @@ export default function LoginPage() {
             <span className="text-xl font-bold text-slate-900">AIMarket</span>
           </div>
           <h1 className="text-4xl font-bold text-slate-900 leading-tight mb-4">
-            Kết nối với<br />
-            <span className="text-gradient">chuyên gia AI</span><br />
-            hàng đầu
+            Connect with<br />
+            <span className="text-gradient">top AI experts</span><br />
+            worldwide
           </h1>
           <p className="text-slate-400 text-lg">
-            Nền tảng freelance dành riêng cho các dự án trí tuệ nhân tạo.
+            The freelance platform dedicated to artificial intelligence projects.
           </p>
         </div>
         {/* Decorative blobs */}
@@ -84,8 +89,8 @@ export default function LoginPage() {
             <span className="text-lg font-bold text-slate-900">AIMarket</span>
           </div>
 
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">Chào mừng trở lại</h2>
-          <p className="text-slate-400 mb-8">Sign In để tiếp tục</p>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h2>
+          <p className="text-slate-400 mb-8">Sign in to continue</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             {/* Email */}
@@ -145,15 +150,15 @@ export default function LoginPage() {
               className="btn-primary btn-lg w-full mt-2"
             >
               {(isSubmitting || isLoading) ? (
-                <><LoadingSpinner size="sm" /> Đang đăng nhập...</>
+                <><LoadingSpinner size="sm" /> Signing in...</>
               ) : 'Sign In'}
             </button>
           </form>
 
           <p className="text-center text-slate-400 text-sm mt-8">
-            None yet tài khoản?{' '}
+            Don't have an account?{' '}
             <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium">
-              Sign Up ngay
+              Sign Up now
             </Link>
           </p>
         </div>

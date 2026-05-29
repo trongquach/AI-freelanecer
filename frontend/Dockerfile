@@ -1,24 +1,10 @@
 # ================================
-# Stage 1: Build
-# ================================
-FROM node:20-alpine AS build
-WORKDIR /app
-
-# Cache node_modules
-COPY package*.json ./
-RUN npm ci --silent
-
-# Build app
-COPY . .
-RUN npm run build
-
-# ================================
-# Stage 2: Serve with Nginx
+# Serve with Nginx (Pre-built)
 # ================================
 FROM nginx:alpine AS runtime
 
-# Copy built files
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copy locally built files (Requires npm run build locally first)
+COPY dist /usr/share/nginx/html
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf

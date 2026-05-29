@@ -1,6 +1,6 @@
 # AI Freelance Marketplace — Task Breakdown & Prompt Chi Tiết
 
-> **Stack:** React 18 + Vite (Frontend) | Spring Boot 3.x + Maven (Backend) | MySQL 8 (Database) | Docker + Docker Compose | AWS (ECS Fargate, RDS, S3, ALB)
+> **Stack:** React 18 + Vite (Frontend) | Spring Boot 3.x + Maven (Backend) | MySQL 8 (Database) | Docker + Docker Compose | AWS (EC2, RDS MySQL, ElastiCache Redis, S3)
 > **Tổng:** 8 Sprints × 2 tuần = 16 tuần
 
 ---
@@ -1035,95 +1035,108 @@ ACTUATOR + METRICS:
 
 ---
 
-### TASK-19 · AWS Infrastructure — Terraform / CloudFormation
+### TASK-19 · AWS Infrastructure — Triển khai thực tế (EC2 + RDS + ElastiCache)
 
-**Mục tiêu:** Triển khai toàn bộ hạ tầng AWS.
+**Mục tiêu:** Triển khai hệ thống lên AWS sử dụng kiến trúc tiết kiệm chi phí (Free Tier) với EC2, RDS, và ElastiCache. Cập nhật quy trình deploy bằng GitHub thủ công.
+
+**[ĐÃ TRIỂN KHAI - Kiến trúc thực tế]**
 
 **Prompt:**
 
 ```
-Tạo AWS infrastructure configuration cho AI Freelance Marketplace:
+Cấu hình và tài liệu hóa kiến trúc AWS thực tế cho AI Freelance Marketplace (môi trường tiết kiệm chi phí / học tập):
 
-1. VPC (vpc.tf hoặc cfn-vpc.yaml):
-   - VPC: 10.0.0.0/16
-   - Public Subnets: 10.0.1.0/24, 10.0.2.0/24 (2 AZ: ap-southeast-1a, ap-southeast-1b)
-   - Private Subnets: 10.0.10.0/24, 10.0.11.0/24 (cho ECS, RDS, Redis)
-   - Internet Gateway + Route Table cho public
-   - NAT Gateway (1 cái dev, 2 cái prod) + Route Table cho private
-   - Security Groups:
-     - sg-alb: inbound 80/443 from 0.0.0.0/0, outbound to sg-ecs
-     - sg-ecs: inbound 8080 from sg-alb, outbound all (cho gọi S3, RDS, external API)
-     - sg-rds: inbound 3306 from sg-ecs only
-     - sg-redis: inbound 6379 from sg-ecs only
+--- KIẾN TRÚC ĐÃ TRIỂN KHAI ---
 
-2. RDS MySQL (rds.tf):
-   - engine: mysql 8.0, instance: db.t3.medium (dev), db.r6g.large (prod)
-   - Multi-AZ: false (dev), true (prod)
-   - allocated_storage: 20GB, max_allocated_storage: 100GB (auto-scaling)
-   - backup_retention_period: 7 ngày
-   - DB subnet group: private subnets
-   - Parameter group: character_set_server=utf8mb4, innodb_buffer_pool_size tối ưu
-   - Lưu password trong AWS Secrets Manager
+IP Public EC2 hiện tại: 54.206.116.105
+Region: ap-southeast-2 (Sydney)
 
-3. ElastiCache Redis (elasticache.tf):
-   - engine: redis 7, node_type: cache.t3.micro (dev), cache.r6g.large (prod)
-   - Cluster mode: disabled (dev), multi-AZ (prod)
-   - Subnet group: private subnets
+1. DATABASE — AWS RDS (MySQL 8.0):
+   - Instance: db.t3.micro (Free Tier)
+   - Storage: 20GB
+   - Public Access: Yes (kết nối trực tiếp từ EC2 qua Security Group)
+   - Endpoint: aimarket-db.cp0q0oweyad8.ap-southeast-2.rds.amazonaws.com:3306
+   - DB Name: aimarket_db, Username: admin
+   - Bảo mật: Security Group chỉ cho phép EC2 Security Group kết nối qua Port 3306
+   - Lưu ý: KHÔNG dùng Multi-AZ (tiết kiệm chi phí)
 
-4. S3 Buckets (s3.tf):
-   - aimarket-uploads-{env}: private, versioning enabled, lifecycle rule (30 ngày -> Glacier)
-   - aimarket-frontend-{env}: static website hosting, public read
-   - Bucket policy, CORS config cho frontend bucket
-   - Block public access cho uploads bucket
+2. CACHE — AWS ElastiCache (Redis OSS):
+   - Node: cache.t3.micro (Free Tier)
+   - Replication: 0 Replicas, Multi-AZ: Disabled
+   - Endpoint: aimarket-redis-ro.rziy3i.ng.0001.apse2.cache.amazonaws.com:6379
+   - Bảo mật: KHÔNG bật "Encryption in transit" (tránh lỗi SSL từ Spring Boot)
+   - Lưu ý: Endpoint hiển thị là Read-Only endpoint nhưng vẫn dùng được cho cả Read/Write ở cấu hình single node
 
-5. ECS Fargate (ecs.tf):
-   - ECS Cluster: aimarket-cluster
-   - Task Definition backend:
-     - containerDefinitions: image từ ECR, 1024 CPU / 2048 MB memory
-     - Environment: từ Secrets Manager (DB_URL, DB_PASSWORD, JWT_PRIVATE_KEY, AI_API_KEY)
-     - LogConfiguration: awslogs driver -> CloudWatch /ecs/aimarket-backend
-   - Service backend: desiredCount=2, auto-scaling min=2 max=10 (CPU>70%)
-   - Task Definition frontend: nginx container, 256 CPU / 512 MB
-   - Service frontend: desiredCount=2
+3. SERVER — AWS EC2 (Ubuntu 24.04 LTS):
+   - Instance: t2.micro hoặc t3.micro (1GB RAM)
+   - OS: Ubuntu 24.04 / 22.04 LTS
+   - Tối ưu RAM: Tạo 2GB Swap để tránh OOM khi build Java/React:
+     ```bash
+     sudo fallocate -l 2G /swapfile
+     sudo chmod 600 /swapfile
+     sudo mkswap /swapfile
+     sudo swapon /swapfile
+     echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+     ```
+   - Security Group (Inbound Rules): Port 22 (SSH), Port 80 (HTTP), Port 443 (HTTPS) — tất cả từ 0.0.0.0/0
+   - Cài đặt: Docker, Docker Compose, Git
 
-6. ALB (alb.tf):
-   - ALB: internet-facing, public subnets
-   - Target Groups: backend (port 8080, health check /actuator/health), frontend (port 80)
-   - Listener 443: ACM certificate, forward backend TG cho /api/* và /ws/*, forward frontend TG cho /* 
-   - Listener 80: redirect 301 -> 443
-   - Sticky sessions: disabled (stateless)
+4. CẤU TRÚC TRÊN SERVER:
+   - Thư mục code: /home/ubuntu/aimarket/
+   - File cấu hình production: /home/ubuntu/aimarket/.env.prod
+   - File compose production: /home/ubuntu/aimarket/docker-compose.prod.yml
+   - docker-compose.prod.yml chỉ chứa 2 service: backend (Spring Boot) và frontend (React + Nginx)
+   - KHÔNG chạy MySQL/Redis local (dùng RDS và ElastiCache thay thế)
 
-7. ECR (ecr.tf):
-   - Repositories: aimarket-backend, aimarket-frontend
-   - Lifecycle policy: giữ 10 images gần nhất
+5. QUY TRÌNH DEPLOY (Manual CI/CD qua GitHub):
 
-8. IAM (iam.tf):
-   - ECS Task Role: quyền đọc Secrets Manager, ghi/đọc S3 uploads bucket, ghi CloudWatch Logs
-   - ECS Execution Role: quyền pull ECR, ghi Secrets Manager
+   Bước 1 — Trên máy cá nhân: push code lên GitHub
+   ```bash
+   git add .
+   git commit -m "feat: [Mô tả tính năng]"
+   git push origin main
+   ```
 
-9. CloudWatch (cloudwatch.tf):
-   - Log groups: /ecs/aimarket-backend (retention 30 ngày), /ecs/aimarket-frontend
-   - Alarms: CPUUtilization > 80%, 5xx Error Rate > 5%, DB FreeStorageSpace < 5GB
-   - Dashboard: key metrics
+   Bước 2 — SSH vào server:
+   ```bash
+   ssh -i aimarket-key.pem ubuntu@54.206.116.105
+   ```
+   Lưu ý Windows: File .pem phải xóa inherited permissions, chỉ cấp Read cho user hiện tại (dùng icacls)
 
-10. GitHub Actions CI/CD (.github/workflows/deploy.yml):
-```yaml
-on:
-  push:
-    branches: [main]
-jobs:
-  test-build-deploy:
-    steps:
-      - Test: mvn test && npm test
-      - Build: mvn package && npm run build  
-      - Docker build & push backend/frontend lên ECR (tag = $GITHUB_SHA)
-      - Update ECS Task Definition với image mới
-      - Deploy: aws ecs update-service --force-new-deployment
-      - Wait: aws ecs wait services-stable
-      - Notify Slack on success/failure
-```
+   Bước 3 — Kéo code mới và build lại:
+   ```bash
+   cd /home/ubuntu/aimarket
+   git pull origin main
+   sudo docker compose -f docker-compose.prod.yml up -d --build
+   ```
 
-Tất cả secrets lưu trong GitHub Secrets, không hardcode. Tạo README deploy với từng bước thủ công nếu cần.
+   Bước 4 — Kiểm tra logs:
+   ```bash
+   sudo docker compose -f docker-compose.prod.yml logs -f
+   # Ctrl+C để thoát
+   ```
+
+6. FILE .env.prod (các biến quan trọng trên server):
+   ```env
+   SPRING_PROFILES_ACTIVE=prod
+   DB_URL=jdbc:mysql://<RDS_ENDPOINT>:3306/aimarket_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+   DB_USERNAME=admin
+   DB_PASSWORD=<password>
+   REDIS_HOST=<ELASTICACHE_ENDPOINT>
+   REDIS_PORT=6379
+   STRIPE_SECRET_KEY=rk_test_...
+   OPENAI_API_KEY=sk-proj-...
+   MAIL_HOST=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USERNAME=<gmail>
+   MAIL_PASSWORD=<app_password_16_ky_tu>
+   ```
+
+7. TROUBLESHOOTING PHỔ BIẾN:
+   - Lỗi SSH "UNPROTECTED PRIVATE KEY FILE": Dùng icacls trên Windows để xóa quyền thừa hưởng
+   - Lỗi OOM (Exit Code 137 / Killed): Kiểm tra `free -h`, đảm bảo Swap 2GB đang hoạt động
+   - Không truy cập được IP: Kiểm tra Inbound Rules Security Group, đảm bảo Port 80 đã mở (0.0.0.0/0)
+   - Redis SSL Error: Tắt "Encryption in transit" trên ElastiCache hoặc thêm `?ssl=false` vào connection string
 ```
 
 ---
@@ -1423,7 +1436,7 @@ Tạo bug report template: docs/BUG_REPORT_TEMPLATE.md
 | 16 | Admin Dashboard Backend | S6 | Admin | Spring Boot |
 | 17 | Admin Dashboard UI | S6 | UI | React, Recharts |
 | 18 | Performance & Caching | S7 | Performance | Redis Cache, @Async |
-| 19 | AWS Infrastructure | S7 | DevOps | ECS, RDS, ALB, S3, ECR |
+| 19 | AWS Infrastructure (EC2+RDS+ElastiCache) ✅ | S7 | DevOps | EC2, RDS MySQL, ElastiCache Redis, Docker |
 | 20 | Security Hardening | S7 | Security | Bucket4j, jsoup, Audit |
 | 21 | Backend Testing | S8 | Testing | JUnit 5, Testcontainers |
 | 22 | API Documentation | S8 | Docs | SpringDoc OpenAPI |

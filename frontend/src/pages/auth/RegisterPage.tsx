@@ -9,16 +9,16 @@ import { useAuth } from '@/hooks/useAuth'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 const schema = z.object({
-  fullName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
-  email: z.string().email('Email không hợp lệ'),
-  password: z.string().min(8, 'Password ít nhất 8 ký tự'),
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
   role: z.enum(['CLIENT', 'EXPERT']),
   agreeTerms: z.literal(true, {
-    errorMap: () => ({ message: 'Bạn phải đồng ý với điều khoản' }),
+    errorMap: () => ({ message: 'You must agree to the terms' }),
   }),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'Mật khẩu không khớp',
+  message: 'Passwords do not match',
   path: ['confirmPassword'],
 })
 
@@ -58,10 +58,15 @@ export default function RegisterPage() {
         fullName: data.fullName,
         role: data.role,
       })
-      toast.success('Sign Up thành công!')
+      toast.success('Account created successfully! Welcome!')
     } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.response?.data?.message || 'Email đã tồn tại hoặc có lỗi xảy ra'
-      toast.error(msg)
+      const status = err?.response?.status
+      if (status === 409) {
+        toast.error('This email address is already registered. Please use a different email or sign in.')
+      } else {
+        const msg = err?.response?.data?.detail || err?.response?.data?.message || 'Registration failed. Please try again.'
+        toast.error(msg)
+      }
     }
   }
 
@@ -78,11 +83,11 @@ export default function RegisterPage() {
             <span className="text-xl font-bold text-slate-900">AIMarket</span>
           </div>
           <h1 className="text-4xl font-bold text-slate-900 leading-tight mb-4">
-            Khởi đầu hành trình<br />
-            <span className="text-gradient">freelance AI</span> của bạn
+            Start your<br />
+            <span className="text-gradient">AI freelance</span> journey
           </h1>
           <p className="text-slate-400 text-lg">
-            Tham gia cộng đồng các chuyên gia AI và những khách hàng đang tìm kiếm giải pháp đột phá.
+            Join a community of AI experts and clients seeking breakthrough solutions.
           </p>
         </div>
         {/* Decorative blobs */}
@@ -104,8 +109,8 @@ export default function RegisterPage() {
             <span className="text-lg font-bold text-slate-900">AIMarket</span>
           </div>
 
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">Tạo tài khoản</h2>
-          <p className="text-slate-400 mb-8">Điền thông tin bên dưới để bắt đầu</p>
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">Create your account</h2>
+          <p className="text-slate-400 mb-8">Fill in the details below to get started</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             
@@ -118,7 +123,7 @@ export default function RegisterPage() {
                     ? 'bg-white text-slate-900 shadow-sm' 
                     : 'text-slate-500 hover:text-slate-700'
                 }`}>
-                  Tôi muốn thuê chuyên gia
+                  I want to hire an expert
                 </div>
               </label>
               <label className="flex-1 cursor-pointer">
@@ -128,7 +133,7 @@ export default function RegisterPage() {
                     ? 'bg-white text-slate-900 shadow-sm' 
                     : 'text-slate-500 hover:text-slate-700'
                 }`}>
-                  Tôi là chuyên gia AI
+                  I am an AI Expert
                 </div>
               </label>
             </div>
@@ -136,7 +141,7 @@ export default function RegisterPage() {
             {/* Full Name */}
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-slate-600 mb-1.5">
-                Họ và Tên
+                Full Name
               </label>
               <div className="relative">
                 <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -173,7 +178,7 @@ export default function RegisterPage() {
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-600 mb-1.5">
-                Mật khẩu
+                Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -199,7 +204,7 @@ export default function RegisterPage() {
             {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-600 mb-1.5">
-                Xác nhận mật khẩu
+                Confirm Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -234,10 +239,10 @@ export default function RegisterPage() {
               </div>
               <div className="ml-3 text-sm">
                 <label htmlFor="agreeTerms" className="text-slate-600">
-                  Tôi đồng ý với{' '}
-                  <a href="#" className="text-primary-500 hover:underline">Điều khoản dịch vụ</a>
-                  {' '}và{' '}
-                  <a href="#" className="text-primary-500 hover:underline">Chính sách bảo mật</a>
+                  I agree to the{' '}
+                  <a href="#" className="text-primary-500 hover:underline">Terms of Service</a>
+                  {' '}and{' '}
+                  <a href="#" className="text-primary-500 hover:underline">Privacy Policy</a>
                 </label>
                 {errors.agreeTerms && <p className="mt-1 text-xs text-danger-500">{errors.agreeTerms.message}</p>}
               </div>
@@ -250,15 +255,15 @@ export default function RegisterPage() {
               className="btn-primary btn-lg w-full mt-4"
             >
               {(isSubmitting || isLoading) ? (
-                <><LoadingSpinner size="sm" /> Đang xử lý...</>
+                <><LoadingSpinner size="sm" /> Processing...</>
               ) : 'Sign Up'}
             </button>
           </form>
 
           <p className="text-center text-slate-400 text-sm mt-8">
-            Đã có tài khoản?{' '}
+            Already have an account?{' '}
             <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">
-              Sign In ngay
+              Sign In now
             </Link>
           </p>
         </div>
