@@ -93,7 +93,7 @@ public class JobService {
     }
 
     // ─── Get Job Detail ───────────────────────────────────
-    @Transactional(readOnly = true)
+    @Transactional
     public JobResponse getJob(Long jobId) {
         Job job = findJobOrThrow(jobId);
         incrementViewCountAsync(jobId);
