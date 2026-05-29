@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link } from 'react-router-dom'
 import { Calendar, DollarSign, Eye, ArrowLeft, Clock, Sparkles } from 'lucide-react'
 import { jobApi } from '@/api/jobServiceApi'
 import { aiApi } from '@/api/aiApi'
+import { toast } from 'sonner'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDistanceToNow } from 'date-fns'
@@ -10,7 +11,17 @@ import { vi } from 'date-fns/locale'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { isAuthenticated, isExpert } = useAuth()
+  const { isAuthenticated, isExpert, user } = useAuth()
+
+  const queryClient = useQueryClient()
+  const publishMutation = useMutation({
+    mutationFn: (jobId: number) => jobApi.publish(jobId),
+    onSuccess: () => {
+      toast.success('Đăng dự án thành công!')
+      queryClient.invalidateQueries({ queryKey: ['job', id] })
+    },
+    onError: () => toast.error('Lỗi khi đăng dự án. Vui lòng thử lại.')
+  })
 
   const { data: job, isLoading, isError } = useQuery({
     queryKey: ['job', id],
@@ -102,6 +113,16 @@ export default function JobDetailPage() {
             <Link to={`/jobs/${job.id}/apply`} className="btn-gradient btn-lg w-full">
               Send đề xuất
             </Link>
+          )}
+
+          {isAuthenticated && user?.id === job.client.id && job.status === 'DRAFT' && (
+            <button 
+              onClick={() => publishMutation.mutate(job.id)} 
+              disabled={publishMutation.isPending} 
+              className="btn-gradient btn-lg w-full flex justify-center items-center"
+            >
+              {publishMutation.isPending ? <LoadingSpinner size="sm" /> : '🚀 Publish Dự án'}
+            </button>
           )}
         </div>
       </div>
