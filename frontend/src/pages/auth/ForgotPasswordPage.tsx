@@ -26,14 +26,14 @@ export default function ForgotPasswordPage() {
         </div>
         <h1 className="text-2xl font-bold text-slate-900 mb-2">Kiểm tra email của bạn</h1>
         <p className="text-slate-400 mb-6">Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu.</p>
-        <Link to="/login" className="btn-primary btn-md">← Quay lại đăng nhập</Link>
+        <Link to="/login" className="btn-primary btn-md">← Back đăng nhập</Link>
       </div>
     </div>
   )
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
-        <Link to="/login" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-8 text-sm"><ArrowLeft className="w-4 h-4" />Quay lại đăng nhập</Link>
+        <Link to="/login" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-8 text-sm"><ArrowLeft className="w-4 h-4" />Back đăng nhập</Link>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Forgot Password?</h1>
         <p className="text-slate-400 mb-8">Nhập email của bạn để nhận link đặt lại mật khẩu.</p>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

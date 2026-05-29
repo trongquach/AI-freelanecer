@@ -58,7 +58,7 @@ export default function RegisterPage() {
         fullName: data.fullName,
         role: data.role,
       })
-      toast.success('Đăng ký thành công!')
+      toast.success('Sign Up thành công!')
     } catch (err: any) {
       const msg = err?.response?.data?.detail || err?.response?.data?.message || 'Email đã tồn tại hoặc có lỗi xảy ra'
       toast.error(msg)
@@ -251,14 +251,14 @@ export default function RegisterPage() {
             >
               {(isSubmitting || isLoading) ? (
                 <><LoadingSpinner size="sm" /> Đang xử lý...</>
-              ) : 'Đăng ký'}
+              ) : 'Sign Up'}
             </button>
           </form>
 
           <p className="text-center text-slate-400 text-sm mt-8">
             Đã có tài khoản?{' '}
             <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">
-              Đăng nhập ngay
+              Sign In ngay
             </Link>
           </p>
         </div>

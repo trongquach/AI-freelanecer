@@ -37,7 +37,7 @@ export default function JobsPage() {
         <div>
           <h1 className="section-title">Find Jobs AI</h1>
           <p className="section-subtitle">
-            {data ? `${data.totalElements.toLocaleString()} dự án đang tuyển` : 'Loading...'}
+            {data ? `${data.totalElements.toLocaleString()} jobs hiring` : 'Loading...'}
           </p>
         </div>
         {isAuthenticated && isClient() && (
@@ -53,7 +53,7 @@ export default function JobsPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             className="input pl-10 pr-4"
-            placeholder="Tìm theo tên, kỹ năng, mô tả..."
+            placeholder="Search by name, skill, description..."
             defaultValue={keyword}
             onKeyDown={e => e.key === 'Enter' && setParam('keyword', (e.target as HTMLInputElement).value)}
           />
@@ -62,7 +62,7 @@ export default function JobsPage() {
           onClick={() => setShowFilters(!showFilters)}
           className={`btn-secondary btn-md gap-2 ${showFilters ? 'border-primary-500 text-primary-300' : ''}`}
         >
-          <SlidersHorizontal className="w-4 h-4" /> Lọc
+          <SlidersHorizontal className="w-4 h-4" /> Filter
         </button>
       </div>
 
@@ -70,13 +70,13 @@ export default function JobsPage() {
       {showFilters && (
         <div className="card p-4 mb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Budget tối thiểu ($)</label>
+            <label className="block text-xs text-slate-400 mb-1">Minimum Budget ($)</label>
             <input type="number" className="input" placeholder="e.g. 100"
               defaultValue={minBudget}
               onChange={e => setParam('minBudget', e.target.value || undefined)} />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Budget tối đa ($)</label>
+            <label className="block text-xs text-slate-400 mb-1">Maximum Budget ($)</label>
             <input type="number" className="input" placeholder="e.g. 5000"
               defaultValue={maxBudget}
               onChange={e => setParam('maxBudget', e.target.value || undefined)} />

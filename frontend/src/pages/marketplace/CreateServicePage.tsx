@@ -30,10 +30,10 @@ export default function CreateServicePage() {
   const { mutate, isPending } = useMutation({
     mutationFn: (data: FormData) => serviceApi.create(data),
     onSuccess: (svc: any) => {
-      toast.success('Create Service thành công!')
+      toast.success('Service created successfully!')
       navigate(`/marketplace/${svc.id}`)
     },
-    onError: () => toast.error('Create Service thất bại, thử lại sau'),
+    onError: () => toast.error('Failed to create service, try again'),
   })
 
   const generateMutation = useMutation({
@@ -42,13 +42,13 @@ export default function CreateServicePage() {
       setValue('description', generatedDesc, { shouldValidate: true, shouldDirty: true });
       toast.success('AI generated a service description for you!');
     },
-    onError: () => toast.error('AI gặp lỗi khi tạo mô tả, vui lòng thử lại.'),
+    onError: () => toast.error('AI encountered an error generating description, please try again.'),
   })
 
   return (
     <div className="max-w-2xl mx-auto py-4">
       <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-6 text-sm">
-        <ArrowLeft className="w-4 h-4" /> Quay lại
+        <ArrowLeft className="w-4 h-4" /> Back
       </button>
 
       <div className="card p-8">
@@ -57,8 +57,8 @@ export default function CreateServicePage() {
             <Box className="w-5 h-5 text-slate-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Create Service Mới</h1>
-            <p className="text-sm text-slate-400">Close gói kỹ năng của bạn thành AI Services</p>
+            <h1 className="text-xl font-bold text-slate-900">Create New Service</h1>
+            <p className="text-sm text-slate-400">Package your skills into AI Services</p>
           </div>
         </div>
 
@@ -66,18 +66,18 @@ export default function CreateServicePage() {
           <div>
             <label className="block text-sm font-medium text-slate-600 mb-1.5">Service Title *</label>
             <input {...register('title')} className={`input ${errors.title ? 'input-error' : ''}`}
-              placeholder="Tôi sẽ phát triển mô hình Machine Learning..." />
+              placeholder="I will develop a Machine Learning model..." />
             {errors.title && <p className="mt-1 text-xs text-danger-500">{errors.title.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1.5">Skills sử dụng (Cách nhau bởi dấu phẩy)</label>
+            <label className="block text-sm font-medium text-slate-600 mb-1.5">Skills used (Comma separated)</label>
             <input value={skills} onChange={e => setSkills(e.target.value)} className="input mb-2" placeholder="Python, TensorFlow, Scikit-learn..." />
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-sm font-medium text-slate-600">Description chi tiết *</label>
+              <label className="block text-sm font-medium text-slate-600">Detailed Description *</label>
               <button 
                 type="button" 
                 onClick={() => generateMutation.mutate()}
@@ -90,13 +90,13 @@ export default function CreateServicePage() {
             </div>
             <textarea {...register('description')} rows={8}
               className={`input resize-none ${errors.description ? 'input-error' : ''}`}
-              placeholder="Description chi tiết những gì bạn sẽ cung cấp trong dịch vụ này..." />
+              placeholder="Detailed Description những gì bạn sẽ cung cấp trong dịch vụ này..." />
             {errors.description && <p className="mt-1 text-xs text-danger-500">{errors.description.message}</p>}
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">Price trọn gói ($) *</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Package Price ($) *</label>
               <input type="number" {...register('price', { valueAsNumber: true })} className="input" placeholder="100" />
               {errors.price && <p className="mt-1 text-xs text-danger-500">{errors.price.message}</p>}
             </div>
@@ -110,7 +110,7 @@ export default function CreateServicePage() {
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => navigate(-1)} className="btn-ghost btn-lg flex-1">Cancel</button>
             <button type="submit" disabled={isPending} className="btn-gradient btn-lg flex-1">
-              {isPending ? <><LoadingSpinner size="sm" /> Đang tạo...</> : 'Đăng Dịch Vụ'}
+              {isPending ? <><LoadingSpinner size="sm" /> Creating...</> : 'Publish Service'}
             </button>
           </div>
         </form>

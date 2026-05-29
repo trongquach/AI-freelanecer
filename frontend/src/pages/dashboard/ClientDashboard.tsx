@@ -32,7 +32,7 @@ export default function ClientDashboard() {
           <p className="section-subtitle">Manage dự án và tìm chuyên gia AI</p>
         </div>
         <Link to="/jobs/new" className="btn-gradient btn-md shrink-0">
-          <Plus className="w-4 h-4" /> Post a Job mới
+          <Plus className="w-4 h-4" /> Post a New Job
         </Link>
       </div>
 

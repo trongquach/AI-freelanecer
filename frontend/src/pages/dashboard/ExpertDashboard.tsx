@@ -17,7 +17,7 @@ export default function ExpertDashboard() {
   const stats = [
     { label: 'Services', value: myServices?.totalElements ?? 0, icon: ShoppingBag, color: 'text-primary-400' },
     { label: 'Đang hoạt động', value: myServices?.content?.filter((s: any) => s.status === 'ACTIVE').length ?? 0, icon: TrendingUp, color: 'text-success-500' },
-    { label: 'Chờ duyệt', value: myServices?.content?.filter((s: any) => s.status === 'PENDING_REVIEW').length ?? 0, icon: Clock, color: 'text-warning-500' },
+    { label: 'Pending Approval', value: myServices?.content?.filter((s: any) => s.status === 'PENDING_REVIEW').length ?? 0, icon: Clock, color: 'text-warning-500' },
     { label: 'Rating TB', value: '4.9', icon: Star, color: 'text-warning-400' },
   ]
 

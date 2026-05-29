@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   if (isLoading) return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
 
   const statCards = [
-    { label: 'Tổng người dùng',  value: stats?.totalUsers ?? 0,              icon: Users,       color: 'text-primary-400',  bg: 'bg-primary-500/10' },
+    { label: 'Total Users',  value: stats?.totalUsers ?? 0,              icon: Users,       color: 'text-primary-400',  bg: 'bg-primary-500/10' },
     { label: 'Client',       value: stats?.totalClients ?? 0,            icon: Users,       color: 'text-blue-400',     bg: 'bg-blue-500/10' },
     { label: 'Expert',       value: stats?.totalExperts ?? 0,            icon: Shield,      color: 'text-accent-400',   bg: 'bg-accent-500/10' },
     { label: 'Tổng việc làm',    value: stats?.totalJobs ?? 0,              icon: Briefcase,   color: 'text-warning-400',  bg: 'bg-warning-500/10' },

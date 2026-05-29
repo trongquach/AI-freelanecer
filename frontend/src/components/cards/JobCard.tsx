@@ -33,7 +33,7 @@ export default function JobCard({ job, compact }: JobCardProps) {
               {job.title}
             </h3>
             <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span>{job.client.fullName ?? 'Client ẩn danh'}</span>
+              <span>{job.client.fullName ?? 'Client anonymous'}</span>
               {job.client.rating > 0 && (
                 <span className="flex items-center gap-0.5 text-warning-500">
                   ★ {job.client.rating.toFixed(1)}
