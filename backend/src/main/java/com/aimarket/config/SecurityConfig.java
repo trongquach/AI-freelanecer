@@ -56,8 +56,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/services").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/services/{id}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/services/recommend/**").permitAll()
-                // Stripe webhook - no auth
-                .requestMatchers("/api/v1/payments/webhook").permitAll()
+                // Stripe webhook - no auth (Stripe signs with webhook secret)
+                .requestMatchers("/api/v1/stripe/webhook", "/api/v1/stripe/mock-deposit").permitAll()
+                // Public profile view
+                .requestMatchers(HttpMethod.GET, "/api/v1/profile/**").permitAll()
                 // Actuator & Swagger
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

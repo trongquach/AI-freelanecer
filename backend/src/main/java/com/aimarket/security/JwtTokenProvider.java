@@ -31,7 +31,9 @@ public class JwtTokenProvider {
 
     private PrivateKey getPrivateKey() {
         try {
-            byte[] keyBytes = Base64.getDecoder().decode(privateKeyBase64);
+            // getMimeDecoder tolerates newlines/whitespace embedded in base64 strings
+            String cleaned = privateKeyBase64.replaceAll("\\s+", "");
+            byte[] keyBytes = Base64.getDecoder().decode(cleaned);
             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
             return KeyFactory.getInstance("RSA").generatePrivate(spec);
         } catch (Exception e) {
@@ -41,7 +43,9 @@ public class JwtTokenProvider {
 
     private PublicKey getPublicKey() {
         try {
-            byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64);
+            // getMimeDecoder tolerates newlines/whitespace embedded in base64 strings
+            String cleaned = publicKeyBase64.replaceAll("\\s+", "");
+            byte[] keyBytes = Base64.getDecoder().decode(cleaned);
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
             return KeyFactory.getInstance("RSA").generatePublic(spec);
         } catch (Exception e) {

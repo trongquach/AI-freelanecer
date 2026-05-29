@@ -40,3 +40,9 @@ infrastructure/terraform/*.tfstate.backup
 infrastructure/terraform/.terraform.lock.hcl
 *.tfvars
 !*.tfvars.example
+
+# Security & Build files
+*.pem
+*.zip
+.env.prod
+deploy_aws/

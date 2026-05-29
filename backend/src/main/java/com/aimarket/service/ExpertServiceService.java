@@ -15,6 +15,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -60,6 +62,7 @@ public class ExpertServiceService {
 
     // ─── Update ───────────────────────────────────────────
     @Transactional
+    @CacheEvict(value = "services", allEntries = true)
     public ServiceResponse updateService(Long id, CreateServiceRequest request, Long expertId) {
         ExpertService svc = findOrThrow(id);
         if (!svc.getExpert().getId().equals(expertId)) throw new ForbiddenException();
@@ -102,6 +105,7 @@ public class ExpertServiceService {
 
     // ─── Browse Marketplace ───────────────────────────────
     @Transactional(readOnly = true)
+    @Cacheable(value = "services", key = "#keyword + '-' + #minPrice + '-' + #maxPrice + '-' + #page")
     public Page<ServiceResponse> browseMarketplace(String keyword, BigDecimal minPrice,
             BigDecimal maxPrice, Integer maxDays, BigDecimal minRating,
             String sortBy, int page, int size) {
@@ -117,6 +121,7 @@ public class ExpertServiceService {
 
     // ─── Get Detail ───────────────────────────────────────
     @Transactional(readOnly = true)
+    @Cacheable(value = "services", key = "'detail:' + #id")
     public ServiceResponse getServiceDetail(Long id) {
         return toResponse(findOrThrow(id));
     }
