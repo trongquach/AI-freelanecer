@@ -60,6 +60,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/stripe/webhook", "/api/v1/stripe/mock-deposit").permitAll()
                 // Public profile view
                 .requestMatchers(HttpMethod.GET, "/api/v1/profile/**").permitAll()
+                // WebSocket handshake - SockJS requests don't carry auth headers
+                .requestMatchers("/ws/**").permitAll()
                 // Actuator & Swagger
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

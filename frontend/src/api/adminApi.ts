@@ -26,29 +26,29 @@ export interface UserDto {
 
 export const adminApi = {
   getStats: async (): Promise<PlatformStats> => {
-    const res = await axiosInstance.get('/api/v1/admin/stats');
+    const res = await axiosInstance.get('/admin/stats');
     return res.data;
   },
 
   getUsers: async (page = 0, size = 10): Promise<PageResponse<UserDto>> => {
-    const res = await axiosInstance.get('/api/v1/admin/users', { params: { page, size } });
+    const res = await axiosInstance.get('/admin/users', { params: { page, size } });
     return res.data;
   },
 
   banUser: async (id: number): Promise<void> => {
-    await axiosInstance.post(`/api/v1/admin/users/${id}/ban`);
+    await axiosInstance.post(`/admin/users/${id}/ban`);
   },
 
   getPendingServices: async (page = 0, size = 10): Promise<PageResponse<any>> => {
-    const res = await axiosInstance.get('/api/v1/admin/services/pending', { params: { page, size } });
+    const res = await axiosInstance.get('/admin/services/pending', { params: { page, size } });
     return res.data;
   },
 
   activateService: async (id: number): Promise<void> => {
-    await axiosInstance.post(`/api/v1/admin/services/${id}/activate`);
+    await axiosInstance.post(`/admin/services/${id}/activate`);
   },
 
   rejectService: async (id: number): Promise<void> => {
-    await axiosInstance.post(`/api/v1/admin/services/${id}/reject`);
+    await axiosInstance.post(`/admin/services/${id}/reject`);
   }
 };
