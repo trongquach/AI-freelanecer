@@ -10,6 +10,59 @@ import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ChatWidget from '@/components/chat/ChatWidget';
 
+// Reject Milestone Modal
+const RejectMilestoneModal = ({ isOpen, onClose, onReject }: { isOpen: boolean, onClose: () => void, onReject: (reason: string) => void }) => {
+  const [reason, setReason] = useState('');
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <h2 className="text-xl font-bold text-slate-900 mb-4">Request Revision</h2>
+        <p className="text-sm text-slate-600 mb-4">Please specify what needs to be changed or fixed.</p>
+        <textarea required value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900 mb-4" rows={4} placeholder="The deliverable is missing..." />
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" disabled={!reason} onClick={() => onReject(reason)}>Submit Request</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Open Dispute Modal
+const OpenDisputeModal = ({ isOpen, onClose, onSubmit }: { isOpen: boolean, onClose: () => void, onSubmit: (reason: string, desc: string) => void }) => {
+  const [reason, setReason] = useState('NON_DELIVERY');
+  const [desc, setDesc] = useState('');
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <h2 className="text-xl font-bold text-slate-900 mb-4">Open Dispute</h2>
+        <p className="text-sm text-slate-600 mb-4">Are you sure you want to dispute this contract? Admins will step in to investigate.</p>
+        <div className="space-y-4 mb-4">
+          <div>
+            <label className="text-xs text-slate-500">Reason</label>
+            <select value={reason} onChange={e => setReason(e.target.value)} className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900">
+              <option value="NON_DELIVERY">Non Delivery</option>
+              <option value="POOR_QUALITY">Poor Quality</option>
+              <option value="UNRESPONSIVE">Unresponsive</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-slate-500">Description</label>
+            <textarea required value={desc} onChange={e => setDesc(e.target.value)} className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm text-slate-900" rows={4} placeholder="Please explain the issue..." />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" className="bg-danger-500 hover:bg-danger-600 border-danger-500" disabled={!desc} onClick={() => onSubmit(reason, desc)}>Open Dispute</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ContractPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -18,6 +71,9 @@ export default function ContractPage() {
   const [deliverableUrl, setDeliverableUrl] = useState('');
   const [deliverableNote, setDeliverableNote] = useState('');
   const [activeMilestoneId, setActiveMilestoneId] = useState<number | null>(null);
+
+  const [rejectModalMilestoneId, setRejectModalMilestoneId] = useState<number | null>(null);
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
 
   const { data: contract, isLoading, isError } = useQuery({
     queryKey: ['contract', id],
@@ -45,6 +101,26 @@ export default function ContractPage() {
       queryClient.invalidateQueries({ queryKey: ['contract', id] });
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to approve milestone')
+  });
+
+  const rejectMilestoneMut = useMutation({
+    mutationFn: ({ mId, reason }: { mId: number, reason: string }) => contractApi.rejectMilestone(Number(id), mId, { reason }),
+    onSuccess: () => {
+      toast.success('Revision requested successfully.');
+      setRejectModalMilestoneId(null);
+      queryClient.invalidateQueries({ queryKey: ['contract', id] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to request revision')
+  });
+
+  const disputeMut = useMutation({
+    mutationFn: ({ reason, desc }: { reason: string, desc: string }) => contractApi.openDispute(Number(id), reason, desc),
+    onSuccess: () => {
+      toast.success('Dispute opened. Admin will review shortly.');
+      setIsDisputeModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['contract', id] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to open dispute')
   });
 
   if (isLoading) return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>;
@@ -143,9 +219,7 @@ export default function ContractPage() {
                   
                   {isClient() && m.status === 'SUBMITTED' && (
                     <>
-                      <Button variant="outline" size="sm" onClick={() => {
-                        toast.info("Reject functionality requires a modal with reason input.");
-                      }}>
+                      <Button variant="outline" size="sm" onClick={() => setRejectModalMilestoneId(m.id)}>
                         Reject
                       </Button>
                       <Button variant="primary" size="sm" onClick={() => approveMilestoneMut.mutate(m.id)} isLoading={approveMilestoneMut.isPending}>
@@ -196,9 +270,7 @@ export default function ContractPage() {
           
           <div className="pt-4 border-t border-slate-300">
             <Button variant="outline" className="w-full justify-center gap-2 text-danger-400 hover:text-danger-300 hover:border-danger-500/50 hover:bg-danger-500/10"
-              onClick={() => {
-                toast.info("Dispute functionality requires modal.");
-              }}>
+              onClick={() => setIsDisputeModalOpen(true)}>
               <AlertTriangle size={16} /> Open Dispute
             </Button>
           </div>
@@ -214,6 +286,18 @@ export default function ContractPage() {
           </div>
         </div>
       </div>
+
+      <RejectMilestoneModal 
+        isOpen={rejectModalMilestoneId !== null} 
+        onClose={() => setRejectModalMilestoneId(null)} 
+        onReject={(reason) => rejectModalMilestoneId && rejectMilestoneMut.mutate({ mId: rejectModalMilestoneId, reason })} 
+      />
+
+      <OpenDisputeModal 
+        isOpen={isDisputeModalOpen} 
+        onClose={() => setIsDisputeModalOpen(false)} 
+        onSubmit={(reason, desc) => disputeMut.mutate({ reason, desc })} 
+      />
     </div>
   );
 }

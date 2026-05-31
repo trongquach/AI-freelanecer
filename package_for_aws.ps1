@@ -17,7 +17,7 @@ USER appuser
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget -qO- http://localhost:8080/actuator/health || exit 1
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-Xmx300m", "-Xms300m", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
 "@ | Out-File -Encoding UTF8 deploy_aws\backend\Dockerfile
 
 # Create frontend/Dockerfile
@@ -27,7 +27,7 @@ COPY dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:80 || exit 1
+  CMD wget -qO- http://127.0.0.1:80/health || exit 1
 CMD ["nginx", "-g", "daemon off;"]
 "@ | Out-File -Encoding UTF8 deploy_aws\frontend\Dockerfile
 

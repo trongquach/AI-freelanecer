@@ -4,10 +4,15 @@ import { ArrowLeft, Star, Clock, ShoppingCart, CheckCircle } from 'lucide-react'
 import { serviceApi } from '@/api/jobServiceApi'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { useAuth } from '@/hooks/useAuth'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 export default function ServiceDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { isAuthenticated, isClient } = useAuth()
+  const { isAuthenticated, isClient, user } = useAuth()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const { data: service, isLoading, isError } = useQuery({
     queryKey: ['service', id],
@@ -23,6 +28,24 @@ export default function ServiceDetailPage() {
     </div>
   )
 
+  const activateMutation = useMutation({
+    mutationFn: () => serviceApi.activate(Number(id)),
+    onSuccess: () => {
+      toast.success('Service activated!');
+      queryClient.invalidateQueries({ queryKey: ['service', id] });
+    },
+    onError: () => toast.error('Error activating service.')
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: () => serviceApi.deactivate(Number(id)),
+    onSuccess: () => {
+      toast.success('Service paused.');
+      queryClient.invalidateQueries({ queryKey: ['service', id] });
+    },
+    onError: () => toast.error('Error pausing service.')
+  });
+
   return (
     <div className="max-w-5xl mx-auto py-4">
       <Link to="/marketplace" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-6 text-sm">
@@ -33,7 +56,12 @@ export default function ServiceDetailPage() {
         {/* Main */}
         <div className="lg:col-span-2 space-y-6">
           <div className="card p-6">
-            <h1 className="text-2xl font-bold text-slate-900 mb-4">{service.title}</h1>
+            <div className="flex justify-between items-start mb-4">
+              <h1 className="text-2xl font-bold text-slate-900">{service.title}</h1>
+              <span className={`badge ${service.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}>
+                {service.status}
+              </span>
+            </div>
 
             {/* Expert info */}
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-200">
@@ -92,6 +120,35 @@ export default function ServiceDetailPage() {
             ) : !isAuthenticated ? (
               <Link to="/login" className="btn-primary btn-lg w-full block text-center">Sign In to Order</Link>
             ) : null}
+
+            {isAuthenticated && user?.id === service.expert.id && (
+              <div className="space-y-3 pt-4 border-t border-slate-200">
+                <button 
+                  onClick={() => navigate(`/services/${service.id}/edit`)}
+                  className="btn-secondary btn-md w-full text-center"
+                >
+                  Edit Service
+                </button>
+                {service.status === 'ACTIVE' && (
+                  <button 
+                    onClick={() => deactivateMutation.mutate()}
+                    disabled={deactivateMutation.isPending}
+                    className="btn-outline btn-md w-full text-warning-600 border-warning-600 hover:bg-warning-50"
+                  >
+                    Pause Service
+                  </button>
+                )}
+                {service.status === 'INACTIVE' && (
+                  <button 
+                    onClick={() => activateMutation.mutate()}
+                    disabled={activateMutation.isPending}
+                    className="btn-outline btn-md w-full text-success-600 border-success-600 hover:bg-success-50"
+                  >
+                    Activate Service
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

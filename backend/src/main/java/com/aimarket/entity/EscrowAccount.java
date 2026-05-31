@@ -3,6 +3,7 @@ package com.aimarket.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ public class EscrowAccount {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonIgnore
     private User user;
 
     @Builder.Default

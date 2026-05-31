@@ -118,6 +118,17 @@ export default function ProposalListPage() {
     }
   });
 
+  const rejectMutation = useMutation({
+    mutationFn: (proposalId: number) => contractApi.rejectProposal(proposalId),
+    onSuccess: () => {
+      toast.success('Proposal rejected.');
+      queryClient.invalidateQueries({ queryKey: ['proposals', id] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to reject proposal');
+    }
+  });
+
   if (isLoading) return <div className="p-8 text-center text-slate-900">Loading proposals...</div>;
   if (!proposalData) return <div className="p-8 text-center text-slate-900">No proposals found.</div>;
 
@@ -188,7 +199,13 @@ export default function ProposalListPage() {
                   <Button variant="primary" onClick={() => setSelectedProposal(proposal)} className="w-full">
                     Accept Proposal
                   </Button>
-                  {/* Additional actions like reject or message could go here */}
+                  <Button variant="outline" onClick={() => {
+                    if(window.confirm("Are you sure you want to reject this proposal?")) {
+                      rejectMutation.mutate(proposal.id);
+                    }
+                  }} className="w-full text-danger-500 border-danger-500 hover:bg-danger-50">
+                    Decline
+                  </Button>
                 </div>
               )}
             </div>

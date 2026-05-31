@@ -6,8 +6,8 @@ test.describe('Client Journey', () => {
     await page.goto('/login');
     
     // Fill credentials
-    await page.fill('input[placeholder="name@company.com"]', 'client@test.com');
-    await page.fill('input[placeholder="••••••••"]', 'password123');
+    await page.fill('input[type="email"]', 'client@test.com');
+    await page.fill('input[type="password"]', 'Test@12345');
     await page.click('button[type="submit"]');
 
     // Should redirect to dashboard

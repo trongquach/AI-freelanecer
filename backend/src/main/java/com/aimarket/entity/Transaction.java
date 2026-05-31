@@ -4,6 +4,7 @@ import com.aimarket.entity.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,14 +20,17 @@ public class Transaction {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id")
+    @JsonIgnore
     private Contract contract;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "milestone_id")
+    @JsonIgnore
     private Milestone milestone;
 
     @Enumerated(EnumType.STRING)

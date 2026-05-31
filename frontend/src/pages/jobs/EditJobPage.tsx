@@ -1,51 +1,88 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Briefcase, Sparkles } from 'lucide-react'
 import { jobApi } from '@/api/jobServiceApi'
 import { aiApi } from '@/api/aiApi'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import SkillSelector from '@/components/ui/SkillSelector'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 
 const schema = z.object({
   title:       z.string().min(10, 'Title must be at least 10 characters').max(255),
   description: z.string().min(50, 'Description must be at least 50 characters'),
-  budgetMin:   z.number().positive().optional(),
-  budgetMax:   z.number().positive().optional(),
-  deadline:    z.string().optional(),
+  budgetMin:   z.number().positive().optional().nullable(),
+  budgetMax:   z.number().positive().optional().nullable(),
+  deadline:    z.string().optional().nullable(),
 })
 type FormData = z.infer<typeof schema>
 
-export default function CreateJobPage() {
+export default function EditJobPage() {
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   const [skillIds, setSkillIds] = useState<number[]>([])
+
+  const { data: job, isLoading: isLoadingJob } = useQuery({
+    queryKey: ['job', id],
+    queryFn: () => jobApi.getById(Number(id)),
+    enabled: !!id,
+  })
+
+  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({ 
+    resolver: zodResolver(schema)
+  })
+
+  useEffect(() => {
+    if (job) {
+      if (user && job.client.id !== user.id) {
+        toast.error("You do not have permission to edit this job.")
+        navigate(`/jobs/${id}`)
+      }
+      reset({
+        title: job.title,
+        description: job.description,
+        budgetMin: job.budgetMin,
+        budgetMax: job.budgetMax,
+        deadline: job.deadline ? job.deadline.split('T')[0] : undefined,
+      })
+      if (job.skills) {
+        setSkillIds(job.skills.map(s => s.id))
+      }
+    }
+  }, [job, reset, user, navigate, id])
 
   const titleValue = watch('title')
   const descriptionValue = watch('description')
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: FormData) => jobApi.create({ ...data, skillIds }),
-    onSuccess: (job: any) => {
-      toast.success('Job created successfully!')
-      navigate(`/jobs/${job.id}`)
+    mutationFn: (data: FormData) => jobApi.update(Number(id), { ...data, skillIds }),
+    onSuccess: () => {
+      toast.success('Job updated successfully!')
+      queryClient.invalidateQueries({ queryKey: ['job', id] })
+      navigate(`/jobs/${id}`)
     },
-    onError: () => toast.error('Failed to create job, try again later'),
+    onError: () => toast.error('Failed to update job, try again later'),
   })
 
   const enhanceMutation = useMutation({
     mutationFn: () => aiApi.enhanceJobDescription(titleValue, descriptionValue),
     onSuccess: (enhancedDesc) => {
-      setValue('description', enhancedDesc, { shouldValidate: true, shouldDirty: true });
-      toast.success('AI optimized your job description!');
+      setValue('description', enhancedDesc, { shouldValidate: true, shouldDirty: true })
+      toast.success('AI optimized your job description!')
     },
     onError: () => toast.error('AI encountered an error, please try again.'),
   })
+
+  if (isLoadingJob) {
+    return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
+  }
 
   return (
     <div className="max-w-2xl mx-auto py-4">
@@ -59,8 +96,8 @@ export default function CreateJobPage() {
             <Briefcase className="w-5 h-5 text-slate-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Post a New Job</h1>
-            <p className="text-sm text-slate-400">Find suitable AI Experts</p>
+            <h1 className="text-xl font-bold text-slate-900">Edit Job</h1>
+            <p className="text-sm text-slate-400">Update project details</p>
           </div>
         </div>
 
@@ -118,7 +155,7 @@ export default function CreateJobPage() {
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => navigate(-1)} className="btn-ghost btn-lg flex-1">Cancel</button>
             <button type="submit" disabled={isPending} className="btn-gradient btn-lg flex-1">
-              {isPending ? <><LoadingSpinner size="sm" /> Creating...</> : 'Post a Job'}
+              {isPending ? <><LoadingSpinner size="sm" /> Saving...</> : 'Save Changes'}
             </button>
           </div>
         </form>

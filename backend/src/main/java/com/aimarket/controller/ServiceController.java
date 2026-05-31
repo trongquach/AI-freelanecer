@@ -1,5 +1,6 @@
 package com.aimarket.controller;
 
+import com.aimarket.dto.PageResponse;
 import com.aimarket.dto.service.*;
 import com.aimarket.entity.enums.UserRole;
 import com.aimarket.security.CustomUserDetails;
@@ -8,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,7 +26,7 @@ public class ServiceController {
 
     @Operation(summary = "Browse marketplace — public")
     @GetMapping
-    public Page<ServiceResponse> browse(
+    public PageResponse<ServiceResponse> browse(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
@@ -74,7 +74,7 @@ public class ServiceController {
     @Operation(summary = "My services — EXPERT")
     @GetMapping("/my")
     @PreAuthorize("hasRole('EXPERT')")
-    public Page<ServiceResponse> myServices(@AuthenticationPrincipal CustomUserDetails user,
+    public PageResponse<ServiceResponse> myServices(@AuthenticationPrincipal CustomUserDetails user,
                                             @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "10") int size) {
         return serviceService.getMyServices(user.getUserId(), page, size);

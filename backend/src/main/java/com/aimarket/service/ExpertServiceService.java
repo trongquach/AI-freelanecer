@@ -10,6 +10,7 @@ import com.aimarket.exception.*;
 import com.aimarket.repository.ExpertServiceRepository;
 import com.aimarket.repository.SkillRepository;
 import com.aimarket.repository.UserRepository;
+import com.aimarket.dto.PageResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -106,7 +107,7 @@ public class ExpertServiceService {
     // ─── Browse Marketplace ───────────────────────────────
     @Transactional(readOnly = true)
     @Cacheable(value = "services", key = "#keyword + '-' + #minPrice + '-' + #maxPrice + '-' + #page")
-    public Page<ServiceResponse> browseMarketplace(String keyword, BigDecimal minPrice,
+    public PageResponse<ServiceResponse> browseMarketplace(String keyword, BigDecimal minPrice,
             BigDecimal maxPrice, Integer maxDays, BigDecimal minRating,
             String sortBy, int page, int size) {
         Sort sort = switch (sortBy != null ? sortBy : "NEWEST") {
@@ -115,8 +116,9 @@ public class ExpertServiceService {
             case "RATING"     -> Sort.by("rating").descending();
             default           -> Sort.by("createdAt").descending();
         };
-        return serviceRepository.findWithFilter(keyword, minPrice, maxPrice, maxDays, minRating,
+        Page<ServiceResponse> result = serviceRepository.findWithFilter(keyword, minPrice, maxPrice, maxDays, minRating,
                 PageRequest.of(page, size, sort)).map(this::toResponse);
+        return PageResponse.of(result);
     }
 
     // ─── Get Detail ───────────────────────────────────────
@@ -128,9 +130,9 @@ public class ExpertServiceService {
 
     // ─── My Services ──────────────────────────────────────
     @Transactional(readOnly = true)
-    public Page<ServiceResponse> getMyServices(Long expertId, int page, int size) {
-        return serviceRepository.findByExpertId(expertId, PageRequest.of(page, size,
-                Sort.by("createdAt").descending())).map(this::toResponse);
+    public PageResponse<ServiceResponse> getMyServices(Long expertId, int page, int size) {
+        return PageResponse.of(serviceRepository.findByExpertId(expertId, PageRequest.of(page, size,
+                Sort.by("createdAt").descending())).map(this::toResponse));
     }
 
     // ─── Helpers ──────────────────────────────────────────

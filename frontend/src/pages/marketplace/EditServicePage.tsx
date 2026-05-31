@@ -1,16 +1,17 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Sparkles, Box } from 'lucide-react'
 
 import { serviceApi } from '@/api/jobServiceApi'
 import { aiApi } from '@/api/aiApi'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import SkillSelector from '@/components/ui/SkillSelector'
+import { useAuth } from '@/hooks/useAuth'
 
 const schema = z.object({
   title:        z.string().min(10, 'Title must be at least 10 characters').max(255),
@@ -20,12 +21,42 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-export default function CreateServicePage() {
+export default function EditServicePage() {
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
+
+  const { data: service, isLoading: isLoadingService } = useQuery({
+    queryKey: ['service', id],
+    queryFn: () => serviceApi.getById(Number(id)),
+    enabled: !!id,
+  })
+
+  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({ 
+    resolver: zodResolver(schema) 
+  })
   
   const [skills, setSkills] = useState<string>('')
   const [skillIds, setSkillIds] = useState<number[]>([])
+
+  useEffect(() => {
+    if (service) {
+      if (user && service.expert.id !== user.id) {
+        toast.error("You do not have permission to edit this service.")
+        navigate(`/marketplace/${id}`)
+      }
+      reset({
+        title: service.title,
+        description: service.description,
+        price: service.price,
+        deliveryDays: service.deliveryDays,
+      })
+      if (service.tags) {
+        setSkills(service.tags.join(', '))
+      }
+    }
+  }, [service, reset, user, navigate, id])
 
   const titleValue = watch('title')
   
@@ -37,16 +68,17 @@ export default function CreateServicePage() {
         price: data.price,
         deliveryDays: data.deliveryDays,
         tags: skills.split(',').map(s => s.trim()).filter(Boolean),
-        skillIds,
+        skillIds, // Assuming skills API updates are supported or ignored if unchanged
       }
-      return serviceApi.create(payload)
+      return serviceApi.update(Number(id), payload)
     },
-    onSuccess: (svc: any) => {
-      toast.success('Service created successfully!')
-      navigate(`/marketplace/${svc.id}`)
+    onSuccess: () => {
+      toast.success('Service updated successfully!')
+      queryClient.invalidateQueries({ queryKey: ['service', id] })
+      navigate(`/marketplace/${id}`)
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.detail || err?.response?.data?.message || 'Failed to create service, please try again'
+      const msg = err?.response?.data?.detail || err?.response?.data?.message || 'Failed to update service, please try again'
       toast.error(msg)
     },
   })
@@ -60,6 +92,10 @@ export default function CreateServicePage() {
     onError: () => toast.error('AI encountered an error generating description, please try again.'),
   })
 
+  if (isLoadingService) {
+    return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
+  }
+
   return (
     <div className="max-w-2xl mx-auto py-4">
       <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-6 text-sm">
@@ -72,8 +108,8 @@ export default function CreateServicePage() {
             <Box className="w-5 h-5 text-slate-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Create New Service</h1>
-            <p className="text-sm text-slate-400">Package your skills into AI Services</p>
+            <h1 className="text-xl font-bold text-slate-900">Edit Service</h1>
+            <p className="text-sm text-slate-400">Update your service package</p>
           </div>
         </div>
 
@@ -89,7 +125,7 @@ export default function CreateServicePage() {
             <label className="block text-sm font-medium text-slate-600 mb-1.5">Tags (Comma separated)</label>
             <input value={skills} onChange={e => setSkills(e.target.value)} className="input mb-2" placeholder="AI, Python, DevOps..." />
             
-            <label className="block text-sm font-medium text-slate-600 mb-1.5 mt-4">Select Core Skills</label>
+            <label className="block text-sm font-medium text-slate-600 mb-1.5 mt-4">Update Core Skills</label>
             <SkillSelector selectedIds={skillIds} onChange={setSkillIds} />
           </div>
 
@@ -128,7 +164,7 @@ export default function CreateServicePage() {
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => navigate(-1)} className="btn-ghost btn-lg flex-1">Cancel</button>
             <button type="submit" disabled={isPending} className="btn-gradient btn-lg flex-1">
-              {isPending ? <><LoadingSpinner size="sm" /> Creating...</> : 'Publish Service'}
+              {isPending ? <><LoadingSpinner size="sm" /> Saving...</> : 'Save Changes'}
             </button>
           </div>
         </form>

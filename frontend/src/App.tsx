@@ -26,10 +26,12 @@ const UsersPage        = lazy(() => import('@/pages/dashboard/admin/UsersPage'))
 const ServiceModerationPage = lazy(() => import('@/pages/dashboard/admin/ServiceModerationPage'))
 const JobDetailPage    = lazy(() => import('@/pages/jobs/JobDetailPage'))
 const CreateJobPage    = lazy(() => import('@/pages/jobs/CreateJobPage'))
+const EditJobPage      = lazy(() => import('@/pages/jobs/EditJobPage'))
 const ProposalListPage = lazy(() => import('@/pages/proposals/ProposalListPage'))
 const ProposalFormPage = lazy(() => import('@/pages/proposals/ProposalFormPage'))
 const ServiceDetailPage= lazy(() => import('@/pages/marketplace/ServiceDetailPage'))
 const CreateServicePage= lazy(() => import('@/pages/marketplace/CreateServicePage'))
+const EditServicePage  = lazy(() => import('@/pages/marketplace/EditServicePage'))
 const ContractPage     = lazy(() => import('@/pages/contracts/ContractPage'))
 const WalletPage       = lazy(() => import('@/pages/wallet/WalletPage'))
 const ProfilePage      = lazy(() => import('@/pages/profile/ProfilePage'))
@@ -92,6 +94,7 @@ export default function App() {
               <Route element={<MainLayout />}>
                 <Route path="/dashboard/client"      element={<ClientDashboard />} />
                 <Route path="/jobs/new"              element={<CreateJobPage />} />
+                <Route path="/jobs/:id/edit"         element={<EditJobPage />} />
                 <Route path="/jobs/:id/proposals"    element={<ProposalListPage />} />
               </Route>
             </Route>
@@ -102,6 +105,7 @@ export default function App() {
                 <Route path="/dashboard/expert"      element={<ExpertDashboard />} />
                 <Route path="/jobs/:id/proposals/new" element={<ProposalFormPage />} />
                 <Route path="/services/new"          element={<CreateServicePage />} />
+                <Route path="/services/:id/edit"     element={<EditServicePage />} />
               </Route>
             </Route>
 

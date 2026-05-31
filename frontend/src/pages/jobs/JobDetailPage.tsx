@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Calendar, DollarSign, Eye, ArrowLeft, Clock, Sparkles } from 'lucide-react'
 import { jobApi } from '@/api/jobServiceApi'
 import { aiApi } from '@/api/aiApi'
@@ -12,6 +12,7 @@ import { vi } from 'date-fns/locale'
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { isAuthenticated, isExpert, user } = useAuth()
+  const navigate = useNavigate()
 
   const queryClient = useQueryClient()
   const publishMutation = useMutation({
@@ -21,6 +22,15 @@ export default function JobDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['job', id] })
     },
     onError: () => toast.error('Error khi đăng dự án. Vui lòng thử lại.')
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (jobId: number) => jobApi.delete(jobId),
+    onSuccess: () => {
+      toast.success('Project deleted successfully!')
+      navigate('/jobs')
+    },
+    onError: () => toast.error('Error deleting project.')
   })
 
   const { data: job, isLoading, isError } = useQuery({
@@ -123,6 +133,25 @@ export default function JobDetailPage() {
             >
               {publishMutation.isPending ? <LoadingSpinner size="sm" /> : '🚀 Publish Project'}
             </button>
+          )}
+
+          {isAuthenticated && user?.id === job.client.id && (job.status === 'DRAFT' || job.status === 'OPEN') && (
+            <div className="flex gap-2">
+              <Link to={`/jobs/${job.id}/edit`} className="btn-secondary btn-md flex-1 text-center">
+                Edit
+              </Link>
+              <button 
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete this job?")) {
+                    deleteMutation.mutate(job.id);
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+                className="btn-outline btn-md flex-1 text-danger-500 border-danger-500 hover:bg-danger-50"
+              >
+                Delete
+              </button>
+            </div>
           )}
         </div>
       </div>

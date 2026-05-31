@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,7 +43,10 @@ public class UserProfileService {
 
     // ─── Update profile ───────────────────────────────────
     @Transactional
-    @CacheEvict(value = "user-profiles", key = "#userId")
+    @Caching(evict = {
+        @CacheEvict(value = "user-profiles", key = "#userId"),
+        @CacheEvict(value = "user-profiles", key = "'pub:' + #userId")
+    })
     public UserProfileResponse updateProfile(Long userId, UpdateProfileRequest request) {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> {
@@ -63,7 +67,10 @@ public class UserProfileService {
 
     // ─── Set availability ────────────────────────────────
     @Transactional
-    @CacheEvict(value = "user-profiles", key = "#userId")
+    @Caching(evict = {
+        @CacheEvict(value = "user-profiles", key = "#userId"),
+        @CacheEvict(value = "user-profiles", key = "'pub:' + #userId")
+    })
     public UserProfileResponse setAvailability(Long userId, boolean available) {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));
