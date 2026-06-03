@@ -39,7 +39,6 @@ public class AIJobAssistantService {
         String reasoning
     ) {}
 
-    @Cacheable(value = "ai-job-enhance", key = "(#title + '|' + #description).hashCode()")
     public AIJobSuggestionDTO enhanceJob(String title, String description, List<String> skills) {
         String userMsg = String.format("Title: %s\nDescription: %s\nCurrent skills: %s",
                 title, description, String.join(", ", skills));

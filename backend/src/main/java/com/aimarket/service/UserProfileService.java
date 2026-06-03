@@ -25,7 +25,6 @@ public class UserProfileService {
 
     // ─── Get my profile ───────────────────────────────────
     @Transactional(readOnly = true)
-    @Cacheable(value = "user-profiles", key = "#userId")
     public UserProfileResponse getProfile(Long userId) {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));
@@ -34,7 +33,6 @@ public class UserProfileService {
 
     // ─── Get public profile by userId ────────────────────
     @Transactional(readOnly = true)
-    @Cacheable(value = "user-profiles", key = "'pub:' + #userId")
     public UserProfileResponse getPublicProfile(Long userId) {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));
@@ -43,10 +41,6 @@ public class UserProfileService {
 
     // ─── Update profile ───────────────────────────────────
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = "user-profiles", key = "#userId"),
-        @CacheEvict(value = "user-profiles", key = "'pub:' + #userId")
-    })
     public UserProfileResponse updateProfile(Long userId, UpdateProfileRequest request) {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseGet(() -> {
@@ -67,10 +61,6 @@ public class UserProfileService {
 
     // ─── Set availability ────────────────────────────────
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = "user-profiles", key = "#userId"),
-        @CacheEvict(value = "user-profiles", key = "'pub:' + #userId")
-    })
     public UserProfileResponse setAvailability(Long userId, boolean available) {
         UserProfile profile = userProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));

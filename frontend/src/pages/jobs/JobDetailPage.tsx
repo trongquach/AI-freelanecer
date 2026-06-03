@@ -21,7 +21,7 @@ export default function JobDetailPage() {
       toast.success('Project published successfully!')
       queryClient.invalidateQueries({ queryKey: ['job', id] })
     },
-    onError: () => toast.error('Error khi đăng dự án. Vui lòng thử lại.')
+    onError: () => toast.error('Error posting project. Please try again.')
   })
 
   const deleteMutation = useMutation({
@@ -42,7 +42,7 @@ export default function JobDetailPage() {
   if (isLoading) return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
   if (isError || !job) return (
     <div className="text-center py-24">
-      <p className="text-danger-500 text-lg">Not Found việc làm này.</p>
+      <p className="text-danger-500 text-lg">Job not found.</p>
       <Link to="/jobs" className="btn-ghost btn-md mt-4">← Back</Link>
     </div>
   )

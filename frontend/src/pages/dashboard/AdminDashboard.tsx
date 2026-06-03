@@ -33,17 +33,17 @@ export default function AdminDashboard() {
 
   const banMutation = useMutation({
     mutationFn: (id: number) => api.post(`/admin/users/${id}/ban`),
-    onSuccess: () => { toast.success('Đã cấm người dùng'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }) },
+    onSuccess: () => { toast.success('User banned'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }) },
   })
 
   const activateSvcMutation = useMutation({
     mutationFn: (id: number) => api.post(`/admin/services/${id}/activate`),
-    onSuccess: () => { toast.success('Services đã được duyệt'); queryClient.invalidateQueries({ queryKey: ['admin-stats'] }) },
+    onSuccess: () => { toast.success('Services approved'); queryClient.invalidateQueries({ queryKey: ['admin-stats'] }) },
   })
 
   const rejectSvcMutation = useMutation({
     mutationFn: (id: number) => api.post(`/admin/services/${id}/reject`),
-    onSuccess: () => { toast.success('Services đã bị từ chối'); queryClient.invalidateQueries({ queryKey: ['admin-stats'] }) },
+    onSuccess: () => { toast.success('Services rejected'); queryClient.invalidateQueries({ queryKey: ['admin-stats'] }) },
   })
 
   if (isLoading) return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
@@ -52,16 +52,16 @@ export default function AdminDashboard() {
     { label: 'Total Users',  value: stats?.totalUsers ?? 0,              icon: Users,       color: 'text-primary-400',  bg: 'bg-primary-500/10' },
     { label: 'Client',       value: stats?.totalClients ?? 0,            icon: Users,       color: 'text-blue-400',     bg: 'bg-blue-500/10' },
     { label: 'Expert',       value: stats?.totalExperts ?? 0,            icon: Shield,      color: 'text-accent-400',   bg: 'bg-accent-500/10' },
-    { label: 'Tổng việc làm',    value: stats?.totalJobs ?? 0,              icon: Briefcase,   color: 'text-warning-400',  bg: 'bg-warning-500/10' },
-    { label: 'Việc đang tuyển',  value: stats?.openJobs ?? 0,               icon: TrendingUp,  color: 'text-success-400',  bg: 'bg-success-500/10' },
+    { label: 'Total Jobs',    value: stats?.totalJobs ?? 0,              icon: Briefcase,   color: 'text-warning-400',  bg: 'bg-warning-500/10' },
+    { label: 'Open Jobs',  value: stats?.openJobs ?? 0,               icon: TrendingUp,  color: 'text-success-400',  bg: 'bg-success-500/10' },
     { label: 'Contracts active',  value: stats?.activeContracts ?? 0,        icon: ShoppingBag, color: 'text-primary-400',  bg: 'bg-primary-500/10' },
     { label: 'Completed',       value: stats?.completedContracts ?? 0,     icon: CheckCircle, color: 'text-success-400',  bg: 'bg-success-500/10' },
-    { label: 'Tổng dịch vụ',     value: stats?.totalServices ?? 0,          icon: ShoppingBag, color: 'text-accent-400',   bg: 'bg-accent-500/10' },
+    { label: 'Total Services',     value: stats?.totalServices ?? 0,          icon: ShoppingBag, color: 'text-accent-400',   bg: 'bg-accent-500/10' },
   ]
 
   const financeCards = [
-    { label: 'Tổng giao dịch',     value: `$${(stats?.totalTransactionVolume ?? 0).toLocaleString()}`, icon: DollarSign, color: 'text-success-400' },
-    { label: 'Phí nền tảng (10%)', value: `$${(stats?.platformFeeEarned ?? 0).toLocaleString()}`,     icon: TrendingUp, color: 'text-primary-400' },
+    { label: 'Total Transactions',     value: `$${(stats?.totalTransactionVolume ?? 0).toLocaleString()}`, icon: DollarSign, color: 'text-success-400' },
+    { label: 'Platform Fee (10%)', value: `$${(stats?.platformFeeEarned ?? 0).toLocaleString()}`,     icon: TrendingUp, color: 'text-primary-400' },
   ]
 
   return (
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
         <h1 className="section-title flex items-center gap-3">
           <Shield className="w-7 h-7 text-primary-400" /> Admin Dashboard
         </h1>
-        <p className="section-subtitle">Manage toàn bộ nền tảng AIMarket</p>
+        <p className="section-subtitle">Manage entire AIMarket platform</p>
       </div>
 
       {/* Stats Grid */}
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
 
       {/* Finance */}
       <div>
-        <h2 className="text-lg font-bold text-slate-900 mb-4">💰 Tài chính</h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-4">💰 Finance</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           {financeCards.map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="card p-6">
@@ -105,13 +105,13 @@ export default function AdminDashboard() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-lg font-bold text-slate-900 mb-4">⚡ Hành động nhanh</h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-4">⚡ Quick Actions</h2>
         <div className="grid sm:grid-cols-3 gap-4">
           <div className="card p-5">
-            <h3 className="font-semibold text-slate-900 mb-2">Duyệt dịch vụ</h3>
-            <p className="text-xs text-slate-400 mb-3">Phê duyệt hoặc từ chối dịch vụ chờ duyệt</p>
+            <h3 className="font-semibold text-slate-900 mb-2">Approve Services</h3>
+            <p className="text-xs text-slate-400 mb-3">Approve or reject pending services</p>
             <Link to="/admin/services" className="btn-primary btn-sm w-full block text-center">
-              <CheckCircle className="w-3.5 h-3.5 inline mr-1" /> Manage dịch vụ
+              <CheckCircle className="w-3.5 h-3.5 inline mr-1" /> Manage services
             </Link>
           </div>
           <div className="card p-5">

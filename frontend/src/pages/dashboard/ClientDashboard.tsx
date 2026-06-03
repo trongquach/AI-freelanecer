@@ -15,9 +15,9 @@ export default function ClientDashboard() {
   })
 
   const stats = [
-    { label: 'Tổng việc đăng',    value: myJobs?.totalElements ?? 0, icon: Briefcase,   color: 'text-primary-400' },
-    { label: 'Đang tuyển',         value: myJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500' },
-    { label: 'Đang thực hiện',    value: myJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400' },
+    { label: 'Total jobs posted',    value: myJobs?.totalElements ?? 0, icon: Briefcase,   color: 'text-primary-400' },
+    { label: 'Recruiting',         value: myJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500' },
+    { label: 'In progress',    value: myJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400' },
     { label: 'Completed',        value: myJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500' },
   ]
 
@@ -27,9 +27,9 @@ export default function ClientDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="section-title">
-            Xin chào, {user?.fullName ?? user?.email}! 👋
+            Hello, {user?.fullName ?? user?.email}! 👋
           </h1>
-          <p className="section-subtitle">Manage dự án và tìm chuyên gia AI</p>
+          <p className="section-subtitle">Manage projects and find AI experts</p>
         </div>
         <Link to="/jobs/new" className="btn-gradient btn-md shrink-0">
           <Plus className="w-4 h-4" /> Post a New Job
@@ -53,9 +53,9 @@ export default function ClientDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900">Jobs gần đây</h2>
+            <h2 className="text-lg font-bold text-slate-900">Recent Jobs</h2>
             <Link to="/jobs/my" className="text-sm text-primary-400 hover:text-primary-300">
-              Xem tất cả →
+              View all →
             </Link>
           </div>
           {isLoading ? (
@@ -63,9 +63,9 @@ export default function ClientDashboard() {
           ) : !myJobs?.content.length ? (
             <div className="card p-12 text-center">
               <Briefcase className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400 mb-4">Bạn chưa đăng việc nào</p>
+              <p className="text-slate-400 mb-4">You haven't posted any jobs yet</p>
               <Link to="/jobs/new" className="btn-gradient btn-sm">
-                <Plus className="w-4 h-4" /> Post a Job đầu tiên
+                <Plus className="w-4 h-4" /> Post first Job
               </Link>
             </div>
           ) : (
@@ -86,14 +86,14 @@ export default function ClientDashboard() {
         {/* Active Contracts Placeholder */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900">Contracts đang chạy</h2>
+            <h2 className="text-lg font-bold text-slate-900">Active Contracts</h2>
             <Link to="/contracts" className="text-sm text-primary-400 hover:text-primary-300">
-              Xem tất cả →
+              View all →
             </Link>
           </div>
           <div className="bg-white border border-slate-200 p-8 rounded-xl border border-slate-300 text-center">
              <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-             <p className="text-slate-500 text-sm">Các hợp đồng đang thực hiện sẽ hiển thị ở đây.</p>
+             <p className="text-slate-500 text-sm">Active contracts will be displayed here.</p>
           </div>
         </div>
       </div>
@@ -105,8 +105,8 @@ export default function ClientDashboard() {
             <DollarSign className="w-5 h-5 text-primary-400" />
           </div>
           <div>
-            <p className="font-semibold text-slate-900">Duyệt Marketplace</p>
-            <p className="text-sm text-slate-400">Tìm AI Services sẵn có</p>
+            <p className="font-semibold text-slate-900">Browse Marketplace</p>
+            <p className="text-sm text-slate-400">Find available AI Services</p>
           </div>
         </Link>
         <Link to="/wallet" className="card-hover p-5 flex items-center gap-4">
@@ -115,7 +115,7 @@ export default function ClientDashboard() {
           </div>
           <div>
             <p className="font-semibold text-slate-900">My Wallet</p>
-            <p className="text-sm text-slate-400">Manage thanh toán</p>
+            <p className="text-sm text-slate-400">Manage payments</p>
           </div>
         </Link>
       </div>

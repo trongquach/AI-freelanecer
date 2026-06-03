@@ -13,7 +13,7 @@ const statusColors: Record<string, string> = {
   CANCELLED: 'badge-danger',
 }
 const statusLabels: Record<string, string> = {
-  OPEN: 'Đang tuyển', DRAFT: 'Nháp', IN_PROGRESS: 'In Progress',
+  OPEN: 'Recruiting', DRAFT: 'Nháp', IN_PROGRESS: 'In Progress',
   COMPLETED: 'Completed', CANCELLED: 'Đã hủy',
 }
 

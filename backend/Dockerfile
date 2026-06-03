@@ -10,7 +10,8 @@ RUN mvn dependency:go-offline -B
 
 # Build application
 COPY src ./src
-RUN mvn package -DskipTests -B
+ENV MAVEN_OPTS="-Xmx256m"
+RUN mvn package -Dmaven.test.skip=true -B
 
 # ================================
 # Stage 2: Runtime

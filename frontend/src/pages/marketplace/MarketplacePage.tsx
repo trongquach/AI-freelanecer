@@ -89,7 +89,7 @@ export default function MarketplacePage() {
               defaultValue={maxPrice} onChange={e => setParam('maxPrice', e.target.value || undefined)} />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Giao hàng tối đa (days)</label>
+            <label className="block text-xs text-slate-400 mb-1">Max delivery (days)</label>
             <input type="number" className="input" placeholder="30"
               defaultValue={maxDays} onChange={e => setParam('maxDays', e.target.value || undefined)} />
           </div>

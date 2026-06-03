@@ -41,21 +41,21 @@ export default function WalletPage() {
     mutationFn: (amount: number) =>
       axiosInstance.post(`/stripe/mock-deposit?userId=${user?.id}&amount=${amount}`),
     onSuccess: () => {
-      toast.success(`$${depositAmount} đã được nạp vào ví thành công!`)
+      toast.success(`$${depositAmount} has been successfully deposited to wallet!`)
       queryClient.invalidateQueries({ queryKey: ['wallet'] })
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
       setShowDepositModal(false)
       setDepositAmount('')
     },
     onError: () => {
-      toast.error('Nạp tiền thất bại. Vui lòng thử lại.')
+      toast.error('Deposit failed. Please try again.')
     }
   })
 
   const handleDeposit = () => {
     const amt = parseFloat(depositAmount)
     if (!amt || amt <= 0) {
-      toast.error('Vui lòng nhập số tiền hợp lệ.')
+      toast.error('Please enter a valid amount.')
       return
     }
     depositMutation.mutate(amt)
@@ -149,9 +149,9 @@ export default function WalletPage() {
       {showDepositModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Nạp tiền vào ví</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Deposit to wallet</h2>
             <p className="text-sm text-slate-500 mb-6">
-              Nhập số tiền bạn muốn nạp. Hệ thống đang chạy ở chế độ <span className="font-semibold text-primary-600">Sandbox (giả lập)</span>, tiền sẽ được cộng ngay lập tức.
+              Enter the amount you want to deposit. The system is running in <span className="font-semibold text-primary-600">Sandbox</span> mode, funds will be added instantly.
             </p>
             <div className="relative mb-6">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
@@ -172,7 +172,7 @@ export default function WalletPage() {
                 className="btn-secondary btn-md flex-1"
                 onClick={() => { setShowDepositModal(false); setDepositAmount('') }}
               >
-                Hủy
+                Cancel
               </button>
               <button
                 id="deposit-confirm-btn"
@@ -180,7 +180,7 @@ export default function WalletPage() {
                 onClick={handleDeposit}
                 disabled={depositMutation.isPending}
               >
-                {depositMutation.isPending ? 'Đang xử lý...' : 'Xác nhận nạp'}
+                {depositMutation.isPending ? 'Processing...' : 'Confirm Deposit'}
               </button>
             </div>
           </div>

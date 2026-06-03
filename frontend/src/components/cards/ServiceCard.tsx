@@ -54,7 +54,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
             </span>
           </div>
           <div className="text-right">
-            <p className="text-xs text-slate-400">Từ</p>
+            <p className="text-xs text-slate-400">From</p>
             <p className="font-bold text-slate-900">${service.price.toLocaleString()}</p>
           </div>
         </div>

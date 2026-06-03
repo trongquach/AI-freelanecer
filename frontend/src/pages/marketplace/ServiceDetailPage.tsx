@@ -108,7 +108,7 @@ export default function ServiceDetailPage() {
             </div>
 
             <div className="space-y-2 text-sm">
-              {['Free Consultation', 'Bảo hành 30 days', 'Secure Escrow Payment'].map(f => (
+              {['Free Consultation', '30 days warranty', 'Secure Escrow Payment'].map(f => (
                 <div key={f} className="flex items-center gap-2 text-slate-400">
                   <CheckCircle className="w-4 h-4 text-success-500 shrink-0" /> {f}
                 </div>

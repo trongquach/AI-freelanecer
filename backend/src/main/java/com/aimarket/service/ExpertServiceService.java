@@ -63,7 +63,6 @@ public class ExpertServiceService {
 
     // ─── Update ───────────────────────────────────────────
     @Transactional
-    @CacheEvict(value = "services", allEntries = true)
     public ServiceResponse updateService(Long id, CreateServiceRequest request, Long expertId) {
         ExpertService svc = findOrThrow(id);
         if (!svc.getExpert().getId().equals(expertId)) throw new ForbiddenException();
@@ -106,7 +105,6 @@ public class ExpertServiceService {
 
     // ─── Browse Marketplace ───────────────────────────────
     @Transactional(readOnly = true)
-    @Cacheable(value = "services", key = "#keyword + '-' + #minPrice + '-' + #maxPrice + '-' + #page")
     public PageResponse<ServiceResponse> browseMarketplace(String keyword, BigDecimal minPrice,
             BigDecimal maxPrice, Integer maxDays, BigDecimal minRating,
             String sortBy, int page, int size) {
@@ -123,7 +121,6 @@ public class ExpertServiceService {
 
     // ─── Get Detail ───────────────────────────────────────
     @Transactional(readOnly = true)
-    @Cacheable(value = "services", key = "'detail:' + #id")
     public ServiceResponse getServiceDetail(Long id) {
         return toResponse(findOrThrow(id));
     }
