@@ -22,6 +22,7 @@ public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
+    private final AIRecommendationService aiRecommendationService;
 
     // ─── Get my profile ───────────────────────────────────
     @Transactional(readOnly = true)
@@ -56,7 +57,14 @@ public class UserProfileService {
         if (request.hourlyRate()  != null) profile.setHourlyRate(request.hourlyRate());
         if (request.isAvailable() != null) profile.setIsAvailable(request.isAvailable());
 
-        return toResponse(userProfileRepository.save(profile));
+        UserProfile saved = userProfileRepository.save(profile);
+        
+        // Trigger embedding update for EXPERT
+        if (saved.getUser().getRole() == com.aimarket.entity.enums.UserRole.EXPERT) {
+            aiRecommendationService.updateExpertEmbedding(userId);
+        }
+
+        return toResponse(saved);
     }
 
     // ─── Set availability ────────────────────────────────
