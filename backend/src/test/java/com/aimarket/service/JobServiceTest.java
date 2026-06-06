@@ -66,7 +66,7 @@ public class JobServiceTest {
     @Test
     void testCreateJob_NotClientRole() {
         CreateJobRequest request = new CreateJobRequest("Title", "Description", 
-                new BigDecimal("100"), new BigDecimal("500"), null, Collections.emptyList());
+                new BigDecimal("100"), new BigDecimal("500"), null, null, null, Collections.emptyList());
                 
         when(userRepository.findById(1L)).thenReturn(Optional.of(expertUser));
         
@@ -80,7 +80,7 @@ public class JobServiceTest {
 
     @Test
     void testUpdateJob_NotOwner() {
-        UpdateJobRequest request = new UpdateJobRequest("New Title", null, null, null, null, null);
+        UpdateJobRequest request = new UpdateJobRequest("New Title", null, null, null, null, null, null, null);
         
         when(jobRepository.findById(100L)).thenReturn(Optional.of(job));
         

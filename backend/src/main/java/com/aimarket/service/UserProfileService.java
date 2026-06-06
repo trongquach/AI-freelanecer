@@ -2,6 +2,7 @@ package com.aimarket.service;
 
 import com.aimarket.dto.profile.UpdateProfileRequest;
 import com.aimarket.dto.profile.UserProfileResponse;
+import com.aimarket.dto.profile.PortfolioItemDto;
 import com.aimarket.entity.UserProfile;
 import com.aimarket.entity.User;
 import com.aimarket.exception.ResourceNotFoundException;
@@ -14,6 +15,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -76,6 +79,55 @@ public class UserProfileService {
         return toResponse(userProfileRepository.save(profile));
     }
 
+    // ─── Portfolio Management ──────────────────────────────
+    @Transactional
+    public UserProfileResponse addPortfolioItem(Long userId, com.aimarket.dto.profile.PortfolioItemRequest request) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));
+        
+        com.aimarket.entity.PortfolioItem item = com.aimarket.entity.PortfolioItem.builder()
+                .userProfile(profile)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .imageUrl(request.getImageUrl())
+                .demoUrl(request.getDemoUrl())
+                .build();
+                
+        profile.getPortfolioItems().add(item);
+        return toResponse(userProfileRepository.save(profile));
+    }
+
+    @Transactional
+    public UserProfileResponse updatePortfolioItem(Long userId, Long itemId, com.aimarket.dto.profile.PortfolioItemRequest request) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));
+                
+        com.aimarket.entity.PortfolioItem item = profile.getPortfolioItems().stream()
+                .filter(i -> i.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("PortfolioItem", itemId));
+                
+        if (request.getTitle() != null) item.setTitle(request.getTitle());
+        if (request.getDescription() != null) item.setDescription(request.getDescription());
+        if (request.getImageUrl() != null) item.setImageUrl(request.getImageUrl());
+        if (request.getDemoUrl() != null) item.setDemoUrl(request.getDemoUrl());
+        
+        return toResponse(userProfileRepository.save(profile));
+    }
+
+    @Transactional
+    public UserProfileResponse deletePortfolioItem(Long userId, Long itemId) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));
+                
+        boolean removed = profile.getPortfolioItems().removeIf(i -> i.getId().equals(itemId));
+        if (!removed) {
+            throw new ResourceNotFoundException("PortfolioItem", itemId);
+        }
+        
+        return toResponse(userProfileRepository.save(profile));
+    }
+
     // ─── Mapper ───────────────────────────────────────────
     public UserProfileResponse toResponse(UserProfile p) {
         return new UserProfileResponse(
@@ -92,7 +144,17 @@ public class UserProfileService {
                 p.getCompletionRate(),
                 p.getIsAvailable(),
                 p.getCreatedAt(),
-                p.getUpdatedAt()
+                p.getUpdatedAt(),
+                p.getPortfolioItems().stream()
+                        .map(item -> PortfolioItemDto.builder()
+                                .id(item.getId())
+                                .title(item.getTitle())
+                                .description(item.getDescription())
+                                .imageUrl(item.getImageUrl())
+                                .demoUrl(item.getDemoUrl())
+                                .createdAt(item.getCreatedAt().toString())
+                                .build())
+                        .collect(Collectors.toList())
         );
     }
 }

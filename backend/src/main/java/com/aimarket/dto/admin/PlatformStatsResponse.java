@@ -14,6 +14,7 @@ public record PlatformStatsResponse(
     long totalServices,
     BigDecimal totalTransactionVolume,
     BigDecimal platformFeeEarned,
+    BigDecimal totalEscrowLocked,
     List<RecentActivity> recentActivity
 ) {
     public record RecentActivity(String type, String description, String createdAt) {}

@@ -11,5 +11,7 @@ public record CreateJobRequest(
     @Positive BigDecimal budgetMin,
     @Positive BigDecimal budgetMax,
     @FutureOrPresent LocalDate deadline,
+    @FutureOrPresent LocalDate startDate,
+    String expectedDuration,
     List<Long> skillIds
 ) {}

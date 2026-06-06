@@ -14,6 +14,7 @@ public record ContractResponse(
     PartyInfo client,
     PartyInfo expert,
     BigDecimal totalAmount,
+    BigDecimal escrowAmount,
     ContractStatus status,
     List<MilestoneInfo> milestones,
     LocalDateTime startedAt,

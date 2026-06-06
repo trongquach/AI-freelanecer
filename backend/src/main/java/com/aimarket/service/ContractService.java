@@ -120,6 +120,11 @@ public class ContractService {
                         m.getDueDate(), m.getStatus(), m.getOrderIndex(), m.getDeliverableUrl()))
                 .collect(Collectors.toList());
 
+        java.math.BigDecimal escrowAmount = c.getMilestones().stream()
+                .filter(m -> m.getStatus() != MilestoneStatus.APPROVED)
+                .map(Milestone::getAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
         return new ContractResponse(
                 c.getId(), c.getJob().getId(), c.getJob().getTitle(),
                 new ContractResponse.PartyInfo(c.getClient().getId(),
@@ -128,7 +133,7 @@ public class ContractService {
                 new ContractResponse.PartyInfo(c.getExpert().getId(),
                         expertProfile != null ? expertProfile.getFullName() : null,
                         expertProfile != null ? expertProfile.getAvatarUrl() : null),
-                c.getTotalAmount(), c.getStatus(), milestones,
+                c.getTotalAmount(), escrowAmount, c.getStatus(), milestones,
                 c.getStartedAt(), c.getCompletedAt(), c.getCreatedAt()
         );
     }

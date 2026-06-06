@@ -10,5 +10,7 @@ public record UpdateJobRequest(
     BigDecimal budgetMin,
     BigDecimal budgetMax,
     LocalDate deadline,
+    LocalDate startDate,
+    String expectedDuration,
     List<Long> skillIds
 ) {}

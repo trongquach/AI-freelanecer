@@ -1,5 +1,6 @@
 package com.aimarket.controller;
 
+import com.aimarket.dto.profile.PortfolioItemRequest;
 import com.aimarket.dto.profile.UpdateProfileRequest;
 import com.aimarket.dto.profile.UserProfileResponse;
 import com.aimarket.security.CustomUserDetails;
@@ -58,5 +59,34 @@ public class UserProfileController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserProfileResponse> getPublicProfile(@PathVariable Long userId) {
         return ResponseEntity.ok(userProfileService.getPublicProfile(userId));
+    }
+
+    // ─── Portfolio ─────────────────────────────────────────
+    @Operation(summary = "Add portfolio item")
+    @PostMapping("/me/portfolio")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<UserProfileResponse> addPortfolioItem(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Valid @RequestBody PortfolioItemRequest request) {
+        return ResponseEntity.ok(userProfileService.addPortfolioItem(user.getUserId(), request));
+    }
+
+    @Operation(summary = "Update portfolio item")
+    @PutMapping("/me/portfolio/{itemId}")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<UserProfileResponse> updatePortfolioItem(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long itemId,
+            @Valid @RequestBody PortfolioItemRequest request) {
+        return ResponseEntity.ok(userProfileService.updatePortfolioItem(user.getUserId(), itemId, request));
+    }
+
+    @Operation(summary = "Delete portfolio item")
+    @DeleteMapping("/me/portfolio/{itemId}")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<UserProfileResponse> deletePortfolioItem(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long itemId) {
+        return ResponseEntity.ok(userProfileService.deletePortfolioItem(user.getUserId(), itemId));
     }
 }

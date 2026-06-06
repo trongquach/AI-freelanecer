@@ -13,6 +13,8 @@ public record JobResponse(
     BigDecimal budgetMin,
     BigDecimal budgetMax,
     LocalDate deadline,
+    LocalDate startDate,
+    String expectedDuration,
     JobStatus status,
     Boolean aiEnhanced,
     Integer viewCount,

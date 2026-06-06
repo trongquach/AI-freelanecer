@@ -3,6 +3,7 @@ package com.aimarket.dto.profile;
 import com.aimarket.entity.enums.UserRole;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record UserProfileResponse(
         Long userId,
@@ -18,5 +19,6 @@ public record UserProfileResponse(
         BigDecimal completionRate,
         Boolean isAvailable,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        List<PortfolioItemDto> portfolioItems
 ) {}

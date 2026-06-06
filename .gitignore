@@ -46,3 +46,4 @@ infrastructure/terraform/.terraform.lock.hcl
 *.zip
 .env.prod
 deploy_aws/
+*.md

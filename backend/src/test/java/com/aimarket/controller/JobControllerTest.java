@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     controllers = JobController.class,
     excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class)
 )
-@AutoConfigureMockMvc(addFilters = false) // Disable security filters to test pure controller logic or use @WithMockUser
+@AutoConfigureMockMvc(addFilters = false)
 public class JobControllerTest {
 
     @Autowired
@@ -74,14 +74,18 @@ public class JobControllerTest {
         mockResponse = new JobResponse(
                 100L, "Test Title", "Test Desc",
                 new BigDecimal("100"), new BigDecimal("500"), LocalDate.now().plusDays(10),
+                LocalDate.now(), "1 month",
                 JobStatus.DRAFT, false, 0, clientInfo, Collections.emptyList(), LocalDateTime.now()
+        );
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(clientUser, "hash", clientUser.getAuthorities())
         );
     }
 
     @Test
     void testCreateJob_Success() throws Exception {
         CreateJobRequest request = new CreateJobRequest("Test Title", "This is a long description with 50 characters minimal length to pass the validation check.", 
-                new BigDecimal("100"), new BigDecimal("500"), LocalDate.now().plusDays(10), Collections.emptyList());
+                new BigDecimal("100"), new BigDecimal("500"), LocalDate.now().plusDays(10), LocalDate.now(), "1 month", Collections.emptyList());
 
         when(jobService.createJob(any(CreateJobRequest.class), eq(1L))).thenReturn(mockResponse);
 
@@ -97,7 +101,7 @@ public class JobControllerTest {
     @Test
     void testCreateJob_InvalidPayload_Returns400() throws Exception {
         CreateJobRequest request = new CreateJobRequest("", "", // Invalid blanks
-                new BigDecimal("100"), new BigDecimal("500"), LocalDate.now().minusDays(10), Collections.emptyList());
+                new BigDecimal("100"), new BigDecimal("500"), LocalDate.now().minusDays(10), LocalDate.now(), "1 month", Collections.emptyList());
 
         mockMvc.perform(post("/api/v1/jobs")
                 .with(user(clientUser))

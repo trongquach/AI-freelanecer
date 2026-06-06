@@ -64,4 +64,28 @@ public class AdminController {
     ) {
         return adminService.getPendingServices(org.springframework.data.domain.PageRequest.of(page, size));
     }
+
+    @Operation(summary = "Get all transactions")
+    @GetMapping("/transactions")
+    public Page<com.aimarket.entity.Transaction> getTransactions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return adminService.getTransactions(org.springframework.data.domain.PageRequest.of(page, size));
+    }
+
+    @Operation(summary = "Delete a job")
+    @DeleteMapping("/jobs/{id}")
+    public Map<String, String> deleteJob(@PathVariable Long id) {
+        // Soft delete or status update handled in service
+        adminService.deleteJob(id);
+        return Map.of("message", "Job deleted successfully");
+    }
+
+    @Operation(summary = "Delete a service")
+    @DeleteMapping("/services/{id}")
+    public Map<String, String> deleteService(@PathVariable Long id) {
+        adminService.deleteService(id);
+        return Map.of("message", "Service deleted successfully");
+    }
 }

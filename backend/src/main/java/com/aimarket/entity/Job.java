@@ -39,6 +39,12 @@ public class Job {
 
     private LocalDate deadline;
 
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "expected_duration", length = 100)
+    private String expectedDuration;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private JobStatus status = JobStatus.DRAFT;

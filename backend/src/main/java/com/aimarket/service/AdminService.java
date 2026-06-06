@@ -19,6 +19,7 @@ public class AdminService {
     private final ContractRepository contractRepository;
     private final ExpertServiceRepository expertServiceRepository;
     private final TransactionRepository transactionRepository;
+    private final EscrowAccountRepository escrowAccountRepository;
     private final NotificationService notificationService;
     private final ExpertServiceService expertServiceService;
 
@@ -37,13 +38,15 @@ public class AdminService {
                 .orElse(BigDecimal.ZERO);
         BigDecimal feeEarned = transactionRepository.sumAmountByType(TransactionType.FEE)
                 .orElse(BigDecimal.ZERO);
+        BigDecimal totalEscrowLocked = escrowAccountRepository.sumLockedAmount();
+        if (totalEscrowLocked == null) totalEscrowLocked = BigDecimal.ZERO;
 
         return new PlatformStatsResponse(
                 totalUsers, totalClients, totalExperts,
                 totalJobs, openJobs,
                 activeCons, completedCons,
                 totalSvc,
-                totalVol, feeEarned,
+                totalVol, feeEarned, totalEscrowLocked,
                 List.of()
         );
     }
@@ -89,5 +92,20 @@ public class AdminService {
     public org.springframework.data.domain.Page<com.aimarket.dto.service.ServiceResponse> getPendingServices(org.springframework.data.domain.Pageable pageable) {
         return expertServiceRepository.findByStatus(ServiceStatus.PENDING_REVIEW, pageable)
                 .map(expertServiceService::toResponse);
+    }
+
+    @Transactional
+    public void deleteJob(Long jobId) {
+        jobRepository.findById(jobId).ifPresent(jobRepository::delete);
+    }
+
+    @Transactional
+    public void deleteService(Long serviceId) {
+        expertServiceRepository.findById(serviceId).ifPresent(expertServiceRepository::delete);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<com.aimarket.entity.Transaction> getTransactions(org.springframework.data.domain.Pageable pageable) {
+        return transactionRepository.findAll(pageable);
     }
 }

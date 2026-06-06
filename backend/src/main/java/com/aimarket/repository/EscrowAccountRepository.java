@@ -9,4 +9,7 @@ import java.util.Optional;
 @Repository
 public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, Long> {
     Optional<EscrowAccount> findByUserId(Long userId);
+    
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(e.lockedAmount) FROM EscrowAccount e")
+    java.math.BigDecimal sumLockedAmount();
 }

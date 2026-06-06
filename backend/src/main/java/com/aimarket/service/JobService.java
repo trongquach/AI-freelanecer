@@ -57,6 +57,8 @@ public class JobService {
                 .budgetMin(request.budgetMin())
                 .budgetMax(request.budgetMax())
                 .deadline(request.deadline())
+                .startDate(request.startDate())
+                .expectedDuration(request.expectedDuration())
                 .status(JobStatus.DRAFT)
                 .skills(skills)
                 .build();
@@ -75,6 +77,8 @@ public class JobService {
         if (request.budgetMin()   != null) job.setBudgetMin(request.budgetMin());
         if (request.budgetMax()   != null) job.setBudgetMax(request.budgetMax());
         if (request.deadline()    != null) job.setDeadline(request.deadline());
+        if (request.startDate()   != null) job.setStartDate(request.startDate());
+        if (request.expectedDuration() != null) job.setExpectedDuration(request.expectedDuration());
         if (request.skillIds()    != null) job.setSkills(resolveSkills(request.skillIds()));
 
         return toResponse(jobRepository.save(job));
@@ -177,6 +181,7 @@ public class JobService {
         return new JobResponse(
                 job.getId(), job.getTitle(), job.getDescription(),
                 job.getBudgetMin(), job.getBudgetMax(), job.getDeadline(),
+                job.getStartDate(), job.getExpectedDuration(),
                 job.getStatus(), job.getAiEnhanced(), job.getViewCount(),
                 clientInfo, skillInfos, job.getCreatedAt()
         );
