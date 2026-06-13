@@ -1,8 +1,13 @@
+SET FOREIGN_KEY_CHECKS = 0;
+
 -- Clear existing mock data if any
 DELETE FROM jobs;
 DELETE FROM services;
 DELETE FROM user_profiles;
 DELETE FROM users;
+DELETE FROM escrow_accounts;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- Insert Users (Password is 'password123' for all)
 INSERT INTO users (id, email, password_hash, role, status, email_verified, created_at, updated_at) VALUES 
