@@ -52,7 +52,7 @@ api.interceptors.response.use(
       originalRequest._retry = true
       isRefreshing = true
 
-      const refreshToken = localStorage.getItem('refreshToken')
+      const refreshToken = sessionStorage.getItem('refreshToken')
       if (!refreshToken) {
         clearAuthStorage()
         window.location.href = '/login'
@@ -62,7 +62,7 @@ api.interceptors.response.use(
       try {
         const { data } = await axios.post<AuthResponse>('/api/v1/auth/refresh', { refreshToken })
         sessionStorage.setItem('accessToken', data.accessToken)
-        localStorage.setItem('refreshToken', data.refreshToken)
+        sessionStorage.setItem('refreshToken', data.refreshToken)
         processQueue(null, data.accessToken)
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
         return api(originalRequest)
@@ -82,7 +82,7 @@ api.interceptors.response.use(
 
 function clearAuthStorage() {
   sessionStorage.removeItem('accessToken')
-  localStorage.removeItem('refreshToken')
+  sessionStorage.removeItem('refreshToken')
 }
 
 export default api

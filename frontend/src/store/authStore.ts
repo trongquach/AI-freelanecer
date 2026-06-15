@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const data = await authApi.login(credentials)
           sessionStorage.setItem('accessToken', data.accessToken)
-          localStorage.setItem('refreshToken', data.refreshToken)
+          sessionStorage.setItem('refreshToken', data.refreshToken)
           set({
             user: data.user,
             accessToken: data.accessToken,
@@ -53,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.register(data)
           sessionStorage.setItem('accessToken', response.accessToken)
-          localStorage.setItem('refreshToken', response.refreshToken)
+          sessionStorage.setItem('refreshToken', response.refreshToken)
           set({
             user: response.user,
             accessToken: response.accessToken,
@@ -75,14 +75,14 @@ export const useAuthStore = create<AuthState>()(
           // Ignore errors — always clear local state
         } finally {
           sessionStorage.removeItem('accessToken')
-          localStorage.removeItem('refreshToken')
+          sessionStorage.removeItem('refreshToken')
           set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false })
         }
       },
 
       setTokens: (accessToken, refreshToken) => {
         sessionStorage.setItem('accessToken', accessToken)
-        localStorage.setItem('refreshToken', refreshToken)
+        sessionStorage.setItem('refreshToken', refreshToken)
         set({ accessToken, refreshToken, isAuthenticated: true })
       },
 
@@ -90,23 +90,23 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         sessionStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
+        sessionStorage.removeItem('refreshToken')
         set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false })
       },
 
       // Called on app startup — try to refresh if we have a stored refresh token
       initializeAuth: async () => {
-        const storedRefresh = localStorage.getItem('refreshToken')
+        const storedRefresh = sessionStorage.getItem('refreshToken')
         if (!storedRefresh) return
 
         set({ isLoading: true })
         try {
           const data = await authApi.refreshToken(storedRefresh)
           sessionStorage.setItem('accessToken', data.accessToken)
-          localStorage.setItem('refreshToken', data.refreshToken)
+          sessionStorage.setItem('refreshToken', data.refreshToken)
           set({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken, isAuthenticated: true })
         } catch {
-          localStorage.removeItem('refreshToken')
+          sessionStorage.removeItem('refreshToken')
           set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false })
         } finally {
           set({ isLoading: false })
