@@ -3,11 +3,14 @@ package com.aimarket.service;
 import com.aimarket.dto.profile.UpdateProfileRequest;
 import com.aimarket.dto.profile.UserProfileResponse;
 import com.aimarket.dto.profile.PortfolioItemDto;
+import com.aimarket.dto.profile.SkillDto;
 import com.aimarket.entity.UserProfile;
 import com.aimarket.entity.User;
+import com.aimarket.entity.Skill;
 import com.aimarket.exception.ResourceNotFoundException;
 import com.aimarket.repository.UserProfileRepository;
 import com.aimarket.repository.UserRepository;
+import com.aimarket.repository.SkillRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -16,6 +19,9 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,6 +31,7 @@ public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
+    private final SkillRepository skillRepository;
     private final AIRecommendationService aiRecommendationService;
 
     // ─── Get my profile ───────────────────────────────────
@@ -58,6 +65,7 @@ public class UserProfileService {
         if (request.avatarUrl()   != null) profile.setAvatarUrl(request.avatarUrl());
         if (request.portfolioUrl()!= null) profile.setPortfolioUrl(request.portfolioUrl());
         if (request.hourlyRate()  != null) profile.setHourlyRate(request.hourlyRate());
+        if (request.timezone()    != null) profile.setTimezone(request.timezone());
         if (request.isAvailable() != null) profile.setIsAvailable(request.isAvailable());
 
         UserProfile saved = userProfileRepository.save(profile);
@@ -91,6 +99,8 @@ public class UserProfileService {
                 .description(request.getDescription())
                 .imageUrl(request.getImageUrl())
                 .demoUrl(request.getDemoUrl())
+                .technologies(request.getTechnologies())
+                .displayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : profile.getPortfolioItems().size())
                 .build();
                 
         profile.getPortfolioItems().add(item);
@@ -111,6 +121,8 @@ public class UserProfileService {
         if (request.getDescription() != null) item.setDescription(request.getDescription());
         if (request.getImageUrl() != null) item.setImageUrl(request.getImageUrl());
         if (request.getDemoUrl() != null) item.setDemoUrl(request.getDemoUrl());
+        if (request.getTechnologies() != null) item.setTechnologies(request.getTechnologies());
+        if (request.getDisplayOrder() != null) item.setDisplayOrder(request.getDisplayOrder());
         
         return toResponse(userProfileRepository.save(profile));
     }
@@ -128,6 +140,42 @@ public class UserProfileService {
         return toResponse(userProfileRepository.save(profile));
     }
 
+    @Transactional
+    public UserProfileResponse reorderPortfolio(Long userId, List<Long> itemIds) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));
+
+        List<com.aimarket.entity.PortfolioItem> items = profile.getPortfolioItems();
+        for (int i = 0; i < itemIds.size(); i++) {
+            Long id = itemIds.get(i);
+            int order = i;
+            items.stream()
+                 .filter(item -> item.getId().equals(id))
+                 .findFirst()
+                 .ifPresent(item -> item.setDisplayOrder(order));
+        }
+
+        return toResponse(userProfileRepository.save(profile));
+    }
+
+    @Transactional
+    public UserProfileResponse updateUserSkills(Long userId, List<Long> skillIds) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        List<Skill> skills = skillRepository.findAllById(skillIds);
+        user.setSkills(new HashSet<>(skills));
+        userRepository.save(user);
+
+        // Update recommendation embeddings
+        if (user.getRole() == com.aimarket.entity.enums.UserRole.EXPERT) {
+            aiRecommendationService.updateExpertEmbedding(userId);
+        }
+
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("UserProfile", userId));
+        return toResponse(profile);
+    }
+
     // ─── Mapper ───────────────────────────────────────────
     public UserProfileResponse toResponse(UserProfile p) {
         return new UserProfileResponse(
@@ -142,17 +190,28 @@ public class UserProfileService {
                 p.getRating(),
                 p.getTotalReviews(),
                 p.getCompletionRate(),
+                p.getTimezone(),
                 p.getIsAvailable(),
                 p.getCreatedAt(),
                 p.getUpdatedAt(),
                 p.getPortfolioItems().stream()
+                        .sorted(Comparator.comparing(com.aimarket.entity.PortfolioItem::getDisplayOrder, Comparator.nullsLast(Comparator.naturalOrder())))
                         .map(item -> PortfolioItemDto.builder()
                                 .id(item.getId())
                                 .title(item.getTitle())
                                 .description(item.getDescription())
                                 .imageUrl(item.getImageUrl())
                                 .demoUrl(item.getDemoUrl())
+                                .technologies(item.getTechnologies())
+                                .displayOrder(item.getDisplayOrder())
                                 .createdAt(item.getCreatedAt().toString())
+                                .build())
+                        .collect(Collectors.toList()),
+                p.getUser().getSkills().stream()
+                        .map(s -> SkillDto.builder()
+                                .id(s.getId())
+                                .name(s.getName())
+                                .category(s.getCategory())
                                 .build())
                         .collect(Collectors.toList())
         );

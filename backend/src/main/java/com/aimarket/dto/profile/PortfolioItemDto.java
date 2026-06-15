@@ -11,5 +11,7 @@ public class PortfolioItemDto {
     private String description;
     private String imageUrl;
     private String demoUrl;
+    private String technologies;
+    private Integer displayOrder;
     private String createdAt;
 }

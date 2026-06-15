@@ -10,5 +10,6 @@ public record UpdateProfileRequest(
         @Size(max = 500)  String avatarUrl,
         @Size(max = 500)  String portfolioUrl,
         @DecimalMin("0.0") BigDecimal hourlyRate,
+        @Size(max = 100) String timezone,
         Boolean isAvailable
 ) {}

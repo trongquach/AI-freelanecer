@@ -32,6 +32,13 @@ public class PortfolioItem {
     @Column(name = "demo_url", length = 500)
     private String demoUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String technologies;
+
+    @Builder.Default
+    @Column(name = "display_order")
+    private Integer displayOrder = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

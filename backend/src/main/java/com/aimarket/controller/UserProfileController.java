@@ -1,7 +1,9 @@
 package com.aimarket.controller;
 
 import com.aimarket.dto.profile.PortfolioItemRequest;
+import com.aimarket.dto.profile.ReorderPortfolioRequest;
 import com.aimarket.dto.profile.UpdateProfileRequest;
+import com.aimarket.dto.profile.UpdateSkillsRequest;
 import com.aimarket.dto.profile.UserProfileResponse;
 import com.aimarket.security.CustomUserDetails;
 import com.aimarket.service.UserProfileService;
@@ -88,5 +90,24 @@ public class UserProfileController {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long itemId) {
         return ResponseEntity.ok(userProfileService.deletePortfolioItem(user.getUserId(), itemId));
+    }
+
+    @Operation(summary = "Reorder portfolio items")
+    @PutMapping("/me/portfolio/reorder")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<UserProfileResponse> reorderPortfolio(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody ReorderPortfolioRequest request) {
+        return ResponseEntity.ok(userProfileService.reorderPortfolio(user.getUserId(), request.getItemIds()));
+    }
+
+    // ─── Skills ───────────────────────────────────────────
+    @Operation(summary = "Update user skills")
+    @PutMapping("/me/skills")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<UserProfileResponse> updateMySkills(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody UpdateSkillsRequest request) {
+        return ResponseEntity.ok(userProfileService.updateUserSkills(user.getUserId(), request.getSkillIds()));
     }
 }

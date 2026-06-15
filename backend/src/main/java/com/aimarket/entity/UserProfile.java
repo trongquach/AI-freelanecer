@@ -34,6 +34,9 @@ public class UserProfile {
     @Column(name = "portfolio_url", length = 500)
     private String portfolioUrl;
 
+    @Column(length = 100)
+    private String timezone;
+
     @Column(name = "hourly_rate", precision = 10, scale = 2)
     private BigDecimal hourlyRate;
 

@@ -9,12 +9,14 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import SkillSelector from '@/components/ui/SkillSelector'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import PortfolioSection from '@/components/profile/PortfolioSection'
 
 const schema = z.object({
   fullName: z.string().min(2, 'Name is too short').max(100),
   bio: z.string().max(1000).optional().nullable(),
   hourlyRate: z.number().positive().optional().nullable(),
   portfolioUrl: z.string().url('Invalid URL').optional().nullable().or(z.literal('')),
+  timezone: z.string().max(100).optional().nullable(),
   isAvailable: z.boolean().optional(),
 })
 
@@ -39,6 +41,7 @@ export default function ProfilePage() {
       bio: '',
       hourlyRate: null,
       portfolioUrl: '',
+      timezone: '',
       isAvailable: true,
     }
   })
@@ -50,22 +53,30 @@ export default function ProfilePage() {
         bio: profile.bio || '',
         hourlyRate: profile.hourlyRate || null,
         portfolioUrl: profile.portfolioUrl || '',
+        timezone: profile.timezone || '',
         isAvailable: profile.isAvailable,
       })
       setAvatarPreview(profile.avatarUrl)
-      // Note: Backend doesn't currently return skillIds for profiles in UserProfileResponse,
-      // but in a fully built system it would. For this demo we'll assume it starts empty if not provided.
+      if (profile.skills) {
+        setSkillIds(profile.skills.map(s => s.id))
+      }
     }
   }, [profile, reset])
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) => profileApi.updateMyProfile({ 
-      ...data, 
-      avatarUrl: avatarPreview || undefined,
-      bio: data.bio || undefined,
-      portfolioUrl: data.portfolioUrl || undefined,
-      hourlyRate: data.hourlyRate || undefined
-    }),
+    mutationFn: async (data: FormData) => {
+      if (user?.role === 'EXPERT') {
+        await profileApi.updateSkills(skillIds)
+      }
+      return profileApi.updateMyProfile({ 
+        ...data, 
+        avatarUrl: avatarPreview || undefined,
+        bio: data.bio || undefined,
+        portfolioUrl: data.portfolioUrl || undefined,
+        hourlyRate: data.hourlyRate || undefined,
+        timezone: data.timezone || undefined
+      })
+    },
     onSuccess: () => {
       toast.success('Profile updated successfully!')
       setIsEditing(false)
@@ -94,7 +105,7 @@ export default function ProfilePage() {
       <div className="flex justify-between items-center">
         <h1 className="section-title mb-0">My Profile</h1>
         {!isEditing && (
-          <button onClick={() => setIsEditing(true)} className="btn-outline flex items-center gap-2">
+          <button onClick={() => setIsEditing(true)} className="btn-secondary flex items-center gap-2 text-sm px-4 py-2">
             <Edit2 className="w-4 h-4" /> Edit Profile
           </button>
         )}
@@ -141,6 +152,11 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Portfolio URL</label>
               <input {...register('portfolioUrl')} className="input" placeholder="https://github.com/..." />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Timezone</label>
+              <input {...register('timezone')} className="input" placeholder="e.g. UTC+7" />
+            </div>
           </div>
 
           <div>
@@ -176,8 +192,8 @@ export default function ProfilePage() {
           </div>
         </form>
       ) : (
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
+        <div className={`grid gap-6 ${user?.role === 'EXPERT' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+          <div className={`${user?.role === 'EXPERT' ? 'md:col-span-2' : ''} space-y-6`}>
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">About Me</h3>
               <p className="text-slate-600 whitespace-pre-wrap">{profile?.bio || 'No bio provided yet.'}</p>
@@ -186,9 +202,11 @@ export default function ProfilePage() {
             {user?.role === 'EXPERT' && (
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Skills</h3>
-                {skillIds.length > 0 ? (
+                {profile?.skills && profile.skills.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    <span className="badge bg-slate-100 text-slate-700">Skills updated in edit mode</span>
+                    {profile.skills.map(s => (
+                      <span key={s.id} className="badge bg-slate-100 text-slate-700">{s.name}</span>
+                    ))}
                   </div>
                 ) : (
                   <p className="text-slate-400 italic text-sm">No skills added yet.</p>
@@ -214,6 +232,15 @@ export default function ProfilePage() {
                   <p className="text-sm text-slate-900">{new Date(profile?.createdAt || '').toLocaleDateString()}</p>
                 </div>
               </div>
+              {profile?.timezone && (
+                <div className="flex items-center gap-3">
+                  <span className="w-4 h-4 text-slate-400 text-center font-bold">⏱</span>
+                  <div>
+                    <p className="text-xs text-slate-400">Timezone</p>
+                    <p className="text-sm text-slate-900">{profile.timezone}</p>
+                  </div>
+                </div>
+              )}
               {profile?.portfolioUrl && (
                 <div className="pt-2 border-t border-slate-100">
                   <a href={profile.portfolioUrl} target="_blank" rel="noreferrer" className="text-primary-600 text-sm hover:underline font-medium">View Portfolio &rarr;</a>
@@ -243,6 +270,10 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+      )}
+
+      {!isEditing && (
+        <PortfolioSection items={profile?.portfolioItems || []} isExpert={user?.role === 'EXPERT'} />
       )}
     </div>
   )

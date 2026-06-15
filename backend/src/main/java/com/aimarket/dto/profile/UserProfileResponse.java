@@ -17,8 +17,10 @@ public record UserProfileResponse(
         BigDecimal rating,
         Integer totalReviews,
         BigDecimal completionRate,
+        String timezone,
         Boolean isAvailable,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        List<PortfolioItemDto> portfolioItems
+        List<PortfolioItemDto> portfolioItems,
+        List<SkillDto> skills
 ) {}
