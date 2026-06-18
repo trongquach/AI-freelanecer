@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatApi, ChatMessage } from '@/api/chatApi';
 import { useWebSocket } from './useWebSocket';
@@ -20,7 +20,7 @@ export function useChat(contractId: number) {
 
   useEffect(() => {
     if (isConnected && contractId) {
-      const sub = subscribe(`/topic/chat/${contractId}`, (msg: any) => {
+      const sub = subscribe(`/topic/contract.${contractId}`, (msg: any) => {
         if (msg.type === 'TYPING') {
           if (msg.userId !== user?.id) {
             setTypingUsers(prev => {
@@ -38,38 +38,34 @@ export function useChat(contractId: number) {
     }
   }, [isConnected, contractId, user, subscribe]);
 
+  const sendMsgMut = useMutation({
+    mutationFn: (content: string) => chatApi.sendMessage(contractId, content)
+  });
+
   const sendMessage = useCallback((content: string) => {
-    if (isConnected) {
-      publish(`/app/chat.send`, {
-        contractId,
-        content
-      });
-    }
-  }, [isConnected, publish, contractId]);
+    sendMsgMut.mutate(content);
+  }, [sendMsgMut]);
 
   const sendTypingEvent = useCallback((typing: boolean) => {
-    if (isConnected) {
-      publish(`/app/chat.typing`, {
-        contractId,
-        userId: user?.id,
-        typing
-      });
-    }
-  }, [isConnected, publish, contractId, user]);
+    // If backend doesn't support typing indicator, we can just skip or keep the WS publish if it has a handler.
+    // Since there is no WS handler in backend, typing events won't work anyway. We just do nothing to prevent errors.
+  }, []);
 
-  const markAsReadMut = useMutation({
+  const { mutate: mutateMarkAsRead } = useMutation({
     mutationFn: () => chatApi.markAsRead(contractId)
   });
 
   const markAsRead = useCallback(() => {
-    markAsReadMut.mutate();
-  }, [markAsReadMut]);
+    mutateMarkAsRead();
+  }, [mutateMarkAsRead]);
 
-  const allMessages = [
-    ...realtimeMessages,
-    ...(data?.content || [])
-  ].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i)
-   .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const allMessages = React.useMemo(() => {
+    return [
+      ...realtimeMessages,
+      ...(data?.content || [])
+    ].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i)
+     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [realtimeMessages, data?.content]);
 
   return {
     messages: allMessages,

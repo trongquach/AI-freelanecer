@@ -24,6 +24,7 @@ public class ProposalService {
     private final UserRepository userRepository;
     private final ContractRepository contractRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final EscrowService escrowService;
 
     // ─── Submit Proposal ─────────────────────────────────
     @Transactional
@@ -101,7 +102,21 @@ public class ProposalService {
                 .totalAmount(proposal.getPrice())
                 .startedAt(LocalDateTime.now())
                 .build();
+                
+        Milestone m1 = Milestone.builder()
+                .contract(contract)
+                .name("Final Deliverable")
+                .description("Complete project delivery based on proposal")
+                .amount(proposal.getPrice())
+                .dueDate(java.time.LocalDate.now().plusDays(proposal.getTimelineDays()))
+                .status(MilestoneStatus.PENDING)
+                .orderIndex(1)
+                .build();
+        contract.getMilestones().add(m1);
+        
         contractRepository.save(contract);
+        
+        escrowService.lockFunds(clientId, contract.getId(), proposal.getPrice());
         log.info("Contract created: {} for job: {}", contract.getId(), job.getId());
 
         return toResponse(proposal);

@@ -59,4 +59,7 @@ export const serviceApi = {
 
   deactivate: (id: number) =>
     api.post(`/services/${id}/deactivate`).then(r => r.data),
+
+  order: (id: number) =>
+    api.post(`/services/${id}/order`).then(r => r.data),
 }

@@ -94,4 +94,11 @@ public class ServiceController {
                                       @AuthenticationPrincipal CustomUserDetails user) {
         return serviceService.deactivateService(id, user.getUserId());
     }
+    @Operation(summary = "Order a service directly — CLIENT")
+    @PostMapping("/{id}/order")
+    @PreAuthorize("hasRole('CLIENT')")
+    public com.aimarket.dto.contract.ContractResponse orderService(@PathVariable Long id,
+                                                                   @AuthenticationPrincipal CustomUserDetails user) {
+        return serviceService.orderService(id, user.getUserId());
+    }
 }
