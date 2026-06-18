@@ -1,5 +1,29 @@
 import api from './axiosInstance'
 
+export interface SkillDto {
+  id: number
+  category: string
+  name: string
+}
+
+export interface PortfolioItemDto {
+  id: number
+  title: string
+  description: string | null
+  imageUrl: string | null
+  demoUrl: string | null
+  createdAt: string
+  skills: SkillDto[]
+}
+
+export interface PortfolioItemRequest {
+  title: string
+  description?: string
+  imageUrl?: string
+  demoUrl?: string
+  skillIds?: number[]
+}
+
 export interface UserProfileResponse {
   userId: number
   email: string
@@ -8,6 +32,7 @@ export interface UserProfileResponse {
   bio: string | null
   avatarUrl: string | null
   portfolioUrl: string | null
+  timezone: string | null
   hourlyRate: number | null
   rating: number
   totalReviews: number
@@ -15,6 +40,8 @@ export interface UserProfileResponse {
   isAvailable: boolean
   createdAt: string
   updatedAt: string
+  portfolioItems: PortfolioItemDto[]
+  skills: SkillDto[]
 }
 
 export interface UpdateProfileRequest {
@@ -22,8 +49,10 @@ export interface UpdateProfileRequest {
   bio?: string
   avatarUrl?: string
   portfolioUrl?: string
+  timezone?: string
   hourlyRate?: number
   isAvailable?: boolean
+  skillIds?: number[]
 }
 
 export const profileApi = {
@@ -38,4 +67,13 @@ export const profileApi = {
     
   getPublicProfile: (userId: number) =>
     api.get<UserProfileResponse>(`/profile/${userId}`).then(r => r.data),
+
+  addPortfolioItem: (data: PortfolioItemRequest) =>
+    api.post<UserProfileResponse>('/profile/me/portfolio', data).then(r => r.data),
+
+  updatePortfolioItem: (itemId: number, data: PortfolioItemRequest) =>
+    api.put<UserProfileResponse>(`/profile/me/portfolio/${itemId}`, data).then(r => r.data),
+
+  deletePortfolioItem: (itemId: number) =>
+    api.delete<UserProfileResponse>(`/profile/me/portfolio/${itemId}`).then(r => r.data),
 }

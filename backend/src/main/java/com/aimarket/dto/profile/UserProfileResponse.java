@@ -13,6 +13,7 @@ public record UserProfileResponse(
         String bio,
         String avatarUrl,
         String portfolioUrl,
+        String timezone,
         BigDecimal hourlyRate,
         BigDecimal rating,
         Integer totalReviews,
@@ -20,5 +21,6 @@ public record UserProfileResponse(
         Boolean isAvailable,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        List<PortfolioItemDto> portfolioItems
+        List<PortfolioItemDto> portfolioItems,
+        List<SkillDto> skills
 ) {}

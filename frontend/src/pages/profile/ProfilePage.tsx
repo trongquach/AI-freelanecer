@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { User, Mail, Shield, Camera, Edit2 } from 'lucide-react'
+import { User, Mail, Shield, Camera, Edit2, Plus, ExternalLink, Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { profileApi } from '@/api/profileApi'
+import { profileApi, PortfolioItemDto, PortfolioItemRequest } from '@/api/profileApi'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import SkillSelector from '@/components/ui/SkillSelector'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import PortfolioItemModal from '@/components/profile/PortfolioItemModal'
 
 const schema = z.object({
   fullName: z.string().min(2, 'Name is too short').max(100),
   bio: z.string().max(1000).optional().nullable(),
   hourlyRate: z.number().positive().optional().nullable(),
   portfolioUrl: z.string().url('Invalid URL').optional().nullable().or(z.literal('')),
+  timezone: z.string().max(100).optional().nullable(),
   isAvailable: z.boolean().optional(),
 })
 
@@ -26,6 +28,10 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [skillIds, setSkillIds] = useState<number[]>([])
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  
+  // Portfolio modal state
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingPortfolioItem, setEditingPortfolioItem] = useState<PortfolioItemDto | undefined>(undefined)
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['myProfile'],
@@ -39,6 +45,7 @@ export default function ProfilePage() {
       bio: '',
       hourlyRate: null,
       portfolioUrl: '',
+      timezone: '',
       isAvailable: true,
     }
   })
@@ -50,21 +57,25 @@ export default function ProfilePage() {
         bio: profile.bio || '',
         hourlyRate: profile.hourlyRate || null,
         portfolioUrl: profile.portfolioUrl || '',
+        timezone: profile.timezone || '',
         isAvailable: profile.isAvailable,
       })
       setAvatarPreview(profile.avatarUrl)
-      // Note: Backend doesn't currently return skillIds for profiles in UserProfileResponse,
-      // but in a fully built system it would. For this demo we'll assume it starts empty if not provided.
+      if (profile.skills) {
+        setSkillIds(profile.skills.map(s => s.id))
+      }
     }
   }, [profile, reset])
 
-  const mutation = useMutation({
+  const updateProfileMutation = useMutation({
     mutationFn: (data: FormData) => profileApi.updateMyProfile({ 
       ...data, 
       avatarUrl: avatarPreview || undefined,
       bio: data.bio || undefined,
       portfolioUrl: data.portfolioUrl || undefined,
-      hourlyRate: data.hourlyRate || undefined
+      timezone: data.timezone || undefined,
+      hourlyRate: data.hourlyRate || undefined,
+      skillIds: skillIds
     }),
     onSuccess: () => {
       toast.success('Profile updated successfully!')
@@ -74,6 +85,35 @@ export default function ProfilePage() {
     onError: () => {
       toast.error('Failed to update profile.')
     }
+  })
+
+  const addPortfolioMutation = useMutation({
+    mutationFn: (data: PortfolioItemRequest) => profileApi.addPortfolioItem(data),
+    onSuccess: () => {
+      toast.success('Project added to portfolio!')
+      setIsModalOpen(false)
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] })
+    },
+    onError: () => toast.error('Failed to add project.')
+  })
+
+  const updatePortfolioMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number, data: PortfolioItemRequest }) => profileApi.updatePortfolioItem(id, data),
+    onSuccess: () => {
+      toast.success('Portfolio project updated!')
+      setIsModalOpen(false)
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] })
+    },
+    onError: () => toast.error('Failed to update project.')
+  })
+
+  const deletePortfolioMutation = useMutation({
+    mutationFn: (id: number) => profileApi.deletePortfolioItem(id),
+    onSuccess: () => {
+      toast.success('Project deleted.')
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] })
+    },
+    onError: () => toast.error('Failed to delete project.')
   })
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,14 +127,22 @@ export default function ProfilePage() {
     }
   }
 
+  const handleSavePortfolio = (data: PortfolioItemRequest) => {
+    if (editingPortfolioItem) {
+      updatePortfolioMutation.mutate({ id: editingPortfolioItem.id, data })
+    } else {
+      addPortfolioMutation.mutate(data)
+    }
+  }
+
   if (isLoading) return <div className="p-8 flex justify-center"><LoadingSpinner /></div>
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-10">
+    <div className="max-w-4xl mx-auto space-y-6 pb-10">
       <div className="flex justify-between items-center">
         <h1 className="section-title mb-0">My Profile</h1>
         {!isEditing && (
-          <button onClick={() => setIsEditing(true)} className="btn-outline flex items-center gap-2">
+          <button onClick={() => setIsEditing(true)} className="px-4 py-2 border border-slate-300 rounded-lg text-black hover:bg-slate-100 flex items-center gap-2 text-sm font-medium transition-colors">
             <Edit2 className="w-4 h-4" /> Edit Profile
           </button>
         )}
@@ -129,7 +177,7 @@ export default function ProfilePage() {
       </div>
 
       {isEditing ? (
-        <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="card p-6 space-y-5">
+        <form onSubmit={handleSubmit(d => updateProfileMutation.mutate(d))} className="card p-6 space-y-5">
           <div className="grid sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Full Name *</label>
@@ -138,8 +186,15 @@ export default function ProfilePage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">Portfolio URL</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Personal Website / GitHub</label>
               <input {...register('portfolioUrl')} className="input" placeholder="https://github.com/..." />
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Timezone</label>
+              <input {...register('timezone')} className="input" placeholder="e.g., Asia/Ho_Chi_Minh or UTC+7" />
             </div>
           </div>
 
@@ -163,15 +218,15 @@ export default function ProfilePage() {
 
           {user?.role === 'EXPERT' && (
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5 mt-4">Skills</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5 mt-4">My AI Skills</label>
               <SkillSelector selectedIds={skillIds} onChange={setSkillIds} />
             </div>
           )}
 
           <div className="flex gap-3 pt-4 border-t border-slate-100">
             <button type="button" onClick={() => setIsEditing(false)} className="btn-ghost flex-1">Cancel</button>
-            <button type="submit" disabled={mutation.isPending} className="btn-gradient flex-1">
-              {mutation.isPending ? <><LoadingSpinner size="sm" /> Saving...</> : 'Save Changes'}
+            <button type="submit" disabled={updateProfileMutation.isPending} className="btn-gradient flex-1">
+              {updateProfileMutation.isPending ? <><LoadingSpinner size="sm" /> Saving...</> : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -186,12 +241,93 @@ export default function ProfilePage() {
             {user?.role === 'EXPERT' && (
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4">Skills</h3>
-                {skillIds.length > 0 ? (
+                {profile?.skills && profile.skills.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    <span className="badge bg-slate-100 text-slate-700">Skills updated in edit mode</span>
+                    {profile.skills.map(s => (
+                      <span key={s.id} className="badge bg-primary-50 text-primary-700 border border-primary-100">
+                        {s.name}
+                      </span>
+                    ))}
                   </div>
                 ) : (
                   <p className="text-slate-400 italic text-sm">No skills added yet.</p>
+                )}
+              </div>
+            )}
+
+            {user?.role === 'EXPERT' && (
+              <div className="card p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-semibold text-slate-900">Portfolio Projects</h3>
+                  <button 
+                    onClick={() => {
+                      setEditingPortfolioItem(undefined)
+                      setIsModalOpen(true)
+                    }} 
+                    className="btn-primary py-1.5 px-3 text-sm flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" /> Add Project
+                  </button>
+                </div>
+                
+                {profile?.portfolioItems && profile.portfolioItems.length > 0 ? (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {profile.portfolioItems.map(item => (
+                      <div key={item.id} className="border border-slate-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.title} className="w-full h-32 object-cover bg-slate-50" />
+                        ) : (
+                          <div className="w-full h-32 bg-slate-100 flex items-center justify-center text-slate-400 text-sm">No Image</div>
+                        )}
+                        <div className="p-4 flex-1 flex flex-col">
+                          <h4 className="font-semibold text-slate-900 line-clamp-1">{item.title}</h4>
+                          <p className="text-sm text-slate-500 mt-1 line-clamp-2 flex-1">{item.description}</p>
+                          
+                          {item.skills && item.skills.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-3">
+                              {item.skills.slice(0, 3).map(s => (
+                                <span key={s.id} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{s.name}</span>
+                              ))}
+                              {item.skills.length > 3 && <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">+{item.skills.length - 3}</span>}
+                            </div>
+                          )}
+
+                          <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between">
+                            {item.demoUrl ? (
+                              <a href={item.demoUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary-600 flex items-center gap-1 hover:underline">
+                                <ExternalLink className="w-3 h-3" /> Demo
+                              </a>
+                            ) : <span />}
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => {
+                                  setEditingPortfolioItem(item)
+                                  setIsModalOpen(true)
+                                }} 
+                                className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if (confirm('Are you sure you want to delete this project?')) {
+                                    deletePortfolioMutation.mutate(item.id)
+                                  }
+                                }} 
+                                className="p-1.5 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <p className="text-slate-500">Showcase your best work to attract more clients.</p>
+                  </div>
                 )}
               </div>
             )}
@@ -214,9 +350,18 @@ export default function ProfilePage() {
                   <p className="text-sm text-slate-900">{new Date(profile?.createdAt || '').toLocaleDateString()}</p>
                 </div>
               </div>
+              {profile?.timezone && (
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 text-slate-400 flex justify-center text-xs font-bold">TZ</div>
+                  <div>
+                    <p className="text-xs text-slate-400">Timezone</p>
+                    <p className="text-sm text-slate-900">{profile.timezone}</p>
+                  </div>
+                </div>
+              )}
               {profile?.portfolioUrl && (
                 <div className="pt-2 border-t border-slate-100">
-                  <a href={profile.portfolioUrl} target="_blank" rel="noreferrer" className="text-primary-600 text-sm hover:underline font-medium">View Portfolio &rarr;</a>
+                  <a href={profile.portfolioUrl} target="_blank" rel="noreferrer" className="text-primary-600 text-sm hover:underline font-medium">Personal Link &rarr;</a>
                 </div>
               )}
             </div>
@@ -244,6 +389,13 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      <PortfolioItemModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSavePortfolio}
+        item={editingPortfolioItem}
+      />
     </div>
   )
 }

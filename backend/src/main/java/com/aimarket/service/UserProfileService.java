@@ -3,19 +3,21 @@ package com.aimarket.service;
 import com.aimarket.dto.profile.UpdateProfileRequest;
 import com.aimarket.dto.profile.UserProfileResponse;
 import com.aimarket.dto.profile.PortfolioItemDto;
+import com.aimarket.dto.profile.SkillDto;
 import com.aimarket.entity.UserProfile;
 import com.aimarket.entity.User;
+import com.aimarket.entity.Skill;
 import com.aimarket.exception.ResourceNotFoundException;
 import com.aimarket.repository.UserProfileRepository;
 import com.aimarket.repository.UserRepository;
+import com.aimarket.repository.SkillRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,6 +27,7 @@ public class UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
+    private final SkillRepository skillRepository;
     private final AIRecommendationService aiRecommendationService;
 
     // ─── Get my profile ───────────────────────────────────
@@ -46,19 +49,26 @@ public class UserProfileService {
     // ─── Update profile ───────────────────────────────────
     @Transactional
     public UserProfileResponse updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        
         UserProfile profile = userProfileRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new ResourceNotFoundException("User", userId));
-                    return UserProfile.builder().user(user).build();
-                });
+                .orElseGet(() -> UserProfile.builder().user(user).build());
 
         if (request.fullName()    != null) profile.setFullName(request.fullName());
         if (request.bio()         != null) profile.setBio(request.bio());
         if (request.avatarUrl()   != null) profile.setAvatarUrl(request.avatarUrl());
         if (request.portfolioUrl()!= null) profile.setPortfolioUrl(request.portfolioUrl());
+        if (request.timezone()    != null) profile.setTimezone(request.timezone());
         if (request.hourlyRate()  != null) profile.setHourlyRate(request.hourlyRate());
         if (request.isAvailable() != null) profile.setIsAvailable(request.isAvailable());
+
+        if (request.skillIds() != null) {
+            List<Skill> skills = skillRepository.findAllById(request.skillIds());
+            user.getSkills().clear();
+            user.getSkills().addAll(skills);
+            userRepository.save(user);
+        }
 
         UserProfile saved = userProfileRepository.save(profile);
         
@@ -91,7 +101,13 @@ public class UserProfileService {
                 .description(request.getDescription())
                 .imageUrl(request.getImageUrl())
                 .demoUrl(request.getDemoUrl())
+                .skills(new HashSet<>())
                 .build();
+                
+        if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
+            List<Skill> itemSkills = skillRepository.findAllById(request.getSkillIds());
+            item.getSkills().addAll(itemSkills);
+        }
                 
         profile.getPortfolioItems().add(item);
         return toResponse(userProfileRepository.save(profile));
@@ -111,6 +127,12 @@ public class UserProfileService {
         if (request.getDescription() != null) item.setDescription(request.getDescription());
         if (request.getImageUrl() != null) item.setImageUrl(request.getImageUrl());
         if (request.getDemoUrl() != null) item.setDemoUrl(request.getDemoUrl());
+        
+        if (request.getSkillIds() != null) {
+            List<Skill> itemSkills = skillRepository.findAllById(request.getSkillIds());
+            item.getSkills().clear();
+            item.getSkills().addAll(itemSkills);
+        }
         
         return toResponse(userProfileRepository.save(profile));
     }
@@ -138,6 +160,7 @@ public class UserProfileService {
                 p.getBio(),
                 p.getAvatarUrl(),
                 p.getPortfolioUrl(),
+                p.getTimezone(),
                 p.getHourlyRate(),
                 p.getRating(),
                 p.getTotalReviews(),
@@ -153,7 +176,21 @@ public class UserProfileService {
                                 .imageUrl(item.getImageUrl())
                                 .demoUrl(item.getDemoUrl())
                                 .createdAt(item.getCreatedAt().toString())
+                                .skills(item.getSkills().stream()
+                                    .map(s -> SkillDto.builder()
+                                        .id(s.getId())
+                                        .category(s.getCategory())
+                                        .name(s.getName())
+                                        .build())
+                                    .collect(Collectors.toList()))
                                 .build())
+                        .collect(Collectors.toList()),
+                p.getUser().getSkills().stream()
+                        .map(s -> SkillDto.builder()
+                            .id(s.getId())
+                            .category(s.getCategory())
+                            .name(s.getName())
+                            .build())
                         .collect(Collectors.toList())
         );
     }

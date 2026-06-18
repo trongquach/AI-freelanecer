@@ -9,6 +9,8 @@ public record UpdateProfileRequest(
         @Size(max = 2000) String bio,
         @Size(max = 500)  String avatarUrl,
         @Size(max = 500)  String portfolioUrl,
+        @Size(max = 100)  String timezone,
         @DecimalMin("0.0") BigDecimal hourlyRate,
-        Boolean isAvailable
+        Boolean isAvailable,
+        java.util.Set<Long> skillIds
 ) {}
