@@ -89,4 +89,14 @@ public class UserProfileController {
             @PathVariable Long itemId) {
         return ResponseEntity.ok(userProfileService.deletePortfolioItem(user.getUserId(), itemId));
     }
+
+    @Operation(summary = "Reorder portfolio items")
+    @PutMapping("/me/portfolio/reorder")
+    @PreAuthorize("hasRole('EXPERT')")
+    public ResponseEntity<Void> reorderPortfolioItems(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody com.aimarket.dto.profile.PortfolioReorderRequest request) {
+        userProfileService.reorderPortfolioItems(user.getUserId(), request.getOrderedItemIds());
+        return ResponseEntity.ok().build();
+    }
 }

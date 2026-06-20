@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import com.aimarket.entity.PortfolioItem;
 
 @Slf4j
 @Service
@@ -150,6 +152,24 @@ public class UserProfileService {
         return toResponse(userProfileRepository.save(profile));
     }
 
+    @Transactional
+    public void reorderPortfolioItems(Long userId, List<Long> orderedItemIds) {
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile not found"));
+
+        Map<Long, PortfolioItem> itemMap = profile.getPortfolioItems().stream()
+                .collect(Collectors.toMap(PortfolioItem::getId, item -> item));
+
+        for (int i = 0; i < orderedItemIds.size(); i++) {
+            Long itemId = orderedItemIds.get(i);
+            PortfolioItem item = itemMap.get(itemId);
+            if (item != null) {
+                item.setDisplayOrder(i);
+            }
+        }
+        userProfileRepository.save(profile);
+    }
+
     // ─── Mapper ───────────────────────────────────────────
     public UserProfileResponse toResponse(UserProfile p) {
         return new UserProfileResponse(
@@ -169,12 +189,14 @@ public class UserProfileService {
                 p.getCreatedAt(),
                 p.getUpdatedAt(),
                 p.getPortfolioItems().stream()
+                        .sorted(java.util.Comparator.comparingInt(item -> item.getDisplayOrder() != null ? item.getDisplayOrder() : 0))
                         .map(item -> PortfolioItemDto.builder()
                                 .id(item.getId())
                                 .title(item.getTitle())
                                 .description(item.getDescription())
                                 .imageUrl(item.getImageUrl())
                                 .demoUrl(item.getDemoUrl())
+                                .displayOrder(item.getDisplayOrder())
                                 .createdAt(item.getCreatedAt().toString())
                                 .skills(item.getSkills().stream()
                                     .map(s -> SkillDto.builder()

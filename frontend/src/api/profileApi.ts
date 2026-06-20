@@ -76,4 +76,7 @@ export const profileApi = {
 
   deletePortfolioItem: (itemId: number) =>
     api.delete<UserProfileResponse>(`/profile/me/portfolio/${itemId}`).then(r => r.data),
+
+  reorderPortfolioItems: (orderedItemIds: number[]) =>
+    api.put<void>('/profile/me/portfolio/reorder', { orderedItemIds }).then(r => r.data),
 }

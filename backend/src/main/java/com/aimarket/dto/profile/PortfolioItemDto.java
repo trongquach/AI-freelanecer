@@ -13,5 +13,6 @@ public class PortfolioItemDto {
     private String imageUrl;
     private String demoUrl;
     private String createdAt;
+    private Integer displayOrder;
     private List<SkillDto> skills;
 }

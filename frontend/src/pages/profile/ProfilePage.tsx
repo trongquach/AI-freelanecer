@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { User, Mail, Shield, Camera, Edit2, Plus, ExternalLink, Trash2 } from 'lucide-react'
+import { User, Mail, Shield, Camera, Edit2, Plus, ExternalLink, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { profileApi, PortfolioItemDto, PortfolioItemRequest } from '@/api/profileApi'
 import { useForm } from 'react-hook-form'
@@ -115,6 +115,38 @@ export default function ProfilePage() {
     },
     onError: () => toast.error('Failed to delete project.')
   })
+
+  const reorderPortfolioMutation = useMutation({
+    mutationFn: (orderedItemIds: number[]) => profileApi.reorderPortfolioItems(orderedItemIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] })
+    },
+    onError: () => toast.error('Failed to reorder projects.')
+  })
+
+  const movePortfolioItem = (index: number, direction: 'up' | 'down') => {
+    if (!profile?.portfolioItems) return
+    const newItems = [...profile.portfolioItems]
+    if (direction === 'up' && index > 0) {
+      const temp = newItems[index - 1]
+      newItems[index - 1] = newItems[index]
+      newItems[index] = temp
+    } else if (direction === 'down' && index < newItems.length - 1) {
+      const temp = newItems[index + 1]
+      newItems[index + 1] = newItems[index]
+      newItems[index] = temp
+    } else {
+      return
+    }
+    
+    // To provide immediate visual feedback before the query invalidates
+    queryClient.setQueryData(['myProfile'], {
+      ...profile,
+      portfolioItems: newItems
+    })
+    
+    reorderPortfolioMutation.mutate(newItems.map(item => item.id))
+  }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -272,8 +304,26 @@ export default function ProfilePage() {
                 
                 {profile?.portfolioItems && profile.portfolioItems.length > 0 ? (
                   <div className="grid sm:grid-cols-2 gap-4">
-                    {profile.portfolioItems.map(item => (
-                      <div key={item.id} className="border border-slate-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow group flex flex-col">
+                    {profile.portfolioItems.map((item, index) => (
+                      <div key={item.id} className="border border-slate-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow group flex flex-col relative">
+                        <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-white/80 rounded backdrop-blur-sm p-1">
+                          <button 
+                            onClick={() => movePortfolioItem(index, 'up')}
+                            disabled={index === 0}
+                            className={`p-1 rounded ${index === 0 ? 'text-slate-300' : 'text-slate-600 hover:bg-slate-200'}`}
+                            title="Move up"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => movePortfolioItem(index, 'down')}
+                            disabled={index === profile.portfolioItems.length - 1}
+                            className={`p-1 rounded ${index === profile.portfolioItems.length - 1 ? 'text-slate-300' : 'text-slate-600 hover:bg-slate-200'}`}
+                            title="Move down"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                        </div>
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.title} className="w-full h-32 object-cover bg-slate-50" />
                         ) : (

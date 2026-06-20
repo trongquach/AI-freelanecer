@@ -41,6 +41,10 @@ public class PortfolioItem {
     @Builder.Default
     private java.util.Set<Skill> skills = new java.util.HashSet<>();
 
+    @Column(name = "display_order", nullable = false)
+    @Builder.Default
+    private Integer displayOrder = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
