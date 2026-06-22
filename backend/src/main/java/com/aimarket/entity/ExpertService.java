@@ -57,8 +57,8 @@ public class ExpertService {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "user_skills",
-        joinColumns = @JoinColumn(name = "user_id"),
+        name = "service_skills",
+        joinColumns = @JoinColumn(name = "service_id"),
         inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
     @Builder.Default

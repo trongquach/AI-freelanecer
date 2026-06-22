@@ -14,6 +14,7 @@ import RegisterPage       from '@/pages/auth/RegisterPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import JobsPage           from '@/pages/jobs/JobsPage'
 import MarketplacePage    from '@/pages/marketplace/MarketplacePage'
+import MyJobsPage         from '@/pages/jobs/MyJobsPage'
 
 // Lazy-loaded pages
 import { lazy, Suspense } from 'react'
@@ -32,6 +33,7 @@ const ProposalFormPage = lazy(() => import('@/pages/proposals/ProposalFormPage')
 const ServiceDetailPage= lazy(() => import('@/pages/marketplace/ServiceDetailPage'))
 const CreateServicePage= lazy(() => import('@/pages/marketplace/CreateServicePage'))
 const EditServicePage  = lazy(() => import('@/pages/marketplace/EditServicePage'))
+const MyServicesPage   = lazy(() => import('@/pages/marketplace/MyServicesPage'))
 const ContractPage     = lazy(() => import('@/pages/contracts/ContractPage'))
 const WalletPage       = lazy(() => import('@/pages/wallet/WalletPage'))
 const ProfilePage      = lazy(() => import('@/pages/profile/ProfilePage'))
@@ -93,6 +95,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
               <Route element={<MainLayout />}>
                 <Route path="/dashboard/client"      element={<ClientDashboard />} />
+                <Route path="/jobs/my"                element={<MyJobsPage />} />
                 <Route path="/jobs/new"              element={<CreateJobPage />} />
                 <Route path="/jobs/:id/edit"         element={<EditJobPage />} />
                 <Route path="/jobs/:id/proposals"    element={<ProposalListPage />} />
@@ -103,6 +106,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['EXPERT']} />}>
               <Route element={<MainLayout />}>
                 <Route path="/dashboard/expert"      element={<ExpertDashboard />} />
+                <Route path="/services/my"            element={<MyServicesPage />} />
                 <Route path="/jobs/:id/proposals/new" element={<ProposalFormPage />} />
                 <Route path="/services/new"          element={<CreateServicePage />} />
                 <Route path="/services/:id/edit"     element={<EditServicePage />} />

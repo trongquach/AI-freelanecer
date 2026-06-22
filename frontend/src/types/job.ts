@@ -6,6 +6,8 @@ export interface JobResponse {
   description: string
   budgetMin: number | null
   budgetMax: number | null
+  startDate: string | null
+  expectedDuration: string | null
   deadline: string | null
   status: JobStatus
   aiEnhanced: boolean

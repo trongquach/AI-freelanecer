@@ -91,6 +91,18 @@ public class ExpertServiceService {
         return toResponse(serviceRepository.save(svc));
     }
 
+    // ─── Expert: Activate ─────────────────────────────────
+    @Transactional
+    public ServiceResponse activateServiceByExpert(Long id, Long expertId) {
+        ExpertService svc = findOrThrow(id);
+        if (!svc.getExpert().getId().equals(expertId)) throw new ForbiddenException();
+        if (svc.getStatus() == ServiceStatus.PENDING_REVIEW) {
+            throw new BusinessException("Cannot activate a service that is pending review. Please wait for admin approval.");
+        }
+        svc.setStatus(ServiceStatus.ACTIVE);
+        return toResponse(serviceRepository.save(svc));
+    }
+
     // ─── Expert: Deactivate ───────────────────────────────
     @Transactional
     public ServiceResponse deactivateService(Long id, Long expertId) {

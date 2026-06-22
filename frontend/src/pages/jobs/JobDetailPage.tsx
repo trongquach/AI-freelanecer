@@ -103,12 +103,30 @@ export default function JobDetailPage() {
                 </p>
               </div>
             )}
+            {job.startDate && (
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Start Date</p>
+                <p className="font-medium text-slate-900 flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  {new Date(job.startDate).toLocaleDateString('vi-VN')}
+                </p>
+              </div>
+            )}
             {job.deadline && (
               <div>
                 <p className="text-xs text-slate-400 mb-1">Deadline</p>
                 <p className="font-medium text-slate-900 flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-slate-400" />
                   {new Date(job.deadline).toLocaleDateString('vi-VN')}
+                </p>
+              </div>
+            )}
+            {job.expectedDuration && (
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Expected Duration</p>
+                <p className="font-medium text-slate-900 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  {job.expectedDuration}
                 </p>
               </div>
             )}

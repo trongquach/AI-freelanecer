@@ -80,10 +80,13 @@ public class ServiceController {
         return serviceService.getMyServices(user.getUserId(), page, size);
     }
 
-    @Operation(summary = "Activate service — ADMIN only")
+    @Operation(summary = "Activate service — ADMIN or EXPERT owner")
     @PostMapping("/{id}/activate")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ServiceResponse activate(@PathVariable Long id) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'EXPERT')")
+    public ServiceResponse activate(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails user) {
+        if (user.getRole() == UserRole.EXPERT) {
+            return serviceService.activateServiceByExpert(id, user.getUserId());
+        }
         return serviceService.activateService(id);
     }
 
