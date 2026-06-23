@@ -38,6 +38,17 @@ export default function ServiceDetailPage() {
     onError: () => toast.error('Error pausing service.')
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => serviceApi.delete(Number(id)),
+    onSuccess: () => {
+      toast.success('Service deleted successfully.');
+      queryClient.invalidateQueries({ queryKey: ['myServices'] });
+      queryClient.invalidateQueries({ queryKey: ['service', id] });
+      navigate('/services/my');
+    },
+    onError: () => toast.error('Error deleting service.')
+  });
+
   const orderMutation = useMutation({
     mutationFn: () => serviceApi.order(Number(id)),
     onSuccess: (data) => {
@@ -165,6 +176,17 @@ export default function ServiceDetailPage() {
                     Activate Service
                   </button>
                 )}
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this service?')) {
+                      deleteMutation.mutate()
+                    }
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="btn-outline btn-md w-full text-danger-600 border-danger-600 hover:bg-danger-50"
+                >
+                  {deleteMutation.isPending ? 'Deleting...' : 'Delete Service'}
+                </button>
               </div>
             )}
           </div>

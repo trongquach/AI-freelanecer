@@ -22,6 +22,7 @@ public class AdminService {
     private final EscrowAccountRepository escrowAccountRepository;
     private final NotificationService notificationService;
     private final ExpertServiceService expertServiceService;
+    private final JobService jobService;
 
     @Transactional(readOnly = true)
     public PlatformStatsResponse getStats() {
@@ -55,6 +56,14 @@ public class AdminService {
     public void banUser(Long userId) {
         userRepository.findById(userId).ifPresent(u -> {
             u.setStatus(com.aimarket.entity.enums.UserStatus.BANNED);
+            userRepository.save(u);
+        });
+    }
+
+    @Transactional
+    public void unbanUser(Long userId) {
+        userRepository.findById(userId).ifPresent(u -> {
+            u.setStatus(com.aimarket.entity.enums.UserStatus.ACTIVE);
             userRepository.save(u);
         });
     }
@@ -107,5 +116,15 @@ public class AdminService {
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<com.aimarket.entity.Transaction> getTransactions(org.springframework.data.domain.Pageable pageable) {
         return transactionRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<com.aimarket.dto.job.JobResponse> getAllJobs(org.springframework.data.domain.Pageable pageable) {
+        return jobRepository.findAll(pageable).map(jobService::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<com.aimarket.dto.service.ServiceResponse> getAllServices(org.springframework.data.domain.Pageable pageable) {
+        return expertServiceRepository.findAll(pageable).map(expertServiceService::toResponse);
     }
 }

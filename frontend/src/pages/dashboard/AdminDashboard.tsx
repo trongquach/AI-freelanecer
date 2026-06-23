@@ -1,133 +1,157 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Users, Briefcase, DollarSign, ShoppingBag, TrendingUp, Shield, Ban, CheckCircle, XCircle } from 'lucide-react'
-import api from '@/api/axiosInstance'
+import {
+  Users, Briefcase, DollarSign, ShoppingBag, TrendingUp, Shield,
+  CheckCircle, AlertTriangle, BarChart3, Clock, Activity
+} from 'lucide-react'
+import { adminApi, PlatformStats } from '@/api/adminApi'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
-import { toast } from 'sonner'
 
-interface PlatformStats {
-  totalUsers: number
-  totalClients: number
-  totalExperts: number
-  totalJobs: number
-  openJobs: number
-  activeContracts: number
-  completedContracts: number
-  totalServices: number
-  totalTransactionVolume: number
-  platformFeeEarned: number
+function StatCard({ label, value, icon: Icon, color, bg, suffix = '' }: {
+  label: string; value: string | number; icon: any; color: string; bg: string; suffix?: string
+}) {
+  return (
+    <div className="card p-5 hover:shadow-md transition-shadow">
+      <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-3`}>
+        <Icon className={`w-5 h-5 ${color}`} />
+      </div>
+      <p className="text-2xl font-bold text-slate-900">{value}{suffix}</p>
+      <p className="text-xs text-slate-400 mt-1">{label}</p>
+    </div>
+  )
+}
+
+function NavCard({ to, icon: Icon, title, subtitle, color, bg }: {
+  to: string; icon: any; title: string; subtitle: string; color: string; bg: string
+}) {
+  return (
+    <Link to={to} className="card p-6 hover:shadow-lg transition-all hover:-translate-y-0.5 group block">
+      <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+        <Icon className={`w-6 h-6 ${color}`} />
+      </div>
+      <h3 className="font-semibold text-slate-900 mb-1">{title}</h3>
+      <p className="text-xs text-slate-400">{subtitle}</p>
+    </Link>
+  )
 }
 
 export default function AdminDashboard() {
-  const queryClient = useQueryClient()
-
   const { data: stats, isLoading } = useQuery<PlatformStats>({
     queryKey: ['admin-stats'],
-    queryFn: () => api.get('/admin/stats').then(r => r.data),
-  })
-
-  const { data: users } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: () => api.get('/admin/users?page=0&size=20').then(r => r.data),
-  })
-
-  const banMutation = useMutation({
-    mutationFn: (id: number) => api.post(`/admin/users/${id}/ban`),
-    onSuccess: () => { toast.success('User banned'); queryClient.invalidateQueries({ queryKey: ['admin-users'] }) },
-  })
-
-  const activateSvcMutation = useMutation({
-    mutationFn: (id: number) => api.post(`/admin/services/${id}/activate`),
-    onSuccess: () => { toast.success('Services approved'); queryClient.invalidateQueries({ queryKey: ['admin-stats'] }) },
-  })
-
-  const rejectSvcMutation = useMutation({
-    mutationFn: (id: number) => api.post(`/admin/services/${id}/reject`),
-    onSuccess: () => { toast.success('Services rejected'); queryClient.invalidateQueries({ queryKey: ['admin-stats'] }) },
+    queryFn: () => adminApi.getStats(),
   })
 
   if (isLoading) return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
 
-  const statCards = [
-    { label: 'Total Users',  value: stats?.totalUsers ?? 0,              icon: Users,       color: 'text-primary-400',  bg: 'bg-primary-500/10' },
-    { label: 'Client',       value: stats?.totalClients ?? 0,            icon: Users,       color: 'text-blue-400',     bg: 'bg-blue-500/10' },
-    { label: 'Expert',       value: stats?.totalExperts ?? 0,            icon: Shield,      color: 'text-accent-400',   bg: 'bg-accent-500/10' },
-    { label: 'Total Jobs',    value: stats?.totalJobs ?? 0,              icon: Briefcase,   color: 'text-warning-400',  bg: 'bg-warning-500/10' },
-    { label: 'Open Jobs',  value: stats?.openJobs ?? 0,               icon: TrendingUp,  color: 'text-success-400',  bg: 'bg-success-500/10' },
-    { label: 'Contracts active',  value: stats?.activeContracts ?? 0,        icon: ShoppingBag, color: 'text-primary-400',  bg: 'bg-primary-500/10' },
-    { label: 'Completed',       value: stats?.completedContracts ?? 0,     icon: CheckCircle, color: 'text-success-400',  bg: 'bg-success-500/10' },
-    { label: 'Total Services',     value: stats?.totalServices ?? 0,          icon: ShoppingBag, color: 'text-accent-400',   bg: 'bg-accent-500/10' },
-  ]
-
-  const financeCards = [
-    { label: 'Total Transactions',     value: `$${(stats?.totalTransactionVolume ?? 0).toLocaleString()}`, icon: DollarSign, color: 'text-success-400' },
-    { label: 'Platform Fee (10%)', value: `$${(stats?.platformFeeEarned ?? 0).toLocaleString()}`,     icon: TrendingUp, color: 'text-primary-400' },
-  ]
+  const successRate = stats
+    ? Math.round(((stats.completedContracts) / Math.max(stats.activeContracts + stats.completedContracts, 1)) * 100)
+    : 0
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="section-title flex items-center gap-3">
-          <Shield className="w-7 h-7 text-primary-400" /> Admin Dashboard
-        </h1>
-        <p className="section-subtitle">Manage entire AIMarket platform</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="card p-5 animate-fade-in">
-            <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-3`}>
-              <Icon className={`w-5 h-5 ${color}`} />
-            </div>
-            <p className="text-2xl font-bold text-slate-900">{value.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-1">{label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Finance */}
-      <div>
-        <h2 className="text-lg font-bold text-slate-900 mb-4">💰 Finance</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {financeCards.map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="card p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Icon className={`w-5 h-5 ${color}`} />
-                <p className="text-sm text-slate-400">{label}</p>
-              </div>
-              <p className="text-3xl font-bold text-slate-900">{value}</p>
-            </div>
-          ))}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
+          <Shield className="w-6 h-6 text-primary-500" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
+          <p className="text-sm text-slate-400">Platform overview & management tools</p>
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Stats Grid */}
       <div>
-        <h2 className="text-lg font-bold text-slate-900 mb-4">⚡ Quick Actions</h2>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div className="card p-5">
-            <h3 className="font-semibold text-slate-900 mb-2">Approve Services</h3>
-            <p className="text-xs text-slate-400 mb-3">Approve or reject pending services</p>
-            <Link to="/admin/services" className="btn-primary btn-sm w-full block text-center">
-              <CheckCircle className="w-3.5 h-3.5 inline mr-1" /> Manage services
-            </Link>
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">Platform Overview</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <StatCard label="Total Users"       value={stats?.totalUsers ?? 0}          icon={Users}       color="text-primary-500"  bg="bg-primary-50" />
+          <StatCard label="Clients"           value={stats?.totalClients ?? 0}        icon={Users}       color="text-blue-500"     bg="bg-blue-50" />
+          <StatCard label="Experts"           value={stats?.totalExperts ?? 0}        icon={Shield}      color="text-accent-500"   bg="bg-accent-50" />
+          <StatCard label="Total Jobs"        value={stats?.totalJobs ?? 0}           icon={Briefcase}   color="text-warning-500"  bg="bg-warning-50" />
+          <StatCard label="Open Jobs"         value={stats?.openJobs ?? 0}            icon={Activity}    color="text-success-500"  bg="bg-success-50" />
+          <StatCard label="Active Contracts"  value={stats?.activeContracts ?? 0}     icon={Clock}       color="text-primary-500"  bg="bg-primary-50" />
+          <StatCard label="Completed"         value={stats?.completedContracts ?? 0}  icon={CheckCircle} color="text-success-500"  bg="bg-success-50" />
+          <StatCard label="Total Services"    value={stats?.totalServices ?? 0}       icon={ShoppingBag} color="text-accent-500"   bg="bg-accent-50" />
+        </div>
+      </div>
+
+      {/* Finance Cards */}
+      <div>
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">Financial Summary</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="card p-5 col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-success-500" />
+              <p className="text-xs text-slate-400">Transaction Volume</p>
+            </div>
+            <p className="text-2xl font-bold text-slate-900">${(Number(stats?.totalTransactionVolume) || 0).toLocaleString()}</p>
           </div>
-          <div className="card p-5">
-            <h3 className="font-semibold text-slate-900 mb-2">Manage người dùng</h3>
-            <p className="text-xs text-slate-400 mb-3">Xem, cấm hoặc khôi phục tài khoản</p>
-            <Link to="/admin/users" className="btn-secondary btn-sm w-full block text-center">
-              <Users className="w-3.5 h-3.5 inline mr-1" /> Danh sách ({stats?.totalUsers ?? 0})
-            </Link>
+          <div className="card p-5 col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="w-4 h-4 text-primary-500" />
+              <p className="text-xs text-slate-400">Platform Fee (10%)</p>
+            </div>
+            <p className="text-2xl font-bold text-slate-900">${(Number(stats?.platformFeeEarned) || 0).toLocaleString()}</p>
           </div>
-          <div className="card p-5">
-            <h3 className="font-semibold text-slate-900 mb-2">Báo cáo</h3>
-            <p className="text-xs text-slate-400 mb-3">Xuất báo cáo tài chính và hoạt động</p>
-            <button className="btn-secondary btn-sm w-full">
-              <TrendingUp className="w-3.5 h-3.5 mr-1" /> Xuất CSV
-            </button>
+          <div className="card p-5 col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-warning-500" />
+              <p className="text-xs text-slate-400">Escrow Locked</p>
+            </div>
+            <p className="text-2xl font-bold text-slate-900">${(Number(stats?.totalEscrowLocked) || 0).toLocaleString()}</p>
           </div>
+          <div className="card p-5 col-span-1">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart3 className="w-4 h-4 text-accent-500" />
+              <p className="text-xs text-slate-400">Project Success Rate</p>
+            </div>
+            <p className="text-2xl font-bold text-slate-900">{successRate}%</p>
+            <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary-400 to-success-400 rounded-full transition-all"
+                style={{ width: `${successRate}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Management Navigation */}
+      <div>
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">Management Tools</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <NavCard
+            to="/admin/users"
+            icon={Users}
+            title="Manage Users"
+            subtitle={`${stats?.totalUsers ?? 0} registered users · Ban or unban accounts`}
+            color="text-primary-500"
+            bg="bg-primary-50"
+          />
+          <NavCard
+            to="/admin/services"
+            icon={ShoppingBag}
+            title="Service Moderation"
+            subtitle="Approve, reject or delete services"
+            color="text-warning-500"
+            bg="bg-warning-50"
+          />
+          <NavCard
+            to="/admin/jobs"
+            icon={Briefcase}
+            title="Manage Jobs"
+            subtitle={`${stats?.totalJobs ?? 0} total jobs · Remove violating posts`}
+            color="text-accent-500"
+            bg="bg-accent-50"
+          />
+          <NavCard
+            to="/admin/transactions"
+            icon={DollarSign}
+            title="Transactions"
+            subtitle="Monitor all financial flows on the platform"
+            color="text-success-500"
+            bg="bg-success-50"
+          />
         </div>
       </div>
     </div>

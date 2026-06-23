@@ -33,6 +33,13 @@ public class AdminController {
         return Map.of("message", "User banned successfully");
     }
 
+    @Operation(summary = "Unban a user")
+    @PostMapping("/users/{id}/unban")
+    public Map<String, String> unbanUser(@PathVariable Long id) {
+        adminService.unbanUser(id);
+        return Map.of("message", "User unbanned successfully");
+    }
+
     @Operation(summary = "Activate a service listing")
     @PostMapping("/services/{id}/activate")
     public Map<String, String> activateService(@PathVariable Long id) {
@@ -74,10 +81,27 @@ public class AdminController {
         return adminService.getTransactions(org.springframework.data.domain.PageRequest.of(page, size));
     }
 
+    @Operation(summary = "Get all jobs for admin")
+    @GetMapping("/jobs")
+    public org.springframework.data.domain.Page<com.aimarket.dto.job.JobResponse> getAllJobs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return adminService.getAllJobs(org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending()));
+    }
+
+    @Operation(summary = "Get all services for admin")
+    @GetMapping("/services/all")
+    public org.springframework.data.domain.Page<com.aimarket.dto.service.ServiceResponse> getAllServices(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return adminService.getAllServices(org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending()));
+    }
+
     @Operation(summary = "Delete a job")
     @DeleteMapping("/jobs/{id}")
     public Map<String, String> deleteJob(@PathVariable Long id) {
-        // Soft delete or status update handled in service
         adminService.deleteJob(id);
         return Map.of("message", "Job deleted successfully");
     }

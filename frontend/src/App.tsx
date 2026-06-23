@@ -25,6 +25,8 @@ const ExpertDashboard  = lazy(() => import('@/pages/dashboard/ExpertDashboard'))
 const AdminDashboard   = lazy(() => import('@/pages/dashboard/AdminDashboard'))
 const UsersPage        = lazy(() => import('@/pages/dashboard/admin/UsersPage'))
 const ServiceModerationPage = lazy(() => import('@/pages/dashboard/admin/ServiceModerationPage'))
+const JobsModerationPage    = lazy(() => import('@/pages/dashboard/admin/JobsModerationPage'))
+const TransactionsPage      = lazy(() => import('@/pages/dashboard/admin/TransactionsPage'))
 const JobDetailPage    = lazy(() => import('@/pages/jobs/JobDetailPage'))
 const CreateJobPage    = lazy(() => import('@/pages/jobs/CreateJobPage'))
 const EditJobPage      = lazy(() => import('@/pages/jobs/EditJobPage'))
@@ -119,6 +121,8 @@ export default function App() {
                 <Route path="/admin/dashboard"       element={<AdminDashboard />} />
                 <Route path="/admin/users"           element={<UsersPage />} />
                 <Route path="/admin/services"        element={<ServiceModerationPage />} />
+                <Route path="/admin/jobs"            element={<JobsModerationPage />} />
+                <Route path="/admin/transactions"    element={<TransactionsPage />} />
               </Route>
             </Route>
 
