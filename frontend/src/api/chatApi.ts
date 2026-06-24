@@ -16,11 +16,18 @@ export interface ChatMessage {
 
 export const chatApi = {
   getMessages: async (contractId: number, page = 0, size = 50): Promise<PageResponse<ChatMessage>> => {
-    const res = await axiosInstance.get(`/api/v1/messages/${contractId}`, { params: { page, size } });
+    const res = await axiosInstance.get(`/contracts/${contractId}/messages`, { params: { page, size } });
+    return res.data;
+  },
+
+  sendMessage: async (contractId: number, content: string): Promise<ChatMessage> => {
+    const res = await axiosInstance.post(`/contracts/${contractId}/messages`, { content });
     return res.data;
   },
 
   markAsRead: async (contractId: number): Promise<void> => {
-    await axiosInstance.post(`/api/v1/messages/${contractId}/read`);
+    // History endpoint implicitly marks as read, but we can do a dummy or just ignore
+    // Or we could implement an explicit markAsRead if backend supported it. For now, do nothing.
+    return Promise.resolve();
   }
 };

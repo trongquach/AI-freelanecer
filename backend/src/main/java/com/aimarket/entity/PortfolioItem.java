@@ -32,6 +32,19 @@ public class PortfolioItem {
     @Column(name = "demo_url", length = 500)
     private String demoUrl;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "portfolio_item_skills",
+        joinColumns = @JoinColumn(name = "portfolio_item_id"),
+        inverseJoinColumns = @JoinColumn(name = "skill_id")
+    )
+    @Builder.Default
+    private java.util.Set<Skill> skills = new java.util.HashSet<>();
+
+    @Column(name = "display_order", nullable = false)
+    @Builder.Default
+    private Integer displayOrder = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

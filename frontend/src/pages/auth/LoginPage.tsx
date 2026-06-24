@@ -20,7 +20,8 @@ export default function LoginPage() {
   const { login, isAuthenticated, isLoading, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname
+  const state = location.state as { from?: { pathname: string } } | null
+  const from = state?.from?.pathname
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),

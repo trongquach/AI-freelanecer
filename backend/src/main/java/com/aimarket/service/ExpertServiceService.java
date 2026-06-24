@@ -37,6 +37,11 @@ public class ExpertServiceService {
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
     private final ObjectMapper objectMapper;
+    private final com.aimarket.repository.JobRepository jobRepository;
+    private final com.aimarket.repository.ProposalRepository proposalRepository;
+    private final com.aimarket.repository.ContractRepository contractRepository;
+    private final com.aimarket.service.EscrowService escrowService;
+    private final com.aimarket.service.ContractService contractService;
 
     // ─── Create ───────────────────────────────────────────
     @Transactional
@@ -86,6 +91,18 @@ public class ExpertServiceService {
         return toResponse(serviceRepository.save(svc));
     }
 
+    // ─── Expert: Activate ─────────────────────────────────
+    @Transactional
+    public ServiceResponse activateServiceByExpert(Long id, Long expertId) {
+        ExpertService svc = findOrThrow(id);
+        if (!svc.getExpert().getId().equals(expertId)) throw new ForbiddenException();
+        if (svc.getStatus() == ServiceStatus.PENDING_REVIEW) {
+            throw new BusinessException("Cannot activate a service that is pending review. Please wait for admin approval.");
+        }
+        svc.setStatus(ServiceStatus.ACTIVE);
+        return toResponse(serviceRepository.save(svc));
+    }
+
     // ─── Expert: Deactivate ───────────────────────────────
     @Transactional
     public ServiceResponse deactivateService(Long id, Long expertId) {
@@ -130,6 +147,74 @@ public class ExpertServiceService {
     public PageResponse<ServiceResponse> getMyServices(Long expertId, int page, int size) {
         return PageResponse.of(serviceRepository.findByExpertId(expertId, PageRequest.of(page, size,
                 Sort.by("createdAt").descending())).map(this::toResponse));
+    }
+
+    // ─── Order Service ────────────────────────────────────
+    @Transactional
+    public com.aimarket.dto.contract.ContractResponse orderService(Long serviceId, Long clientId) {
+        ExpertService svc = findOrThrow(serviceId);
+        if (svc.getStatus() != ServiceStatus.ACTIVE)
+            throw new BusinessException("Service is not active");
+
+        User client = userRepository.findById(clientId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", clientId));
+        if (client.getRole() != UserRole.CLIENT)
+            throw new ForbiddenException("Only clients can order services");
+
+        if (svc.getExpert().getId().equals(clientId))
+            throw new BusinessException("Cannot order your own service");
+
+        // 1. Create Job
+        com.aimarket.entity.Job job = com.aimarket.entity.Job.builder()
+                .client(client)
+                .title("Order: " + svc.getTitle())
+                .description("Direct order from service: " + svc.getTitle() + "\n\n" + svc.getDescription())
+                .budgetMin(svc.getPrice())
+                .budgetMax(svc.getPrice())
+                .deadline(java.time.LocalDate.now().plusDays(svc.getDeliveryDays()))
+                .status(com.aimarket.entity.enums.JobStatus.IN_PROGRESS)
+                .build();
+        job = jobRepository.save(job);
+
+        // 2. Create Proposal
+        com.aimarket.entity.Proposal proposal = com.aimarket.entity.Proposal.builder()
+                .job(job)
+                .expert(svc.getExpert())
+                .price(svc.getPrice())
+                .timelineDays(svc.getDeliveryDays())
+                .coverLetter("Auto-generated proposal for direct service order.")
+                .status(com.aimarket.entity.enums.ProposalStatus.ACCEPTED)
+                .build();
+        proposal = proposalRepository.save(proposal);
+
+        // 3. Create Contract
+        com.aimarket.entity.Contract contract = com.aimarket.entity.Contract.builder()
+                .proposal(proposal)
+                .job(job)
+                .client(client)
+                .expert(svc.getExpert())
+                .totalAmount(svc.getPrice())
+                .startedAt(java.time.LocalDateTime.now())
+                .build();
+
+        // 4. Create Milestone
+        com.aimarket.entity.Milestone milestone = com.aimarket.entity.Milestone.builder()
+                .contract(contract)
+                .name("Complete Service Delivery")
+                .description("Deliver the service as described: " + svc.getTitle())
+                .amount(svc.getPrice())
+                .dueDate(java.time.LocalDate.now().plusDays(svc.getDeliveryDays()))
+                .status(com.aimarket.entity.enums.MilestoneStatus.PENDING)
+                .orderIndex(1)
+                .build();
+        contract.getMilestones().add(milestone);
+
+        contract = contractRepository.save(contract);
+
+        // 5. Lock funds
+        escrowService.lockFunds(clientId, contract.getId(), svc.getPrice());
+
+        return contractService.toResponse(contract);
     }
 
     // ─── Helpers ──────────────────────────────────────────

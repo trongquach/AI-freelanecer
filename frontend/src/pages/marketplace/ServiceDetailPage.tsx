@@ -20,14 +20,6 @@ export default function ServiceDetailPage() {
     enabled: !!id,
   })
 
-  if (isLoading) return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
-  if (isError || !service) return (
-    <div className="text-center py-24">
-      <p className="text-danger-500 text-lg">Service not found.</p>
-      <Link to="/marketplace" className="btn-ghost btn-md mt-4">← Back to Marketplace</Link>
-    </div>
-  )
-
   const activateMutation = useMutation({
     mutationFn: () => serviceApi.activate(Number(id)),
     onSuccess: () => {
@@ -45,6 +37,36 @@ export default function ServiceDetailPage() {
     },
     onError: () => toast.error('Error pausing service.')
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => serviceApi.delete(Number(id)),
+    onSuccess: () => {
+      toast.success('Service deleted successfully.');
+      queryClient.invalidateQueries({ queryKey: ['myServices'] });
+      queryClient.invalidateQueries({ queryKey: ['service', id] });
+      navigate('/services/my');
+    },
+    onError: () => toast.error('Error deleting service.')
+  });
+
+  const orderMutation = useMutation({
+    mutationFn: () => serviceApi.order(Number(id)),
+    onSuccess: (data) => {
+      toast.success('Service ordered successfully!');
+      navigate(`/contracts/${data.id}`);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error ordering service. Please check your balance.');
+    }
+  });
+
+  if (isLoading) return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
+  if (isError || !service) return (
+    <div className="text-center py-24">
+      <p className="text-danger-500 text-lg">Service not found.</p>
+      <Link to="/marketplace" className="btn-ghost btn-md mt-4">← Back to Marketplace</Link>
+    </div>
+  )
 
   return (
     <div className="max-w-5xl mx-auto py-4">
@@ -116,7 +138,14 @@ export default function ServiceDetailPage() {
             </div>
 
             {isAuthenticated && isClient() ? (
-              <button className="btn-gradient btn-lg w-full">Order Service Now</button>
+              <button 
+                onClick={() => orderMutation.mutate()} 
+                disabled={orderMutation.isPending}
+                className="btn-gradient btn-lg w-full flex justify-center items-center gap-2"
+              >
+                {orderMutation.isPending && <LoadingSpinner size="sm" />}
+                {orderMutation.isPending ? 'Processing...' : 'Order Service Now'}
+              </button>
             ) : !isAuthenticated ? (
               <Link to="/login" className="btn-primary btn-lg w-full block text-center">Sign In to Order</Link>
             ) : null}
@@ -147,6 +176,17 @@ export default function ServiceDetailPage() {
                     Activate Service
                   </button>
                 )}
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this service?')) {
+                      deleteMutation.mutate()
+                    }
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="btn-outline btn-md w-full text-danger-600 border-danger-600 hover:bg-danger-50"
+                >
+                  {deleteMutation.isPending ? 'Deleting...' : 'Delete Service'}
+                </button>
               </div>
             )}
           </div>

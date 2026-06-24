@@ -1,10 +1,20 @@
 # ================================
-# Serve with Nginx (Pre-built)
+# Build Stage
+# ================================
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# ================================
+# Serve with Nginx
 # ================================
 FROM nginx:alpine AS runtime
 
-# Copy locally built files (Requires npm run build locally first)
-COPY dist /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf

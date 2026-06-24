@@ -80,10 +80,13 @@ public class ServiceController {
         return serviceService.getMyServices(user.getUserId(), page, size);
     }
 
-    @Operation(summary = "Activate service — ADMIN only")
+    @Operation(summary = "Activate service — ADMIN or EXPERT owner")
     @PostMapping("/{id}/activate")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ServiceResponse activate(@PathVariable Long id) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'EXPERT')")
+    public ServiceResponse activate(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails user) {
+        if (user.getRole() == UserRole.EXPERT) {
+            return serviceService.activateServiceByExpert(id, user.getUserId());
+        }
         return serviceService.activateService(id);
     }
 
@@ -93,5 +96,12 @@ public class ServiceController {
     public ServiceResponse deactivate(@PathVariable Long id,
                                       @AuthenticationPrincipal CustomUserDetails user) {
         return serviceService.deactivateService(id, user.getUserId());
+    }
+    @Operation(summary = "Order a service directly — CLIENT")
+    @PostMapping("/{id}/order")
+    @PreAuthorize("hasRole('CLIENT')")
+    public com.aimarket.dto.contract.ContractResponse orderService(@PathVariable Long id,
+                                                                   @AuthenticationPrincipal CustomUserDetails user) {
+        return serviceService.orderService(id, user.getUserId());
     }
 }

@@ -31,7 +31,8 @@ export default function RegisterPage() {
   const { register: authRegister, isAuthenticated, isLoading, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname
+  const state = location.state as { from?: { pathname: string } } | null
+  const from = state?.from?.pathname
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),

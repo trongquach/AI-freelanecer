@@ -10,9 +10,10 @@ export interface PlatformStats {
   activeContracts: number;
   completedContracts: number;
   totalServices: number;
-  totalVolume: number;
-  platformFeesEarned: number;
-  dailyRegistrations: number[];
+  totalTransactionVolume: number;
+  platformFeeEarned: number;
+  totalEscrowLocked: number;
+  dailyRegistrations?: number[];
 }
 
 export interface UserDto {
@@ -24,31 +25,64 @@ export interface UserDto {
   createdAt: string;
 }
 
+export interface TransactionDto {
+  id: number;
+  type: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+  wallet?: { user?: { email?: string } };
+}
+
 export const adminApi = {
   getStats: async (): Promise<PlatformStats> => {
     const res = await axiosInstance.get('/admin/stats');
     return res.data;
   },
 
-  getUsers: async (page = 0, size = 10): Promise<PageResponse<UserDto>> => {
+  // Users
+  getUsers: async (page = 0, size = 20): Promise<PageResponse<UserDto>> => {
     const res = await axiosInstance.get('/admin/users', { params: { page, size } });
     return res.data;
   },
-
   banUser: async (id: number): Promise<void> => {
     await axiosInstance.post(`/admin/users/${id}/ban`);
   },
+  unbanUser: async (id: number): Promise<void> => {
+    await axiosInstance.post(`/admin/users/${id}/unban`);
+  },
 
-  getPendingServices: async (page = 0, size = 10): Promise<PageResponse<any>> => {
+  // Services
+  getPendingServices: async (page = 0, size = 20): Promise<PageResponse<any>> => {
     const res = await axiosInstance.get('/admin/services/pending', { params: { page, size } });
     return res.data;
   },
-
+  getAllServices: async (page = 0, size = 20): Promise<PageResponse<any>> => {
+    const res = await axiosInstance.get('/admin/services/all', { params: { page, size } });
+    return res.data;
+  },
   activateService: async (id: number): Promise<void> => {
     await axiosInstance.post(`/admin/services/${id}/activate`);
   },
-
   rejectService: async (id: number): Promise<void> => {
     await axiosInstance.post(`/admin/services/${id}/reject`);
-  }
+  },
+  deleteService: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/admin/services/${id}`);
+  },
+
+  // Jobs
+  getAllJobs: async (page = 0, size = 20): Promise<PageResponse<any>> => {
+    const res = await axiosInstance.get('/admin/jobs', { params: { page, size } });
+    return res.data;
+  },
+  deleteJob: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/admin/jobs/${id}`);
+  },
+
+  // Transactions
+  getTransactions: async (page = 0, size = 20): Promise<PageResponse<TransactionDto>> => {
+    const res = await axiosInstance.get('/admin/transactions', { params: { page, size } });
+    return res.data;
+  },
 };

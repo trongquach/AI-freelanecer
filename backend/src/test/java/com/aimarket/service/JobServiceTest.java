@@ -104,4 +104,45 @@ public class JobServiceTest {
         assertEquals("Cannot delete job with status: IN_PROGRESS", ex.getMessage());
         verify(jobRepository, never()).delete(any());
     }
+
+    @Test
+    void testCreateJob_WithTimeline() {
+        java.time.LocalDate startDate = java.time.LocalDate.now().plusDays(1);
+        java.time.LocalDate deadline = java.time.LocalDate.now().plusDays(15);
+        String duration = "2 weeks";
+        
+        CreateJobRequest request = new CreateJobRequest("Title", "Description", 
+                new BigDecimal("100"), new BigDecimal("500"), deadline, startDate, duration, Collections.emptyList());
+                
+        when(userRepository.findById(2L)).thenReturn(Optional.of(clientUser));
+        when(jobRepository.save(any(Job.class))).thenAnswer(i -> {
+            Job saved = i.getArgument(0);
+            saved.setId(101L);
+            return saved;
+        });
+        
+        com.aimarket.dto.job.JobResponse response = jobService.createJob(request, 2L);
+        
+        assertEquals(startDate, response.startDate());
+        assertEquals(deadline, response.deadline());
+        assertEquals(duration, response.expectedDuration());
+    }
+
+    @Test
+    void testUpdateJob_Timeline() {
+        java.time.LocalDate newStartDate = java.time.LocalDate.now().plusDays(5);
+        java.time.LocalDate newDeadline = java.time.LocalDate.now().plusDays(20);
+        String newDuration = "3 weeks";
+        
+        UpdateJobRequest request = new UpdateJobRequest(null, null, null, null, newDeadline, newStartDate, newDuration, null);
+        
+        when(jobRepository.findById(100L)).thenReturn(Optional.of(job));
+        when(jobRepository.save(any(Job.class))).thenAnswer(i -> i.getArgument(0));
+        
+        com.aimarket.dto.job.JobResponse response = jobService.updateJob(100L, request, 2L, UserRole.CLIENT);
+        
+        assertEquals(newStartDate, response.startDate());
+        assertEquals(newDeadline, response.deadline());
+        assertEquals(newDuration, response.expectedDuration());
+    }
 }

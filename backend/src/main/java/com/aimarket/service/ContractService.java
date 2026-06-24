@@ -24,6 +24,7 @@ public class ContractService {
 
     private final ContractRepository contractRepository;
     private final MilestoneRepository milestoneRepository;
+    private final EscrowService escrowService;
 
     @Transactional(readOnly = true)
     public ContractResponse getContract(Long id, Long userId) {
@@ -67,6 +68,8 @@ public class ContractService {
 
         milestone.setStatus(MilestoneStatus.APPROVED);
         milestoneRepository.save(milestone);
+
+        escrowService.releaseFunds(contractId, clientId, contract.getExpert().getId(), milestone.getAmount());
 
         // Auto-complete contract if all milestones approved
         boolean allDone = contract.getMilestones().stream()
