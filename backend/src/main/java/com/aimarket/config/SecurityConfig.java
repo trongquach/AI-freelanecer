@@ -64,7 +64,7 @@ public class SecurityConfig {
                 .requestMatchers("/ws/**").permitAll()
                 // Actuator & Swagger
                 .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )

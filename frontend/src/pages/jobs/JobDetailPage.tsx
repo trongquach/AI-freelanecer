@@ -112,6 +112,24 @@ export default function JobDetailPage() {
                 </p>
               </div>
             )}
+            {job.startDate && (
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Start Date</p>
+                <p className="font-medium text-slate-900 flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  {new Date(job.startDate).toLocaleDateString('vi-VN')}
+                </p>
+              </div>
+            )}
+            {job.expectedDuration && (
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Duration</p>
+                <p className="font-medium text-slate-900 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  {job.expectedDuration}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-xs text-slate-400 mb-1">Posted by</p>
               <p className="font-medium text-slate-900">{job.client.fullName ?? 'Client anonymous'}</p>
@@ -147,7 +165,7 @@ export default function JobDetailPage() {
                   }
                 }}
                 disabled={deleteMutation.isPending}
-                className="btn-outline btn-md flex-1 text-danger-500 border-danger-500 hover:bg-danger-50"
+                className="btn-danger btn-md flex-1 text-center"
               >
                 Delete
               </button>

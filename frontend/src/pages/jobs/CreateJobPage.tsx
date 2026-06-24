@@ -17,6 +17,8 @@ const schema = z.object({
   budgetMin:   z.number().positive().optional(),
   budgetMax:   z.number().positive().optional(),
   deadline:    z.string().optional(),
+  startDate:   z.string().optional(),
+  expectedDuration: z.string().max(100).optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -104,9 +106,21 @@ export default function CreateJobPage() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Start Date</label>
+              <input type="date" {...register('startDate')} className="input"
+                min={new Date().toISOString().split('T')[0]} />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Deadline</label>
               <input type="date" {...register('deadline')} className="input"
                 min={new Date().toISOString().split('T')[0]} />
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">Expected Duration</label>
+              <input {...register('expectedDuration')} className="input" placeholder="e.g. 2 weeks, 1 month" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Required Skills *</label>
