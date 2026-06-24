@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.production
+.env.prod
 
 # Java / Maven
 backend/target/
@@ -31,19 +32,7 @@ Thumbs.db
 
 # Test coverage
 **/coverage/
-backend/target/site/
 
-# AWS / Terraform
-infrastructure/terraform/.terraform/
-infrastructure/terraform/*.tfstate
-infrastructure/terraform/*.tfstate.backup
-infrastructure/terraform/.terraform.lock.hcl
-*.tfvars
-!*.tfvars.example
-
-# Security & Build files
+# Security & Secrets
 *.pem
 *.zip
-.env.prod
-deploy_aws/
-*.md

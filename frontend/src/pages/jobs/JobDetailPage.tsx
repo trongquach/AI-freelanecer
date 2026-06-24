@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { Calendar, DollarSign, Eye, ArrowLeft, Clock, Sparkles } from 'lucide-react'
 import { jobApi } from '@/api/jobServiceApi'
 import { aiApi } from '@/api/aiApi'
@@ -13,6 +14,7 @@ export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { isAuthenticated, isExpert, user } = useAuth()
   const navigate = useNavigate()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const queryClient = useQueryClient()
   const publishMutation = useMutation({
@@ -48,6 +50,7 @@ export default function JobDetailPage() {
   )
 
   return (
+    <>
     <div className="max-w-4xl mx-auto py-4">
       <Link to="/jobs" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-6 text-sm">
         <ArrowLeft className="w-4 h-4" /> All jobs
@@ -138,7 +141,7 @@ export default function JobDetailPage() {
           </div>
 
           {isAuthenticated && isExpert() && job.status === 'OPEN' && (
-            <Link to={`/jobs/${job.id}/apply`} className="btn-gradient btn-lg w-full">
+            <Link to={`/jobs/${job.id}/proposals/new`} className="btn-gradient btn-lg w-full text-center">
               Send Proposal
             </Link>
           )}
@@ -158,12 +161,8 @@ export default function JobDetailPage() {
               <Link to={`/jobs/${job.id}/edit`} className="btn-secondary btn-md flex-1 text-center">
                 Edit
               </Link>
-              <button 
-                onClick={() => {
-                  if (window.confirm("Are you sure you want to delete this job?")) {
-                    deleteMutation.mutate(job.id);
-                  }
-                }}
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={deleteMutation.isPending}
                 className="btn-danger btn-md flex-1 text-center"
               >
@@ -174,6 +173,27 @@ export default function JobDetailPage() {
         </div>
       </div>
     </div>
+
+      {/* Delete Confirm Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl">
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Delete Job?</h2>
+            <p className="text-sm text-slate-500 mb-6">This action cannot be undone. Are you sure you want to delete this job?</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowDeleteConfirm(false)} className="btn-ghost btn-md">Cancel</button>
+              <button
+                onClick={() => { setShowDeleteConfirm(false); deleteMutation.mutate(job.id); }}
+                disabled={deleteMutation.isPending}
+                className="btn-danger btn-md"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 function ExpertRecommendations({ jobId }: { jobId: number }) {

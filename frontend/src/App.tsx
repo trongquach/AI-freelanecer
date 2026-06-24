@@ -42,6 +42,7 @@ const ContractPage     = lazy(() => import('@/pages/contracts/ContractPage'))
 const WalletPage       = lazy(() => import('@/pages/wallet/WalletPage'))
 const ProfilePage      = lazy(() => import('@/pages/profile/ProfilePage'))
 const NotFoundPage     = lazy(() => import('@/pages/NotFoundPage'))
+const AccessDeniedPage = lazy(() => import('@/pages/AccessDeniedPage'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -131,7 +132,7 @@ export default function App() {
             </Route>
 
             {/* Fallbacks */}
-            <Route path="/403" element={<div className="min-h-screen flex items-center justify-center text-slate-900 text-2xl">403 — Access Denied</div>} />
+            <Route path="/403" element={<AccessDeniedPage />} />
             <Route path="*"    element={<NotFoundPage />} />
           </Routes>
         </Suspense>

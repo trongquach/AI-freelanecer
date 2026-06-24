@@ -14,6 +14,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
@@ -123,10 +124,10 @@ public class ContractService {
                         m.getDueDate(), m.getStatus(), m.getOrderIndex(), m.getDeliverableUrl()))
                 .collect(Collectors.toList());
 
-        java.math.BigDecimal escrowAmount = c.getMilestones().stream()
+        BigDecimal escrowAmount = c.getMilestones().stream()
                 .filter(m -> m.getStatus() != MilestoneStatus.APPROVED)
                 .map(Milestone::getAmount)
-                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new ContractResponse(
                 c.getId(), c.getJob().getId(), c.getJob().getTitle(),

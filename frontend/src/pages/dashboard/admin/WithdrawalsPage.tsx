@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 export default function WithdrawalsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
+  const [rejectingId, setRejectingId] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-withdrawals', page],
@@ -94,23 +96,14 @@ export default function WithdrawalsPage() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-danger-600 bg-danger-50 hover:bg-danger-100 transition-colors"
-                          onClick={() => {
-                            const reason = prompt('Enter rejection reason:');
-                            if (reason !== null) {
-                              rejectMutation.mutate({ id: tx.id, reason: reason || 'Violation of terms' });
-                            }
-                          }}
+                          onClick={() => { setRejectingId(tx.id); setRejectReason(''); }}
                           disabled={rejectMutation.isPending}
                         >
                           <XCircle className="w-3.5 h-3.5" /> Reject
                         </button>
                         <button
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-white bg-primary-500 hover:bg-primary-600 transition-colors"
-                          onClick={() => {
-                            if (confirm(`Approve withdrawal of $${tx.amount}?`)) {
-                              approveMutation.mutate(tx.id);
-                            }
-                          }}
+                          onClick={() => approveMutation.mutate(tx.id)}
                           disabled={approveMutation.isPending}
                         >
                           <CheckCircle className="w-3.5 h-3.5" /> Approve
@@ -139,6 +132,42 @@ export default function WithdrawalsPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {rejectingId !== null && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-danger-500" /> Reject Withdrawal #{rejectingId}
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">Please provide a reason for rejecting this withdrawal request.</p>
+            <textarea
+              className="input w-full min-h-[100px] resize-none mb-4"
+              placeholder="Enter rejection reason..."
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                onClick={() => setRejectingId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-primary bg-danger-500 hover:bg-danger-600 border-danger-500"
+                onClick={() => {
+                  rejectMutation.mutate({ id: rejectingId, reason: rejectReason || 'Violation of terms' });
+                  setRejectingId(null);
+                }}
+                disabled={rejectMutation.isPending}
+              >
+                {rejectMutation.isPending ? <LoadingSpinner size="sm" /> : 'Confirm Reject'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -34,12 +34,12 @@ export default function NotificationBell() {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-300 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[400px]">
-          <div className="p-3 border-b border-slate-300 flex justify-between items-center bg-white border border-slate-200">
+          <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-white">
             <h3 className="font-semibold text-slate-900">Notifications</h3>
             {unreadCount > 0 && (
               <button 
                 onClick={() => markAllAsRead()}
-                className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
+                className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1"
               >
                 <Check size={14}/> Mark all read
               </button>
@@ -56,7 +56,7 @@ export default function NotificationBell() {
                 {notifications.slice(0, 10).map(notif => (
                   <div 
                     key={notif.id} 
-                    className={`p-3 flex gap-3 hover:bg-white border border-slate-200 transition-colors cursor-pointer ${!notif.isRead ? 'bg-white border border-slate-200/50' : ''}`}
+                    className={`p-3 flex gap-3 hover:bg-slate-50 transition-colors cursor-pointer ${!notif.isRead ? 'bg-primary-50/30' : ''}`}
                     onClick={() => {
                       if (!notif.isRead) markAsRead(notif.id);
                       setIsOpen(false);
@@ -87,7 +87,7 @@ export default function NotificationBell() {
           <Link 
             to="/notifications" 
             onClick={() => setIsOpen(false)}
-            className="p-2 text-center text-xs font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 border-t border-slate-300"
+            className="p-2 text-center text-xs font-medium text-slate-600 hover:text-slate-900 bg-white border-t border-slate-200"
           >
             View all notifications
           </Link>

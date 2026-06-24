@@ -135,7 +135,7 @@ export default function ProposalFormPage() {
             </div>
             <div className="flex justify-between">
               <span>Client:</span>
-              <span className="font-medium text-slate-900">{(job as any).clientName || 'N/A'}</span>
+              <span className="font-medium text-slate-900">{job.client.fullName || 'N/A'}</span>
             </div>
           </div>
         </div>

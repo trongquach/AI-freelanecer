@@ -1,5 +1,6 @@
 package com.aimarket.service;
 
+import com.aimarket.dto.dispute.DisputeResponse;
 import com.aimarket.entity.*;
 import com.aimarket.entity.enums.*;
 import com.aimarket.exception.*;
@@ -105,5 +106,27 @@ public class DisputeService {
         notificationService.send(contract.getExpert().getId(), "DISPUTE_RESOLVED", "Giải quyết tranh chấp", msg, contract.getId());
 
         return dispute;
+    }
+
+    public DisputeResponse toResponse(Dispute d) {
+        Contract c = d.getContract();
+        User opener = d.getOpenedBy();
+        return DisputeResponse.builder()
+                .id(d.getId())
+                .contractId(c.getId())
+                .contractTitle(c.getProposal() != null && c.getProposal().getJob() != null
+                        ? c.getProposal().getJob().getTitle() : "Contract #" + c.getId())
+                .openedBy(DisputeResponse.OpenedByInfo.builder()
+                        .id(opener.getId())
+                        .email(opener.getEmail())
+                        .fullName(opener.getProfile() != null ? opener.getProfile().getFullName() : opener.getEmail())
+                        .build())
+                .reason(d.getReason())
+                .status(d.getStatus())
+                .adminNote(d.getAdminNote())
+                .resolution(d.getResolution())
+                .resolvedAt(d.getResolvedAt())
+                .createdAt(d.getCreatedAt())
+                .build();
     }
 }

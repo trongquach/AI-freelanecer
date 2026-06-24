@@ -54,7 +54,7 @@ export default function ClientDashboard() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-slate-900">Recent Jobs</h2>
-            <Link to="/jobs/my" className="text-sm text-primary-400 hover:text-primary-300">
+            <Link to="/jobs/my" className="text-sm text-primary-600 hover:text-primary-700">
               View all →
             </Link>
           </div>
@@ -87,7 +87,7 @@ export default function ClientDashboard() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-slate-900">Active Contracts</h2>
-            <Link to="/contracts" className="text-sm text-primary-400 hover:text-primary-300">
+            <Link to="/contracts" className="text-sm text-primary-600 hover:text-primary-700">
               View all →
             </Link>
           </div>

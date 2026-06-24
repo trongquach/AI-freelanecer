@@ -87,14 +87,14 @@ export default function RegisterPage() {
             Start your<br />
             <span className="text-gradient">AI freelance</span> journey
           </h1>
-          <p className="text-slate-400 text-lg">
+          <p className="text-slate-500 text-lg">
             Join a community of AI experts and clients seeking breakthrough solutions.
           </p>
         </div>
         {/* Decorative blobs */}
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-primary-600/20 rounded-full blur-3xl" />
         <div className="absolute top-40 -left-10 w-60 h-60 bg-accent-600/10 rounded-full blur-3xl" />
-        <div className="relative z-10 text-slate-400 text-sm">
+        <div className="relative z-10 text-slate-500 text-sm">
           © 2024 AIMarket. All rights reserved.
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function RegisterPage() {
           </div>
 
           <h2 className="text-3xl font-bold text-slate-900 mb-2">Create your account</h2>
-          <p className="text-slate-400 mb-8">Fill in the details below to get started</p>
+          <p className="text-slate-500 mb-8">Fill in the details below to get started</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             
@@ -261,9 +261,9 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="text-center text-slate-400 text-sm mt-8">
+          <p className="text-center text-slate-500 text-sm mt-8">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">
+            <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
               Sign In now
             </Link>
           </p>

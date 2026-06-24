@@ -66,7 +66,15 @@ export default function EditJobPage() {
   const descriptionValue = watch('description')
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: FormData) => jobApi.update(Number(id), { ...data, skillIds }),
+    mutationFn: (data: FormData) => jobApi.update(Number(id), {
+      ...data,
+      skillIds,
+      budgetMin: data.budgetMin ?? undefined,
+      budgetMax: data.budgetMax ?? undefined,
+      startDate: data.startDate ?? undefined,
+      deadline: data.deadline ?? undefined,
+      expectedDuration: data.expectedDuration ?? undefined,
+    }),
     onSuccess: () => {
       toast.success('Job updated successfully!')
       queryClient.invalidateQueries({ queryKey: ['job', id] })

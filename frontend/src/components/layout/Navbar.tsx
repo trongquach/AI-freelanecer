@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Sparkles, Bell, LogOut, User, LayoutDashboard, Briefcase, ShoppingBag, Wallet } from 'lucide-react'
+import { Sparkles, LogOut, LayoutDashboard, Briefcase, ShoppingBag, Wallet } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from 'sonner'
 import { cn } from '@/utils/cn'
@@ -51,8 +51,16 @@ export default function Navbar() {
                     {user?.fullName?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? 'U'}
                   </div>
                 </Link>
-                <button onClick={handleLogout} className="p-2 text-slate-500 hover:text-danger-600 rounded-lg hover:bg-slate-50 transition-colors">
+                <button
+                  onClick={handleLogout}
+                  title="Sign out"
+                  aria-label="Sign out"
+                  type="button"
+                  id="logout-btn"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-500 hover:text-danger-600 rounded-lg hover:bg-danger-50 transition-colors"
+                >
                   <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sign out</span>
                 </button>
               </>
             ) : (

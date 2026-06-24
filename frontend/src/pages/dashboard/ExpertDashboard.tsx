@@ -54,7 +54,7 @@ export default function ExpertDashboard() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-900">My Services</h2>
-          <Link to="/services/my" className="text-sm text-primary-400 hover:text-primary-300">View all →</Link>
+          <Link to="/services/my" className="text-sm text-primary-600 hover:text-primary-700">View all →</Link>
         </div>
         {isLoading ? (
           <div className="flex justify-center py-12"><LoadingSpinner size="lg" /></div>

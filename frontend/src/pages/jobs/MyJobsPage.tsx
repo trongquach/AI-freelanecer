@@ -1,7 +1,6 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams, Link } from 'react-router-dom'
-import { Search, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { jobApi } from '@/api/jobServiceApi'
 import JobCard from '@/components/cards/JobCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'

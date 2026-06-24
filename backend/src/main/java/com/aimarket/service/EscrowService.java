@@ -24,6 +24,7 @@ public class EscrowService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final com.aimarket.repository.ContractRepository contractRepository;
 
     @Value("${app.platform-fee-percent:10}")
     private double platformFeePercent;
@@ -128,15 +129,48 @@ public class EscrowService {
     @Transactional
     public void refundAllLocked(Long contractId) {
         log.info("Refunding all locked funds for contract {}", contractId);
-        // In a real impl: look up the contract, reverse the ESCROW_LOCK transaction
-        // For now: no-op — escrow lock reversal tracked via audit log
+        var contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new com.aimarket.exception.ResourceNotFoundException("Contract", contractId));
+
+        BigDecimal lockedAmount = contract.getMilestones().stream()
+                .filter(m -> m.getStatus() != com.aimarket.entity.enums.MilestoneStatus.APPROVED)
+                .map(com.aimarket.entity.Milestone::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (lockedAmount.compareTo(BigDecimal.ZERO) > 0) {
+            EscrowAccount clientAccount = getOrCreate(contract.getClient().getId());
+            clientAccount.setLockedAmount(
+                    clientAccount.getLockedAmount().subtract(lockedAmount).max(BigDecimal.ZERO));
+            clientAccount.setBalance(
+                    clientAccount.getBalance().subtract(lockedAmount).max(BigDecimal.ZERO));
+            escrowAccountRepository.save(clientAccount);
+            recordTransaction(contract.getClient(), contractId, null,
+                    TransactionType.REFUND, lockedAmount,
+                    UUID.randomUUID().toString(), "Dispute refund for contract " + contractId);
+            log.info("Refunded ${} to client {} for contract {}", lockedAmount,
+                    contract.getClient().getId(), contractId);
+        }
     }
 
     // ─── Dispute resolution: release all pending to expert ─
     @Transactional
     public void releaseAllPending(Long contractId) {
         log.info("Releasing all pending funds for contract {}", contractId);
-        // In a real impl: process any remaining milestone amounts
+        var contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new com.aimarket.exception.ResourceNotFoundException("Contract", contractId));
+
+        BigDecimal pendingAmount = contract.getMilestones().stream()
+                .filter(m -> m.getStatus() == com.aimarket.entity.enums.MilestoneStatus.SUBMITTED
+                        || m.getStatus() == com.aimarket.entity.enums.MilestoneStatus.IN_PROGRESS)
+                .map(com.aimarket.entity.Milestone::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (pendingAmount.compareTo(BigDecimal.ZERO) > 0) {
+            releaseFunds(contractId, contract.getClient().getId(),
+                    contract.getExpert().getId(), pendingAmount);
+            log.info("Released ${} to expert {} for contract {}", pendingAmount,
+                    contract.getExpert().getId(), contractId);
+        }
     }
 
     // ─── Balance summary ──────────────────────────────────
@@ -148,9 +182,12 @@ public class EscrowService {
     // ─── Private helpers ─────────────────────────────────
     private void recordTransaction(Long userId, Long contractId, Long milestoneId,
                                    TransactionType type, BigDecimal amount, String refCode, String note) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null) return;
+        userRepository.findById(userId).ifPresent(user ->
+                recordTransaction(user, contractId, milestoneId, type, amount, refCode, note));
+    }
 
+    private void recordTransaction(User user, Long contractId, Long milestoneId,
+                                   TransactionType type, BigDecimal amount, String refCode, String note) {
         Transaction tx = Transaction.builder()
                 .user(user).type(type).amount(amount)
                 .refCode(refCode).note(note).build();

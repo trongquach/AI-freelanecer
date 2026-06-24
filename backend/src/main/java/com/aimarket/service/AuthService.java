@@ -75,8 +75,6 @@ public class AuthService {
         createEscrowAccount(user);
 
         log.info("New user registered: {} ({})", request.email(), request.role());
-        // In prod: send verification email
-        log.info("[DEV] Email verification link: http://localhost:8080/api/v1/auth/verify?token=MOCK_TOKEN");
 
         return buildAuthResponse(user, profile);
     }
@@ -146,7 +144,7 @@ public class AuthService {
                     15, TimeUnit.MINUTES
             );
             // In prod: send email with reset link
-            log.info("[DEV] Password reset link: http://localhost:3000/reset-password?token={}", resetToken);
+            log.debug("Password reset token generated for user: {}", user.getId());
         });
     }
 

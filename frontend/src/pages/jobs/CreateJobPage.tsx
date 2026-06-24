@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useMutation } from '@tanstack/react-query'
 import { ArrowLeft, Briefcase, Sparkles } from 'lucide-react'
 import { jobApi } from '@/api/jobServiceApi'
+import type { CreateJobRequest } from '@/api/jobServiceApi'
 import { aiApi } from '@/api/aiApi'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import SkillSelector from '@/components/ui/SkillSelector'
@@ -32,7 +33,7 @@ export default function CreateJobPage() {
   const descriptionValue = watch('description')
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: FormData) => jobApi.create({ ...data, skillIds }),
+    mutationFn: (data: FormData) => jobApi.create({ ...data, skillIds } as CreateJobRequest),
     onSuccess: (job: any) => {
       toast.success('Job created successfully!')
       navigate(`/jobs/${job.id}`)

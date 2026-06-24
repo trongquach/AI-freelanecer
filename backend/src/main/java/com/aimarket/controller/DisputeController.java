@@ -1,6 +1,6 @@
 package com.aimarket.controller;
 
-import com.aimarket.entity.Dispute;
+import com.aimarket.dto.dispute.DisputeResponse;
 import com.aimarket.entity.enums.DisputeResolution;
 import com.aimarket.security.CustomUserDetails;
 import com.aimarket.service.DisputeService;
@@ -28,31 +28,33 @@ public class DisputeController {
     @PostMapping("/api/v1/contracts/{contractId}/dispute")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("isAuthenticated()")
-    public Dispute open(@PathVariable Long contractId,
+    public DisputeResponse open(@PathVariable Long contractId,
                         @RequestBody OpenDisputeRequest req,
                         @AuthenticationPrincipal CustomUserDetails user) {
-        return disputeService.openDispute(contractId, user.getUserId(), req.reason());
+        return disputeService.toResponse(
+                disputeService.openDispute(contractId, user.getUserId(), req.reason()));
     }
 
     @Operation(summary = "List all disputes (ADMIN)")
     @GetMapping("/api/v1/admin/disputes")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<Dispute> listAll(@RequestParam(defaultValue = "0") int page,
+    public Page<DisputeResponse> listAll(@RequestParam(defaultValue = "0") int page,
                                  @RequestParam(defaultValue = "20") int size) {
-        return disputeService.listAll(page, size);
+        return disputeService.listAll(page, size).map(disputeService::toResponse);
     }
 
     @Operation(summary = "Get dispute detail")
     @GetMapping("/api/v1/disputes/{id}")
     @PreAuthorize("isAuthenticated()")
-    public Dispute getById(@PathVariable Long id) {
-        return disputeService.getById(id);
+    public DisputeResponse getById(@PathVariable Long id) {
+        return disputeService.toResponse(disputeService.getById(id));
     }
 
     @Operation(summary = "Resolve dispute (ADMIN)")
     @PostMapping("/api/v1/disputes/{id}/resolve")
     @PreAuthorize("hasRole('ADMIN')")
-    public Dispute resolve(@PathVariable Long id, @RequestBody ResolveDisputeRequest req) {
-        return disputeService.resolve(id, req.resolution(), req.adminNote());
+    public DisputeResponse resolve(@PathVariable Long id, @RequestBody ResolveDisputeRequest req) {
+        return disputeService.toResponse(
+                disputeService.resolve(id, req.resolution(), req.adminNote()));
     }
 }

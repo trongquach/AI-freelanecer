@@ -12,6 +12,28 @@ export interface JobFilterParams {
   size?: number
 }
 
+export interface CreateJobRequest {
+  title: string
+  description: string
+  budgetMin?: number
+  budgetMax?: number
+  startDate?: string
+  deadline?: string
+  expectedDuration?: string
+  skillIds?: number[]
+}
+
+export interface UpdateJobRequest {
+  title?: string
+  description?: string
+  budgetMin?: number
+  budgetMax?: number
+  startDate?: string
+  deadline?: string
+  expectedDuration?: string
+  skillIds?: number[]
+}
+
 export const jobApi = {
   list: (params: JobFilterParams) =>
     api.get<PageResponse<JobResponse>>('/jobs', { params }).then(r => r.data),
@@ -19,10 +41,10 @@ export const jobApi = {
   getById: (id: number) =>
     api.get<JobResponse>(`/jobs/${id}`).then(r => r.data),
 
-  create: (data: unknown) =>
+  create: (data: CreateJobRequest) =>
     api.post<JobResponse>('/jobs', data).then(r => r.data),
 
-  update: (id: number, data: unknown) =>
+  update: (id: number, data: UpdateJobRequest) =>
     api.put<JobResponse>(`/jobs/${id}`, data).then(r => r.data),
 
   delete: (id: number) =>

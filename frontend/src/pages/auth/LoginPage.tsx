@@ -67,14 +67,14 @@ export default function LoginPage() {
             <span className="text-gradient">top AI experts</span><br />
             worldwide
           </h1>
-          <p className="text-slate-400 text-lg">
+          <p className="text-slate-500 text-lg">
             The freelance platform dedicated to artificial intelligence projects.
           </p>
         </div>
         {/* Decorative blobs */}
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-primary-600/20 rounded-full blur-3xl" />
         <div className="absolute top-40 -left-10 w-60 h-60 bg-accent-600/10 rounded-full blur-3xl" />
-        <div className="relative z-10 text-slate-400 text-sm">
+        <div className="relative z-10 text-slate-500 text-sm">
           © 2024 AIMarket. All rights reserved.
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function LoginPage() {
           </div>
 
           <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h2>
-          <p className="text-slate-400 mb-8">Sign in to continue</p>
+          <p className="text-slate-500 mb-8">Sign in to continue</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
             {/* Email */}
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-slate-600">
                   Password
                 </label>
-                <Link to="/forgot-password" className="text-xs text-primary-400 hover:text-primary-300">
+                <Link to="/forgot-password" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
                   Forgot Password?
                 </Link>
               </div>
@@ -156,9 +156,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-slate-400 text-sm mt-8">
+          <p className="text-center text-slate-500 text-sm mt-8">
             Don't have an account?{' '}
-            <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium">
+            <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
               Sign Up now
             </Link>
           </p>
