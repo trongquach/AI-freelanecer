@@ -152,6 +152,22 @@ export default function AdminDashboard() {
             color="text-success-500"
             bg="bg-success-50"
           />
+          <NavCard
+            to="/admin/withdrawals"
+            icon={DollarSign}
+            title="Withdrawals"
+            subtitle="Approve or reject expert withdrawal requests"
+            color="text-blue-500"
+            bg="bg-blue-50"
+          />
+          <NavCard
+            to="/admin/disputes"
+            icon={Shield}
+            title="Disputes"
+            subtitle="Resolve conflicts between clients and experts"
+            color="text-danger-500"
+            bg="bg-danger-50"
+          />
         </div>
       </div>
     </div>

@@ -9,8 +9,6 @@ export interface JobResponse {
   startDate: string | null
   expectedDuration: string | null
   deadline: string | null
-  startDate: string | null
-  expectedDuration: string | null
   status: JobStatus
   aiEnhanced: boolean
   viewCount: number

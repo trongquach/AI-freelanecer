@@ -85,4 +85,28 @@ export const adminApi = {
     const res = await axiosInstance.get('/admin/transactions', { params: { page, size } });
     return res.data;
   },
+
+  // Withdrawals
+  getPendingWithdrawals: async (page = 0, size = 20): Promise<PageResponse<TransactionDto>> => {
+    const res = await axiosInstance.get('/admin/withdrawals', { params: { page, size } });
+    return res.data;
+  },
+  approveWithdrawal: async (id: number): Promise<TransactionDto> => {
+    const res = await axiosInstance.post(`/admin/withdrawals/${id}/approve`);
+    return res.data;
+  },
+  rejectWithdrawal: async (id: number, reason: string): Promise<TransactionDto> => {
+    const res = await axiosInstance.post(`/admin/withdrawals/${id}/reject`, { reason });
+    return res.data;
+  },
+
+  // Disputes
+  getAllDisputes: async (page = 0, size = 20): Promise<PageResponse<any>> => {
+    const res = await axiosInstance.get('/admin/disputes', { params: { page, size } });
+    return res.data;
+  },
+  resolveDispute: async (id: number, resolution: string, adminNote: string): Promise<any> => {
+    const res = await axiosInstance.post(`/disputes/${id}/resolve`, { resolution, adminNote });
+    return res.data;
+  },
 };
