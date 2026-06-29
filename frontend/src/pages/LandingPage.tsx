@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Sparkles, ArrowRight, Star, Users, Briefcase, Zap } from 'lucide-react'
+import Navbar from '@/components/layout/Navbar'
 
 const stats = [
   { label: 'AI Experts', value: '2,500+', icon: Users },
@@ -16,23 +17,7 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Navbar */}
-      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-6 max-w-7xl flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-sm">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold text-slate-900">AIMarket</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/jobs" className="text-slate-500 hover:text-slate-900 text-sm font-medium transition-colors">Find Jobs</Link>
-            <Link to="/marketplace" className="text-slate-500 hover:text-slate-900 text-sm font-medium transition-colors">Marketplace</Link>
-            <Link to="/login" className="btn-ghost btn-sm">Sign In</Link>
-            <Link to="/register" className="btn-primary btn-sm">Get Started</Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero */}
       <section className="relative overflow-hidden py-24 px-6 bg-white border-b border-slate-200">
