@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Freelancer — Swim Lane Diagrams</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+
+      --client:    #58a6ff;
+      --expert:    #3fb950;
+      --system:    #d2a8ff;
+      --admin:     #ffa657;
+
+      --client-bg:  rgba(88,166,255,.08);
+      --expert-bg:  rgba(63,185,80,.08);
+      --system-bg:  rgba(210,168,255,.08);
+      --admin-bg:   rgba(255,166,87,.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #58a6ff, #d2a8ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    header p { color: var(--muted); font-size: .95rem; }
+
+    /* ── Nav tabs ── */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 44px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 10px 24px;
+      border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: .88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .tab-btn:hover { border-color: var(--text); color: var(--text); }
+    .tab-btn.active { color: #0d1117; font-weight: 600; }
+    .tab-btn[data-tab="1"].active { background: var(--client);  border-color: var(--client); }
+    .tab-btn[data-tab="2"].active { background: var(--expert);  border-color: var(--expert); }
+    .tab-btn[data-tab="3"].active { background: var(--system);  border-color: var(--system); }
+
+    /* ── Diagram panel ── */
+    .diagram { display: none; animation: fadeIn .3s ease; }
+    .diagram.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    .diagram-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    /* ── Swim Lane Table ── */
+    .lane-table {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+    }
+
+    .lane-header {
+      width: 110px;
+      min-width: 90px;
+      padding: 0 12px;
+      text-align: center;
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      writing-mode: vertical-lr;
+      transform: rotate(180deg);
+      user-select: none;
+      border-right: 1.5px solid var(--border);
+    }
+    .lane-header.client  { background: var(--client-bg);  color: var(--client); }
+    .lane-header.expert  { background: var(--expert-bg);  color: var(--expert); }
+    .lane-header.system  { background: var(--system-bg);  color: var(--system); }
+    .lane-header.admin   { background: var(--admin-bg);   color: var(--admin); }
+
+    .lane-body {
+      padding: 20px 24px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .lane-body:last-child { border-bottom: none; }
+    .lane-body.client  { background: var(--client-bg); }
+    .lane-body.expert  { background: var(--expert-bg); }
+    .lane-body.system  { background: var(--system-bg); }
+    .lane-body.admin   { background: var(--admin-bg); }
+
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 120px;
+      max-width: 160px;
+      text-align: center;
+    }
+
+    .step-box {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1.5px solid;
+      font-size: .82rem;
+      font-weight: 500;
+      line-height: 1.4;
+      transition: transform .15s, box-shadow .15s;
+      cursor: default;
+    }
+    .step-box:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+
+    .step-box.client { border-color: var(--client); color: var(--client); background: rgba(88,166,255,.12); }
+    .step-box.expert { border-color: var(--expert); color: var(--expert); background: rgba(63,185,80,.12); }
+    .step-box.system { border-color: var(--system); color: var(--system); background: rgba(210,168,255,.12); }
+    .step-box.admin  { border-color: var(--admin);  color: var(--admin);  background: rgba(255,166,87,.12); }
+
+    .db-badge {
+      font-size: .68rem;
+      color: var(--muted);
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: 'Courier New', monospace;
+      white-space: nowrap;
+    }
+
+    .arrow {
+      font-size: 1.1rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      align-self: center;
+      margin-bottom: 22px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 28px;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .legend-dot.client { background: var(--client); }
+    .legend-dot.expert { background: var(--expert); }
+    .legend-dot.system { background: var(--system); }
+    .legend-dot.admin  { background: var(--admin); }
+
+    tr:last-child .lane-body { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏊 AI Freelancer — Swim Lane Diagrams</h1>
+  <p>3 core business flows · Database: <code>aimarket_db</code></p>
+</header>
+
+<!-- ── TAB NAV ── -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="1" onclick="showTab(1)">
+    📋 1. Post &amp; Apply for Job
+  </button>
+  <button class="tab-btn" data-tab="2" onclick="showTab(2)">
+    💰 2. Contract &amp; Payment
+  </button>
+  <button class="tab-btn" data-tab="3" onclick="showTab(3)">
+    ⚖️ 3. Dispute &amp; Resolution
+  </button>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DIAGRAM 1 — Job Posting & Proposal Flow            -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="tab-1" class="diagram active">
+  <p class="diagram-title">📋 Flow 1 — Job Posting &amp; Proposal Submission</p>
+
+  <table class="lane-table">
+    <!-- CLIENT lane -->
+    <tr>
+      <td class="lane-header client">Client</td>
+      <td class="lane-body client">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box client">Register / Login</div>
+            <span class="db-badge">users</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Create Job (DRAFT)</div>
+            <span class="db-badge">jobs</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Select Skills + AI Enhance</div>
+            <span class="db-badge">job_skills · ai_usage_logs</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Publish Job (OPEN)</div>
+            <span class="db-badge">jobs.status</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Review Proposals</div>
+            <span class="db-badge">proposals</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Accept Proposal</div>
+            <span class="db-badge">proposals.status = ACCEPTED</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- SYSTEM lane -->
+    <tr>
+      <td class="lane-header system">System</td>
+      <td class="lane-body system">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box system">AI Recommends Experts</div>
+            <span class="db-badge">user_profiles.skills_embedding</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box system">Log AI Token Usage</div>
+            <span class="db-badge">ai_usage_logs</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box system">Send Notification</div>
+            <span class="db-badge">notifications</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box system">Create Contract</div>
+            <span class="db-badge">contracts (ACTIVE)</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- EXPERT lane -->
+    <tr>
+      <td class="lane-header expert">Expert</td>
+      <td class="lane-body expert">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box expert">Browse Job Listings</div>
+            <span class="db-badge">jobs (OPEN)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box expert">Submit Proposal</div>
+            <span class="db-badge">proposals (PENDING)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box expert">Receive Outcome Notification</div>
+            <span class="db-badge">notifications</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot client"></span>Client — job poster</div>
+    <div class="legend-item"><span class="legend-dot expert"></span>Expert — AI freelancer</div>
+    <div class="legend-item"><span class="legend-dot system"></span>System — automated / AI</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DIAGRAM 2 — Contract, Milestone & Payment Flow     -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="tab-2" class="diagram">
+  <p class="diagram-title">💰 Flow 2 — Contract, Milestones &amp; Escrow Payment</p>
+
+  <table class="lane-table">
+    <!-- CLIENT -->
+    <tr>
+      <td class="lane-header client">Client</td>
+      <td class="lane-body client">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box client">Deposit into Escrow</div>
+            <span class="db-badge">escrow_accounts · transactions (DEPOSIT)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Create Milestones</div>
+            <span class="db-badge">milestones (PENDING)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Lock Milestone Funds</div>
+            <span class="db-badge">transactions (ESCROW_LOCK)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Review &amp; Approve Delivery</div>
+            <span class="db-badge">milestones.status = APPROVED</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Rate Expert</div>
+            <span class="db-badge">reviews</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- EXPERT -->
+    <tr>
+      <td class="lane-header expert">Expert</td>
+      <td class="lane-body expert">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box expert">Start Milestone</div>
+            <span class="db-badge">milestones (IN_PROGRESS)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box expert">Submit Deliverable</div>
+            <span class="db-badge">milestones (SUBMITTED) + deliverable_url</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box expert">Receive Payment</div>
+            <span class="db-badge">transactions (RELEASE)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box expert">Rate Client</div>
+            <span class="db-badge">reviews</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- SYSTEM -->
+    <tr>
+      <td class="lane-header system">System</td>
+      <td class="lane-body system">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box system">Hold Escrow Funds</div>
+            <span class="db-badge">escrow_accounts.locked_amount</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box system">In-Contract Messaging</div>
+            <span class="db-badge">messages</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box system">Write Audit Log</div>
+            <span class="db-badge">audit_logs</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box system">Close Contract</div>
+            <span class="db-badge">contracts.status = COMPLETED</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot client"></span>Client — job poster</div>
+    <div class="legend-item"><span class="legend-dot expert"></span>Expert — AI freelancer</div>
+    <div class="legend-item"><span class="legend-dot system"></span>System — automated processing</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- DIAGRAM 3 — Dispute Resolution Flow               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="tab-3" class="diagram">
+  <p class="diagram-title">⚖️ Flow 3 — Dispute &amp; Resolution</p>
+
+  <table class="lane-table">
+    <!-- CLIENT / EXPERT -->
+    <tr>
+      <td class="lane-header client" style="color: #a5d6ff;">Client / Expert</td>
+      <td class="lane-body client">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box client">Issue Arises</div>
+            <span class="db-badge">contracts (DISPUTED)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Open Dispute</div>
+            <span class="db-badge">disputes (OPEN) · disputes.opened_by</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Provide Evidence</div>
+            <span class="db-badge">messages (in contract)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box client">Receive Ruling</div>
+            <span class="db-badge">notifications</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- SYSTEM -->
+    <tr>
+      <td class="lane-header system">System</td>
+      <td class="lane-body system">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box system">Freeze Escrow Funds</div>
+            <span class="db-badge">escrow_accounts.locked_amount</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box system">Notify Admin</div>
+            <span class="db-badge">notifications (ADMIN)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box system">Write Audit Log</div>
+            <span class="db-badge">audit_logs</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- ADMIN -->
+    <tr>
+      <td class="lane-header admin">Admin</td>
+      <td class="lane-body admin">
+        <div class="steps">
+          <div class="step">
+            <div class="step-box admin">Investigate Dispute</div>
+            <span class="db-badge">disputes (INVESTIGATING)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box admin">Add Admin Note</div>
+            <span class="db-badge">disputes.admin_note</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box admin">Issue Ruling</div>
+            <span class="db-badge">disputes.resolution<br/>(REFUND / RELEASE / PARTIAL)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box admin">Process Transaction</div>
+            <span class="db-badge">transactions (REFUND / RELEASE)</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="step">
+            <div class="step-box admin">Close Dispute</div>
+            <span class="db-badge">disputes (RESOLVED)</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot client"></span>Client / Expert — disputing parties</div>
+    <div class="legend-item"><span class="legend-dot system"></span>System — automated handling</div>
+    <div class="legend-item"><span class="legend-dot admin"></span>Admin — ruling authority</div>
+  </div>
+</div>
+
+
+<script>
+  function showTab(n) {
+    document.querySelectorAll('.diagram').forEach(d => d.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + n).classList.add('active');
+    document.querySelector('[data-tab="' + n + '"]').classList.add('active');
+  }
+</script>
+</body>
+</html>

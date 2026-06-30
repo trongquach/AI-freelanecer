@@ -1,9 +1,18 @@
 import axiosInstance from './axiosInstance';
 
+export interface AIJobSuggestion {
+  improvedTitle: string;
+  improvedDescription: string;
+  suggestedBudgetMin: number | null;
+  suggestedBudgetMax: number | null;
+  missingSkills: string[];
+  reasoning: string;
+}
+
 export const aiApi = {
-  enhanceJobDescription: async (title: string, description: string): Promise<string> => {
+  enhanceJobDescription: async (title: string, description: string): Promise<AIJobSuggestion> => {
     const res = await axiosInstance.post('/ai/jobs/enhance', { title, description });
-    return res.data.enhancedDescription;
+    return res.data as AIJobSuggestion;
   },
 
   generateServiceDescription: async (title: string, skills: string[]): Promise<string> => {

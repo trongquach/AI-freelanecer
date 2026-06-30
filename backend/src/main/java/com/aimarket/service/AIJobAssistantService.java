@@ -44,8 +44,20 @@ public class AIJobAssistantService {
         String userMsg = String.format("Title: %s\nDescription: %s\nCurrent skills: %s",
                 title, description, String.join(", ", skills));
         try {
-            String raw = aiClient.complete(SYSTEM_PROMPT, userMsg, 1024);
+            String raw = aiClient.complete(SYSTEM_PROMPT, userMsg, 2048);
             if (raw == null) return fallback(title, description);
+            
+            raw = raw.trim();
+            if (raw.startsWith("```json")) {
+                raw = raw.substring(7);
+            } else if (raw.startsWith("```")) {
+                raw = raw.substring(3);
+            }
+            if (raw.endsWith("```")) {
+                raw = raw.substring(0, raw.length() - 3);
+            }
+            raw = raw.trim();
+            
             return objectMapper.readValue(raw, AIJobSuggestionDTO.class);
         } catch (Exception e) {
             log.warn("AI enhance job failed, returning fallback: {}", e.getMessage());

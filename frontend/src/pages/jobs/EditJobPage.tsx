@@ -85,8 +85,8 @@ export default function EditJobPage() {
 
   const enhanceMutation = useMutation({
     mutationFn: () => aiApi.enhanceJobDescription(titleValue, descriptionValue),
-    onSuccess: (enhancedDesc) => {
-      setValue('description', enhancedDesc, { shouldValidate: true, shouldDirty: true })
+    onSuccess: (result) => {
+      setValue('description', result.improvedDescription, { shouldValidate: true, shouldDirty: true })
       toast.success('AI optimized your job description!')
     },
     onError: () => toast.error('AI encountered an error, please try again.'),

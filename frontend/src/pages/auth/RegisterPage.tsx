@@ -10,8 +10,8 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 const schema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required').min(8, 'Password must be at least 8 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
   role: z.enum(['CLIENT', 'EXPERT']),
   agreeTerms: z.literal(true, {
@@ -27,7 +27,7 @@ type FormData = z.infer<typeof schema>
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  
+
   const { register: authRegister, isAuthenticated, isLoading, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -114,26 +114,24 @@ export default function RegisterPage() {
           <p className="text-slate-500 mb-8">Fill in the details below to get started</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-            
+
             {/* Role Toggle */}
             <div className="flex p-1 bg-slate-100 rounded-lg">
               <label className="flex-1 cursor-pointer">
                 <input type="radio" value="CLIENT" {...register('role')} className="sr-only" />
-                <div className={`text-center py-2 text-sm font-medium rounded-md transition-all ${
-                  selectedRole === 'CLIENT' 
-                    ? 'bg-white text-slate-900 shadow-sm' 
+                <div className={`text-center py-2 text-sm font-medium rounded-md transition-all ${selectedRole === 'CLIENT'
+                    ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
-                }`}>
+                  }`}>
                   I want to hire an expert
                 </div>
               </label>
               <label className="flex-1 cursor-pointer">
                 <input type="radio" value="EXPERT" {...register('role')} className="sr-only" />
-                <div className={`text-center py-2 text-sm font-medium rounded-md transition-all ${
-                  selectedRole === 'EXPERT' 
-                    ? 'bg-white text-slate-900 shadow-sm' 
+                <div className={`text-center py-2 text-sm font-medium rounded-md transition-all ${selectedRole === 'EXPERT'
+                    ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
-                }`}>
+                  }`}>
                   I am an AI Expert
                 </div>
               </label>

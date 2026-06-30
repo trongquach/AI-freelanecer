@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIMarket DB — Physical ERD</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent2: #79c0ff;
+      --pk: #f78166;
+      --fk: #d2a8ff;
+      --uk: #56d364;
+      --idx: #e3b341;
+      --enum: #79c0ff;
+
+      --table-auth: #1c2526;
+      --table-auth-hd: #1f3a3f;
+      --table-core: #1c2126;
+      --table-core-hd: #1f3430;
+      --table-fin: #261c1c;
+      --table-fin-hd: #3a2020;
+      --table-sys: #1c1c26;
+      --table-sys-hd: #2a203a;
+      --table-content: #1c2526;
+      --table-content-hd: #1a3030;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ─── Header ─── */
+    header {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { font-size: 18px; font-weight: 700; }
+    .logo-sub { font-size: 12px; color: var(--text-muted); }
+    .header-badges { display: flex; gap: 8px; }
+    .badge {
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      border: 1px solid;
+    }
+    .badge-blue { background: #0d2a4a; border-color: #58a6ff; color: #58a6ff; }
+    .badge-green { background: #0d2a1a; border-color: #56d364; color: #56d364; }
+
+    /* ─── Controls ─── */
+    .controls {
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .legend { display: flex; gap: 16px; margin-left: auto; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+    .btn {
+      padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text); cursor: pointer; transition: all .2s;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); background: #0d2a4a; }
+
+    /* ─── Canvas ─── */
+    #canvas-wrap {
+      overflow: auto;
+      width: 100%;
+      min-height: calc(100vh - 140px);
+      cursor: grab;
+      position: relative;
+    }
+    #canvas-wrap.dragging { cursor: grabbing; }
+    #erd-canvas {
+      position: relative;
+      min-width: 3200px;
+      min-height: 2200px;
+      transform-origin: top left;
+    }
+
+    /* ─── SVG lines ─── */
+    #svg-layer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    /* ─── Table card ─── */
+    .table-card {
+      position: absolute;
+      width: 290px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,.6);
+      transition: box-shadow .2s, transform .15s;
+      z-index: 10;
+      user-select: none;
+    }
+    .table-card:hover {
+      box-shadow: 0 8px 40px rgba(88,166,255,.2);
+      transform: translateY(-2px);
+      z-index: 20;
+    }
+
+    .table-header {
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      cursor: move;
+    }
+    .table-icon { font-size: 14px; }
+    .table-name { font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono', monospace; letter-spacing: .3px; }
+    .table-engine { font-size: 10px; color: var(--text-muted); margin-left: auto; }
+
+    .col-list { padding: 0; list-style: none; }
+    .col-row {
+      display: flex; align-items: center; gap: 0;
+      padding: 5px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      font-size: 11.5px;
+      transition: background .15s;
+    }
+    .col-row:last-child { border-bottom: none; }
+    .col-row:hover { background: rgba(88,166,255,.06); }
+
+    .col-badges { display: flex; gap: 3px; min-width: 70px; }
+    .col-badge {
+      font-size: 9px; font-weight: 700; padding: 1px 4px;
+      border-radius: 3px; font-family: 'JetBrains Mono', monospace;
+    }
+    .pk-badge { background: rgba(247,129,102,.15); color: var(--pk); border: 1px solid rgba(247,129,102,.3); }
+    .fk-badge { background: rgba(210,168,255,.12); color: var(--fk); border: 1px solid rgba(210,168,255,.3); }
+    .uk-badge { background: rgba(86,211,100,.12); color: var(--uk); border: 1px solid rgba(86,211,100,.3); }
+    .idx-badge { background: rgba(227,179,65,.12); color: var(--idx); border: 1px solid rgba(227,179,65,.3); }
+    .nn-badge { background: rgba(255,255,255,.06); color: #888; border: 1px solid rgba(255,255,255,.1); }
+    .ai-badge { background: rgba(88,166,255,.12); color: var(--accent); border: 1px solid rgba(88,166,255,.3); }
+
+    .col-name {
+      flex: 1; color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .col-name.is-pk { color: var(--pk); font-weight: 600; }
+    .col-name.is-fk { color: var(--fk); }
+
+    .col-type {
+      color: var(--text-muted); font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      margin-left: 6px; white-space: nowrap;
+    }
+    .col-type .enum-val { color: var(--enum); }
+    .col-null { color: #444; font-size: 9px; margin-left: 4px; }
+
+    /* ─── Color themes per group ─── */
+    .t-auth { background: var(--table-auth); }
+    .t-auth .table-header { background: var(--table-auth-hd); }
+    .t-core { background: var(--table-core); }
+    .t-core .table-header { background: var(--table-core-hd); }
+    .t-fin { background: var(--table-fin); }
+    .t-fin .table-header { background: var(--table-fin-hd); }
+    .t-sys { background: var(--table-sys); }
+    .t-sys .table-header { background: var(--table-sys-hd); }
+    .t-skill { background: #1c261c; }
+    .t-skill .table-header { background: #1f3a1f; }
+
+    /* ─── Tooltip ─── */
+    .tooltip {
+      position: fixed; z-index: 999;
+      background: #1c2128; border: 1px solid var(--border);
+      padding: 8px 12px; border-radius: 8px; font-size: 11px;
+      color: var(--text-muted); pointer-events: none;
+      display: none; max-width: 260px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.5);
+    }
+
+    /* ─── Group labels ─── */
+    .group-label {
+      position: absolute;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: rgba(255,255,255,.18);
+      pointer-events: none;
+    }
+
+    /* ─── Zoom controls ─── */
+    .zoom-btns {
+      position: fixed; bottom: 24px; right: 24px;
+      display: flex; flex-direction: column; gap: 6px; z-index: 200;
+    }
+    .zoom-btns button {
+      width: 36px; height: 36px;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; font-size: 18px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .zoom-btns button:hover { border-color: var(--accent); color: var(--accent); }
+
+    .zoom-info {
+      position: fixed; bottom: 24px; right: 70px;
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 8px; font-size: 11px; color: var(--text-muted);
+      z-index: 200;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧠</div>
+    <div>
+      <div class="logo-text">AIMarket Database</div>
+      <div class="logo-sub">Physical Entity-Relationship Diagram</div>
+    </div>
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-blue">MySQL 8.0</span>
+    <span class="badge badge-green">18 Tables</span>
+  </div>
+</header>
+
+<div class="controls">
+  <button class="btn" onclick="fitAll()">⊡ Fit All</button>
+  <button class="btn" onclick="resetZoom()">↺ Reset</button>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#f78166"></div>PK – Primary Key</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d2a8ff"></div>FK – Foreign Key</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#56d364"></div>UQ – Unique</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e3b341"></div>IDX – Index</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div>AI – Auto Increment</div>
+  </div>
+</div>
+
+<div id="canvas-wrap">
+  <div id="erd-canvas">
+    <svg id="svg-layer"></svg>
+    <!-- Tables injected by JS -->
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<div class="zoom-info" id="zoom-info">100%</div>
+<div class="zoom-btns">
+  <button onclick="changeZoom(0.15)">+</button>
+  <button onclick="changeZoom(-0.15)">−</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  SCHEMA DEFINITION
+// ════════════════════════════════════════════
+const SCHEMA = [
+  // ── AUTH / USER GROUP ──────────────────────
+  {
+    name: 'users', theme: 't-auth', icon: '👤',
+    x: 80, y: 80,
+    cols: [
+      { name: 'id',             type: 'BIGINT',      flags: ['PK','AI','NN'] },
+      { name: 'email',          type: 'VARCHAR(255)', flags: ['UQ','NN'] },
+      { name: 'password_hash',  type: 'VARCHAR(255)', flags: ['NN'] },
+      { name: 'role',           type: "ENUM('CLIENT','EXPERT','ADMIN')", flags: ['NN','IDX'] },
+      { name: 'status',         type: "ENUM('ACTIVE','SUSPENDED','PENDING')", flags: ['IDX'] },
+      { name: 'email_verified', type: 'TINYINT(1)',   flags: [] },
+      { name: 'created_at',     type: 'DATETIME',     flags: [] },
+      { name: 'updated_at',     type: 'DATETIME',     flags: [] },
+    ]
+  },
+  {
+    name: 'user_profiles', theme: 't-auth', icon: '📋',
+    x: 430, y: 80,
+    cols: [
+      { name: 'id',              type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'user_id',         type: 'BIGINT',       flags: ['FK','UQ','NN'] },
+      { name: 'full_name',       type: 'VARCHAR(255)',  flags: [] },
+      { name: 'bio',             type: 'TEXT',          flags: [] },
+      { name: 'avatar_url',      type: 'VARCHAR(500)',  flags: [] },
+      { name: 'portfolio_url',   type: 'VARCHAR(500)',  flags: [] },
+      { name: 'hourly_rate',     type: 'DECIMAL(10,2)', flags: [] },
+      { name: 'rating',          type: 'DECIMAL(3,2)',  flags: [] },
+      { name: 'total_reviews',   type: 'INT',           flags: [] },
+      { name: 'completion_rate', type: 'DECIMAL(5,2)',  flags: [] },
+      { name: 'is_available',    type: 'TINYINT(1)',    flags: [] },
+      { name: 'skills_embedding',type: 'JSON',          flags: [] },
+      { name: 'timezone',        type: 'VARCHAR(100)',  flags: [] },
+      { name: 'created_at',      type: 'DATETIME',      flags: [] },
+      { name: 'updated_at',      type: 'DATETIME',      flags: [] },
+    ]
+  },
+  {
+    name: 'refresh_tokens', theme: 't-auth', icon: '🔑',
+    x: 80, y: 560,
+    cols: [
+      { name: 'id',         type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'user_id',    type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'token_hash', type: 'VARCHAR(255)', flags: ['UQ','NN'] },
+      { name: 'expires_at', type: 'DATETIME',     flags: ['NN'] },
+      { name: 'revoked',    type: 'TINYINT(1)',   flags: [] },
+      { name: 'created_at', type: 'DATETIME',     flags: [] },
+    ]
+  },
+  // ── SKILLS ────────────────────────────────
+  {
+    name: 'skills', theme: 't-skill', icon: '🎯',
+    x: 430, y: 700,
+    cols: [
+      { name: 'id',         type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'category',   type: 'VARCHAR(100)', flags: ['NN'] },
+      { name: 'name',       type: 'VARCHAR(100)', flags: ['UQ','NN'] },
+      { name: 'created_at', type: 'DATETIME',     flags: [] },
+    ]
+  },
+  {
+    name: 'user_skills', theme: 't-skill', icon: '🔗',
+    x: 80, y: 790,
+    cols: [
+      { name: 'user_id',  type: 'BIGINT', flags: ['PK','FK','NN'] },
+      { name: 'skill_id', type: 'BIGINT', flags: ['PK','FK','NN'] },
+    ]
+  },
+  // ── CORE JOB / SERVICE ────────────────────
+  {
+    name: 'jobs', theme: 't-core', icon: '💼',
+    x: 800, y: 80,
+    cols: [
+      { name: 'id',                type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'client_id',         type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'title',             type: 'VARCHAR(255)', flags: ['NN'] },
+      { name: 'description',       type: 'TEXT',          flags: ['NN'] },
+      { name: 'budget_min',        type: 'DECIMAL(15,2)', flags: [] },
+      { name: 'budget_max',        type: 'DECIMAL(15,2)', flags: [] },
+      { name: 'deadline',          type: 'DATE',          flags: [] },
+      { name: 'status',            type: "ENUM('DRAFT','OPEN','IN_PROGRESS','COMPLETED','CANCELLED')", flags: ['IDX'] },
+      { name: 'ai_enhanced',       type: 'TINYINT(1)',    flags: [] },
+      { name: 'view_count',        type: 'INT',           flags: [] },
+      { name: 'start_date',        type: 'DATE',          flags: [] },
+      { name: 'expected_duration', type: 'VARCHAR(100)',  flags: [] },
+      { name: 'created_at',        type: 'DATETIME',      flags: [] },
+      { name: 'updated_at',        type: 'DATETIME',      flags: [] },
+    ]
+  },
+  {
+    name: 'job_skills', theme: 't-skill', icon: '🔗',
+    x: 800, y: 680,
+    cols: [
+      { name: 'job_id',   type: 'BIGINT', flags: ['PK','FK','NN'] },
+      { name: 'skill_id', type: 'BIGINT', flags: ['PK','FK','NN'] },
+    ]
+  },
+  {
+    name: 'proposals', theme: 't-core', icon: '📝',
+    x: 1170, y: 80,
+    cols: [
+      { name: 'id',            type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'job_id',        type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'expert_id',     type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'price',         type: 'DECIMAL(15,2)',flags: ['NN'] },
+      { name: 'timeline_days', type: 'INT',           flags: ['NN'] },
+      { name: 'cover_letter',  type: 'TEXT',          flags: [] },
+      { name: 'status',        type: "ENUM('PENDING','ACCEPTED','REJECTED','WITHDRAWN')", flags: ['IDX'] },
+      { name: 'created_at',    type: 'DATETIME',      flags: [] },
+      { name: 'updated_at',    type: 'DATETIME',      flags: [] },
+    ]
+  },
+  {
+    name: 'services', theme: 't-core', icon: '🛒',
+    x: 800, y: 440,
+    cols: [
+      { name: 'id',               type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'expert_id',        type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'title',            type: 'VARCHAR(255)', flags: ['NN'] },
+      { name: 'description',      type: 'TEXT',          flags: [] },
+      { name: 'price',            type: 'DECIMAL(15,2)',flags: ['NN'] },
+      { name: 'delivery_days',    type: 'INT',           flags: ['NN'] },
+      { name: 'status',           type: "ENUM('ACTIVE','INACTIVE','PENDING_REVIEW')", flags: ['IDX'] },
+      { name: 'tags',             type: 'JSON',          flags: [] },
+      { name: 'rating',           type: 'DECIMAL(3,2)', flags: [] },
+      { name: 'order_count',      type: 'INT',           flags: [] },
+      { name: 'skills_embedding', type: 'JSON',          flags: [] },
+      { name: 'created_at',       type: 'DATETIME',      flags: [] },
+      { name: 'updated_at',       type: 'DATETIME',      flags: [] },
+    ]
+  },
+  {
+    name: 'service_skills', theme: 't-skill', icon: '🔗',
+    x: 800, y: 850,
+    cols: [
+      { name: 'service_id', type: 'BIGINT', flags: ['PK','FK','NN'] },
+      { name: 'skill_id',   type: 'BIGINT', flags: ['PK','FK','NN'] },
+    ]
+  },
+  // ── CONTRACTS & FINANCIALS ────────────────
+  {
+    name: 'contracts', theme: 't-fin', icon: '📜',
+    x: 1560, y: 80,
+    cols: [
+      { name: 'id',           type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'job_id',       type: 'BIGINT',       flags: ['FK','NN'] },
+      { name: 'proposal_id',  type: 'BIGINT',       flags: ['FK','UQ','NN'] },
+      { name: 'client_id',    type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'expert_id',    type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'total_amount', type: 'DECIMAL(15,2)',flags: ['NN'] },
+      { name: 'status',       type: "ENUM('ACTIVE','COMPLETED','DISPUTED','CANCELLED')", flags: [] },
+      { name: 'started_at',   type: 'DATETIME',     flags: [] },
+      { name: 'completed_at', type: 'DATETIME',     flags: [] },
+      { name: 'created_at',   type: 'DATETIME',     flags: [] },
+    ]
+  },
+  {
+    name: 'milestones', theme: 't-fin', icon: '🏁',
+    x: 1560, y: 500,
+    cols: [
+      { name: 'id',               type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'contract_id',      type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'name',             type: 'VARCHAR(255)', flags: ['NN'] },
+      { name: 'description',      type: 'TEXT',          flags: [] },
+      { name: 'amount',           type: 'DECIMAL(15,2)',flags: ['NN'] },
+      { name: 'due_date',         type: 'DATE',          flags: [] },
+      { name: 'status',           type: "ENUM('PENDING','IN_PROGRESS','SUBMITTED','APPROVED','REJECTED')", flags: [] },
+      { name: 'deliverable_url',  type: 'VARCHAR(500)', flags: [] },
+      { name: 'deliverable_note', type: 'TEXT',          flags: [] },
+      { name: 'order_index',      type: 'INT',           flags: [] },
+      { name: 'created_at',       type: 'DATETIME',      flags: [] },
+      { name: 'updated_at',       type: 'DATETIME',      flags: [] },
+    ]
+  },
+  {
+    name: 'escrow_accounts', theme: 't-fin', icon: '💰',
+    x: 1170, y: 700,
+    cols: [
+      { name: 'id',              type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'user_id',         type: 'BIGINT',       flags: ['FK','UQ','NN'] },
+      { name: 'balance',         type: 'DECIMAL(15,2)',flags: [] },
+      { name: 'locked_amount',   type: 'DECIMAL(15,2)',flags: [] },
+      { name: 'total_deposited', type: 'DECIMAL(15,2)',flags: [] },
+      { name: 'total_released',  type: 'DECIMAL(15,2)',flags: [] },
+      { name: 'currency',        type: 'CHAR(3)',       flags: [] },
+      { name: 'updated_at',      type: 'DATETIME',      flags: [] },
+    ]
+  },
+  {
+    name: 'transactions', theme: 't-fin', icon: '💳',
+    x: 1560, y: 900,
+    cols: [
+      { name: 'id',           type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'user_id',      type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'contract_id',  type: 'BIGINT',       flags: ['FK'] },
+      { name: 'milestone_id', type: 'BIGINT',       flags: ['FK'] },
+      { name: 'type',         type: "ENUM('DEPOSIT','ESCROW_LOCK','RELEASE','REFUND','FEE','WITHDRAW')", flags: ['NN','IDX'] },
+      { name: 'amount',       type: 'DECIMAL(15,2)',flags: ['NN'] },
+      { name: 'currency',     type: 'CHAR(3)',       flags: [] },
+      { name: 'status',       type: "ENUM('PENDING','SUCCESS','FAILED')", flags: ['IDX'] },
+      { name: 'ref_code',     type: 'VARCHAR(100)', flags: ['IDX'] },
+      { name: 'note',         type: 'TEXT',          flags: [] },
+      { name: 'created_at',   type: 'DATETIME',      flags: [] },
+    ]
+  },
+  // ── COMMUNICATION ─────────────────────────
+  {
+    name: 'messages', theme: 't-core', icon: '💬',
+    x: 1950, y: 80,
+    cols: [
+      { name: 'id',          type: 'BIGINT',  flags: ['PK','AI','NN'] },
+      { name: 'contract_id', type: 'BIGINT',  flags: ['FK','NN','IDX'] },
+      { name: 'sender_id',   type: 'BIGINT',  flags: ['FK','NN','IDX'] },
+      { name: 'content',     type: 'TEXT',     flags: ['NN'] },
+      { name: 'is_read',     type: 'TINYINT(1)', flags: [] },
+      { name: 'created_at',  type: 'DATETIME', flags: [] },
+    ]
+  },
+  {
+    name: 'notifications', theme: 't-core', icon: '🔔',
+    x: 1950, y: 400,
+    cols: [
+      { name: 'id',           type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'user_id',      type: 'BIGINT',       flags: ['FK','NN','IDX'] },
+      { name: 'type',         type: 'VARCHAR(50)',  flags: ['NN'] },
+      { name: 'title',        type: 'VARCHAR(255)', flags: [] },
+      { name: 'content',      type: 'TEXT',          flags: [] },
+      { name: 'is_read',      type: 'TINYINT(1)',   flags: [] },
+      { name: 'reference_id', type: 'BIGINT',       flags: [] },
+      { name: 'created_at',   type: 'DATETIME',     flags: [] },
+    ]
+  },
+  {
+    name: 'reviews', theme: 't-core', icon: '⭐',
+    x: 1950, y: 680,
+    cols: [
+      { name: 'id',          type: 'BIGINT',  flags: ['PK','AI','NN'] },
+      { name: 'contract_id', type: 'BIGINT',  flags: ['FK','NN'] },
+      { name: 'reviewer_id', type: 'BIGINT',  flags: ['FK','NN','IDX'] },
+      { name: 'reviewee_id', type: 'BIGINT',  flags: ['FK','NN','IDX'] },
+      { name: 'rating',      type: 'TINYINT', flags: ['NN'] },
+      { name: 'comment',     type: 'TEXT',    flags: [] },
+      { name: 'created_at',  type: 'DATETIME',flags: [] },
+    ]
+  },
+  // ── DISPUTES ──────────────────────────────
+  {
+    name: 'disputes', theme: 't-fin', icon: '⚖️',
+    x: 1950, y: 920,
+    cols: [
+      { name: 'id',          type: 'BIGINT',  flags: ['PK','AI','NN'] },
+      { name: 'contract_id', type: 'BIGINT',  flags: ['FK','NN','IDX'] },
+      { name: 'opened_by',   type: 'BIGINT',  flags: ['FK','NN','IDX'] },
+      { name: 'reason',      type: 'TEXT',    flags: ['NN'] },
+      { name: 'status',      type: "ENUM('OPEN','INVESTIGATING','RESOLVED')", flags: ['IDX'] },
+      { name: 'admin_note',  type: 'TEXT',    flags: [] },
+      { name: 'resolution',  type: "ENUM('REFUND_CLIENT','RELEASE_EXPERT','PARTIAL')", flags: [] },
+      { name: 'resolved_at', type: 'DATETIME',flags: [] },
+      { name: 'created_at',  type: 'DATETIME',flags: [] },
+    ]
+  },
+  // ── PORTFOLIO ─────────────────────────────
+  {
+    name: 'portfolio_items', theme: 't-content', icon: '🖼️',
+    x: 80, y: 1000,
+    cols: [
+      { name: 'id',               type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'user_profile_id',  type: 'BIGINT',       flags: ['FK','NN'] },
+      { name: 'title',            type: 'VARCHAR(255)', flags: ['NN'] },
+      { name: 'description',      type: 'TEXT',          flags: [] },
+      { name: 'image_url',        type: 'VARCHAR(500)', flags: [] },
+      { name: 'demo_url',         type: 'VARCHAR(500)', flags: [] },
+      { name: 'display_order',    type: 'INT',           flags: [] },
+      { name: 'created_at',       type: 'TIMESTAMP',    flags: [] },
+      { name: 'updated_at',       type: 'TIMESTAMP',    flags: [] },
+    ]
+  },
+  {
+    name: 'portfolio_item_skills', theme: 't-skill', icon: '🔗',
+    x: 430, y: 1000,
+    cols: [
+      { name: 'portfolio_item_id', type: 'BIGINT', flags: ['PK','FK','NN'] },
+      { name: 'skill_id',          type: 'BIGINT', flags: ['PK','FK','NN'] },
+    ]
+  },
+  // ── SYS ───────────────────────────────────
+  {
+    name: 'ai_usage_logs', theme: 't-sys', icon: '🤖',
+    x: 430, y: 440,
+    cols: [
+      { name: 'id',          type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'user_id',     type: 'BIGINT',       flags: ['IDX'] },
+      { name: 'module',      type: 'VARCHAR(50)',  flags: ['NN','IDX'] },
+      { name: 'tokens_used', type: 'INT',           flags: [] },
+      { name: 'cost_usd',    type: 'DECIMAL(10,6)',flags: [] },
+      { name: 'created_at',  type: 'DATETIME',     flags: [] },
+    ]
+  },
+  {
+    name: 'audit_logs', theme: 't-sys', icon: '📊',
+    x: 80, y: 340,
+    cols: [
+      { name: 'id',          type: 'BIGINT',       flags: ['PK','AI','NN'] },
+      { name: 'user_id',     type: 'BIGINT',       flags: ['IDX'] },
+      { name: 'action',      type: 'VARCHAR(100)', flags: ['NN'] },
+      { name: 'entity_type', type: 'VARCHAR(50)',  flags: ['IDX'] },
+      { name: 'entity_id',   type: 'BIGINT',       flags: ['IDX'] },
+      { name: 'details',     type: 'JSON',          flags: [] },
+      { name: 'ip_address',  type: 'VARCHAR(45)',  flags: [] },
+      { name: 'created_at',  type: 'DATETIME',     flags: [] },
+    ]
+  },
+];
+
+// ════════════════════════════════════════════
+//  FOREIGN KEY RELATIONSHIPS
+// ════════════════════════════════════════════
+const FK_RELATIONS = [
+  // users → many
+  { from: 'user_profiles',         fromCol: 'user_id',          to: 'users',           toCol: 'id',          type: '1:1' },
+  { from: 'refresh_tokens',        fromCol: 'user_id',          to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'user_skills',           fromCol: 'user_id',          to: 'users',           toCol: 'id',          type: 'N:M' },
+  { from: 'user_skills',           fromCol: 'skill_id',         to: 'skills',          toCol: 'id',          type: 'N:M' },
+  { from: 'escrow_accounts',       fromCol: 'user_id',          to: 'users',           toCol: 'id',          type: '1:1' },
+  { from: 'jobs',                  fromCol: 'client_id',        to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'proposals',             fromCol: 'expert_id',        to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'contracts',             fromCol: 'client_id',        to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'contracts',             fromCol: 'expert_id',        to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'services',              fromCol: 'expert_id',        to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'messages',              fromCol: 'sender_id',        to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'notifications',         fromCol: 'user_id',          to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'reviews',               fromCol: 'reviewer_id',      to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'reviews',               fromCol: 'reviewee_id',      to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'disputes',              fromCol: 'opened_by',        to: 'users',           toCol: 'id',          type: '1:N' },
+  { from: 'transactions',          fromCol: 'user_id',          to: 'users',           toCol: 'id',          type: '1:N' },
+  // jobs
+  { from: 'proposals',             fromCol: 'job_id',           to: 'jobs',            toCol: 'id',          type: '1:N' },
+  { from: 'job_skills',            fromCol: 'job_id',           to: 'jobs',            toCol: 'id',          type: 'N:M' },
+  { from: 'job_skills',            fromCol: 'skill_id',         to: 'skills',          toCol: 'id',          type: 'N:M' },
+  { from: 'contracts',             fromCol: 'job_id',           to: 'jobs',            toCol: 'id',          type: '1:N' },
+  // proposals
+  { from: 'contracts',             fromCol: 'proposal_id',      to: 'proposals',       toCol: 'id',          type: '1:1' },
+  // contracts
+  { from: 'milestones',            fromCol: 'contract_id',      to: 'contracts',       toCol: 'id',          type: '1:N' },
+  { from: 'messages',              fromCol: 'contract_id',      to: 'contracts',       toCol: 'id',          type: '1:N' },
+  { from: 'reviews',               fromCol: 'contract_id',      to: 'contracts',       toCol: 'id',          type: '1:N' },
+  { from: 'disputes',              fromCol: 'contract_id',      to: 'contracts',       toCol: 'id',          type: '1:N' },
+  { from: 'transactions',          fromCol: 'contract_id',      to: 'contracts',       toCol: 'id',          type: '1:N' },
+  { from: 'transactions',          fromCol: 'milestone_id',     to: 'milestones',      toCol: 'id',          type: '1:N' },
+  // services & skills
+  { from: 'service_skills',        fromCol: 'service_id',       to: 'services',        toCol: 'id',          type: 'N:M' },
+  { from: 'service_skills',        fromCol: 'skill_id',         to: 'skills',          toCol: 'id',          type: 'N:M' },
+  // portfolio
+  { from: 'portfolio_items',       fromCol: 'user_profile_id',  to: 'user_profiles',   toCol: 'id',          type: '1:N' },
+  { from: 'portfolio_item_skills', fromCol: 'portfolio_item_id',to: 'portfolio_items', toCol: 'id',          type: 'N:M' },
+  { from: 'portfolio_item_skills', fromCol: 'skill_id',         to: 'skills',          toCol: 'id',          type: 'N:M' },
+];
+
+// ════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════
+const canvas = document.getElementById('erd-canvas');
+const svg    = document.getElementById('svg-layer');
+const tableEls = {};  // name → DOM element
+const tablePos = {};  // name → {x, y, w, h}
+
+const COL_H = 26, HEADER_H = 38;
+
+function colY(tableIndex, colIndex) {
+  const t = SCHEMA[tableIndex];
+  return t.y + HEADER_H + colIndex * COL_H + COL_H / 2;
+}
+
+function renderBadge(f) {
+  const map = {
+    PK:  '<span class="col-badge pk-badge">PK</span>',
+    FK:  '<span class="col-badge fk-badge">FK</span>',
+    UQ:  '<span class="col-badge uk-badge">UQ</span>',
+    IDX: '<span class="col-badge idx-badge">IDX</span>',
+    AI:  '<span class="col-badge ai-badge">AI</span>',
+    NN:  '<span class="col-badge nn-badge">NN</span>',
+  };
+  return map[f] || '';
+}
+
+function renderTypeStr(type) {
+  if (type.startsWith('ENUM(')) {
+    const vals = type.slice(5, -1);
+    return `<span class="enum-val">ENUM</span><span style="color:#555">(${vals.replace(/'/g,'').slice(0,20)}…)</span>`;
+  }
+  return type;
+}
+
+SCHEMA.forEach((tbl, ti) => {
+  const el = document.createElement('div');
+  el.className = `table-card ${tbl.theme}`;
+  el.id = `tbl-${tbl.name}`;
+  el.style.left = tbl.x + 'px';
+  el.style.top  = tbl.y + 'px';
+
+  const colsHTML = tbl.cols.map(c => {
+    const isPK = c.flags.includes('PK');
+    const isFK = c.flags.includes('FK');
+    const badges = c.flags.map(renderBadge).join('');
+    return `<li class="col-row">
+      <div class="col-badges">${badges}</div>
+      <span class="col-name ${isPK?'is-pk':isFK?'is-fk':''}">${c.name}</span>
+      <span class="col-type">${renderTypeStr(c.type)}</span>
+    </li>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="table-header">
+      <span class="table-icon">${tbl.icon}</span>
+      <span class="table-name">${tbl.name}</span>
+      <span class="table-engine">InnoDB</span>
+    </div>
+    <ul class="col-list">${colsHTML}</ul>
+  `;
+
+  canvas.appendChild(el);
+  tableEls[tbl.name] = el;
+
+  // Store position
+  const w = 290;
+  const h = HEADER_H + tbl.cols.length * COL_H;
+  tablePos[tbl.name] = { x: tbl.x, y: tbl.y, w, h };
+});
+
+// ── Draw FK lines ─────────────────────────
+function midX(name, side) {
+  const p = tablePos[name];
+  return side === 'left' ? p.x : p.x + p.w;
+}
+function rowCenterY(name, colName) {
+  const ti = SCHEMA.findIndex(t => t.name === name);
+  if (ti < 0) return 0;
+  const ci = SCHEMA[ti].cols.findIndex(c => c.name === colName);
+  if (ci < 0) return SCHEMA[ti].y + HEADER_H / 2;
+  return SCHEMA[ti].y + HEADER_H + ci * COL_H + COL_H / 2;
+}
+
+function drawLines() {
+  svg.innerHTML = '';
+  // defs
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  // arrow markers
+  ['fk','1to1','nm'].forEach(id => {
+    const colors = { fk:'#d2a8ff', '1to1':'#56d364', nm:'#e3b341' };
+    const m = document.createElementNS('http://www.w3.org/2000/svg','marker');
+    m.setAttribute('id', `arrow-${id}`);
+    m.setAttribute('viewBox','0 0 10 10');
+    m.setAttribute('refX','8'); m.setAttribute('refY','5');
+    m.setAttribute('markerWidth','6'); m.setAttribute('markerHeight','6');
+    m.setAttribute('orient','auto-start-reverse');
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','M 0 0 L 10 5 L 0 10 z');
+    path.setAttribute('fill', colors[id]);
+    m.appendChild(path);
+    defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+
+  FK_RELATIONS.forEach(rel => {
+    const fp = tablePos[rel.from];
+    const tp = tablePos[rel.to];
+    if (!fp || !tp) return;
+
+    const fromY = rowCenterY(rel.from, rel.fromCol);
+    const toY   = rowCenterY(rel.to,   rel.toCol);
+
+    // decide left/right
+    const fCenterX = fp.x + fp.w / 2;
+    const tCenterX = tp.x + tp.w / 2;
+    let x1, x2;
+    if (fCenterX < tCenterX) {
+      x1 = fp.x + fp.w; x2 = tp.x;
+    } else {
+      x1 = fp.x; x2 = tp.x + tp.w;
+    }
+
+    const dx = Math.abs(x2 - x1);
+    const ctrl = Math.min(80, dx * 0.4);
+
+    const cx1 = x1 + (x1 < x2 ? ctrl : -ctrl);
+    const cx2 = x2 + (x1 < x2 ? -ctrl : ctrl);
+
+    const typeMap = { '1:1':'1to1', '1:N':'fk', 'N:M':'nm' };
+    const color = { '1:1':'#56d364', '1:N':'#d2a8ff', 'N:M':'#e3b341' }[rel.type];
+    const markerId = typeMap[rel.type];
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M ${x1} ${fromY} C ${cx1} ${fromY}, ${cx2} ${toY}, ${x2} ${toY}`);
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width','1.5');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke-opacity','0.55');
+    path.setAttribute('marker-end', `url(#arrow-${markerId})`);
+    path.setAttribute('class','fk-line');
+    svg.appendChild(path);
+  });
+}
+
+// ── Update SVG size ───────────────────────
+function updateSVGSize() {
+  let maxX = 0, maxY = 0;
+  Object.values(tablePos).forEach(p => {
+    maxX = Math.max(maxX, p.x + p.w + 80);
+    maxY = Math.max(maxY, p.y + p.h + 80);
+  });
+  canvas.style.minWidth  = maxX + 'px';
+  canvas.style.minHeight = maxY + 'px';
+  svg.setAttribute('width',  maxX);
+  svg.setAttribute('height', maxY);
+}
+
+// ════════════════════════════════════════════
+//  DRAG TABLES
+// ════════════════════════════════════════════
+let dragging = null, dragOffX = 0, dragOffY = 0;
+Object.entries(tableEls).forEach(([name, el]) => {
+  el.querySelector('.table-header').addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    dragging = name;
+    const rect = el.getBoundingClientRect();
+    dragOffX = e.clientX - rect.left;
+    dragOffY = e.clientY - rect.top;
+    el.style.zIndex = 50;
+    e.preventDefault();
+  });
+});
+
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const wrap = document.getElementById('canvas-wrap');
+  const wRect = wrap.getBoundingClientRect();
+  const s = scale;
+  const nx = (e.clientX - wRect.left + wrap.scrollLeft) / s - dragOffX;
+  const ny = (e.clientY - wRect.top  + wrap.scrollTop)  / s - dragOffY;
+  const el = tableEls[dragging];
+  el.style.left = nx + 'px';
+  el.style.top  = ny + 'px';
+  tablePos[dragging].x = nx;
+  tablePos[dragging].y = ny;
+  drawLines();
+});
+
+document.addEventListener('mouseup', () => {
+  if (dragging) {
+    tableEls[dragging].style.zIndex = 10;
+    dragging = null;
+  }
+});
+
+// ════════════════════════════════════════════
+//  PAN CANVAS
+// ════════════════════════════════════════════
+const wrap = document.getElementById('canvas-wrap');
+let panning = false, panX = 0, panY = 0;
+wrap.addEventListener('mousedown', e => {
+  if (e.target === wrap || e.target === canvas || e.target === svg) {
+    panning = true;
+    panX = e.clientX + wrap.scrollLeft;
+    panY = e.clientY + wrap.scrollTop;
+    wrap.classList.add('dragging');
+  }
+});
+document.addEventListener('mousemove', e => {
+  if (!panning) return;
+  wrap.scrollLeft = panX - e.clientX;
+  wrap.scrollTop  = panY - e.clientY;
+});
+document.addEventListener('mouseup', () => {
+  panning = false;
+  wrap.classList.remove('dragging');
+});
+
+// ════════════════════════════════════════════
+//  ZOOM
+// ════════════════════════════════════════════
+let scale = 0.72;
+function applyZoom() {
+  canvas.style.transform = `scale(${scale})`;
+  document.getElementById('zoom-info').textContent = Math.round(scale * 100) + '%';
+}
+function changeZoom(delta) {
+  scale = Math.min(2, Math.max(0.2, scale + delta));
+  applyZoom();
+}
+function resetZoom() { scale = 1; applyZoom(); }
+function fitAll() { scale = 0.55; applyZoom(); }
+
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  changeZoom(e.deltaY < 0 ? 0.08 : -0.08);
+}, { passive: false });
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+setTimeout(() => {
+  updateSVGSize();
+  drawLines();
+  applyZoom();
+}, 50);
+</script>
+</body>
+</html>
