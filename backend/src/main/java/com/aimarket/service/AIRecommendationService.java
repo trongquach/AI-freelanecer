@@ -94,6 +94,11 @@ public class AIRecommendationService {
 
         // 4. Load all expert profiles with embeddings
         List<UserProfile> expertProfiles = userProfileRepository.findAllExpertsWithEmbedding();
+        
+        if (expertProfiles.isEmpty()) {
+            log.info("No experts with embeddings found, falling back to skill-based matching");
+            return fallbackBySkills(job);
+        }
 
         // 5. Score & rank
         return expertProfiles.stream()
