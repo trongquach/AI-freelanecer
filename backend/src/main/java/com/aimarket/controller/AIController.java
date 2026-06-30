@@ -31,10 +31,7 @@ public class AIController {
     ) {}
 
     public record GenerateServiceRequest(
-        @NotBlank String title,
-        List<String> keywords,
-        int deliveryDays,
-        double price
+        @NotBlank String prompt
     ) {}
 
     // ─── Job AI Enhance ───────────────────────────────────────────────────────
@@ -57,9 +54,7 @@ public class AIController {
     public AIServiceGeneratorService.ServiceGeneratedDTO generateService(
             @RequestBody GenerateServiceRequest req,
             @AuthenticationPrincipal CustomUserDetails user) {
-        return serviceGenerator.generate(req.title(),
-                req.keywords() != null ? req.keywords() : List.of(),
-                req.deliveryDays(), req.price());
+        return serviceGenerator.generate(req.prompt());
     }
 
     // ─── Expert Recommendation ────────────────────────────────────────────────

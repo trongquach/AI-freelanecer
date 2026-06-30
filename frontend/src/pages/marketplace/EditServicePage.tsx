@@ -83,13 +83,21 @@ export default function EditServicePage() {
     },
   })
 
+  const [aiPrompt, setAiPrompt] = useState('')
+
   const generateMutation = useMutation({
-    mutationFn: () => aiApi.generateServiceDescription(titleValue, skills.split(',').map(s => s.trim()).filter(Boolean)),
-    onSuccess: (generatedDesc) => {
-      setValue('description', generatedDesc, { shouldValidate: true, shouldDirty: true });
-      toast.success('AI generated a service description for you!');
+    mutationFn: () => aiApi.generateServiceDescription(aiPrompt),
+    onSuccess: (data) => {
+      setValue('title', data.title, { shouldValidate: true, shouldDirty: true });
+      setValue('description', data.description, { shouldValidate: true, shouldDirty: true });
+      setValue('price', data.suggestedPrice || 50, { shouldValidate: true, shouldDirty: true });
+      setValue('deliveryDays', data.suggestedDeliveryDays || 3, { shouldValidate: true, shouldDirty: true });
+      if (data.suggestedTags && data.suggestedTags.length > 0) {
+        setSkills(data.suggestedTags.join(', '));
+      }
+      toast.success('AI magic complete! Please review the generated service.');
     },
-    onError: () => toast.error('AI encountered an error generating description, please try again.'),
+    onError: () => toast.error('AI encountered an error, please try again.'),
   })
 
   if (isLoadingService) {
@@ -103,13 +111,46 @@ export default function EditServicePage() {
       </button>
 
       <div className="card p-8">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center">
             <Box className="w-5 h-5 text-slate-900" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900">Edit Service</h1>
             <p className="text-sm text-slate-400">Update your service package</p>
+          </div>
+        </div>
+
+        {/* AI Auto Generate Box */}
+        <div className="bg-primary-50/50 border border-primary-100 rounded-xl p-5 mb-8">
+          <div className="flex items-start gap-3">
+            <div className="bg-primary-500/10 p-2 rounded-lg text-primary-500 mt-0.5">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-slate-900 mb-1">✨ AI Magic Create</h3>
+              <p className="text-xs text-slate-500 mb-3">
+                Just type your idea or keywords. AI will auto-fill the Title, Description, Price, Delivery Time, and Tags for you!
+              </p>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                  placeholder="e.g. Develop a Telegram Chatbot using Python" 
+                  className="input flex-1 text-sm bg-white" 
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (aiPrompt) generateMutation.mutate(); } }}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => generateMutation.mutate()}
+                  disabled={generateMutation.isPending || !aiPrompt}
+                  className="btn-gradient px-4 py-2 text-sm disabled:opacity-50"
+                >
+                  {generateMutation.isPending ? <LoadingSpinner size="sm" /> : 'Generate'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -132,15 +173,6 @@ export default function EditServicePage() {
           <div>
             <div className="flex justify-between items-center mb-1.5">
               <label className="block text-sm font-medium text-slate-600">Detailed Description *</label>
-              <button 
-                type="button" 
-                onClick={() => generateMutation.mutate()}
-                disabled={generateMutation.isPending || !titleValue}
-                className="text-xs font-medium text-primary-400 hover:text-primary-300 flex items-center gap-1 bg-primary-500/10 px-2 py-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {generateMutation.isPending ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3 h-3" />}
-                AI Generate
-              </button>
             </div>
             <textarea {...register('description')} rows={8}
               className={`input resize-none ${errors.description ? 'input-error' : ''}`}
