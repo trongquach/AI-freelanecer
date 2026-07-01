@@ -87,12 +87,12 @@ export default function ServiceDetailPage() {
 
             {/* Expert info */}
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-200">
-              <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center text-slate-900 font-bold text-lg">
+              <Link to={`/profile/${service.expert.id}`} className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center text-slate-900 font-bold text-lg hover:ring-2 hover:ring-primary-500 transition-all">
                 {service.expert.fullName?.[0] ?? 'E'}
-              </div>
+              </Link>
               <div>
-                <p className="font-semibold text-slate-900">{service.expert.fullName}</p>
-                <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Link to={`/profile/${service.expert.id}`} className="font-semibold text-slate-900 hover:text-primary-600 hover:underline">{service.expert.fullName}</Link>
+                <div className="flex items-center gap-2 text-sm text-slate-400 mt-0.5">
                   <span className="flex items-center gap-1 text-warning-500">
                     <Star className="w-3.5 h-3.5 fill-warning-500" /> {(service.expert.rating ?? 0).toFixed(1)}
                   </span>

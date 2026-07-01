@@ -330,11 +330,11 @@ export default function ContractPage() {
           
           <div>
             <p className="text-xs text-slate-500">Client</p>
-            <p className="font-medium text-slate-900">{contract.clientName || 'Client'}</p>
+            <Link to={`/profile/${contract.clientId}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{contract.clientName || 'Client'}</Link>
           </div>
           <div>
             <p className="text-xs text-slate-500">Expert</p>
-            <p className="font-medium text-slate-900">{contract.expertName || 'Expert'}</p>
+            <Link to={`/profile/${contract.expertId}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{contract.expertName || 'Expert'}</Link>
           </div>
           
           <div className="pt-4 border-t border-slate-300 space-y-2">

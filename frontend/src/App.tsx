@@ -41,6 +41,7 @@ const MyServicesPage   = lazy(() => import('@/pages/marketplace/MyServicesPage')
 const ContractPage     = lazy(() => import('@/pages/contracts/ContractPage'))
 const WalletPage       = lazy(() => import('@/pages/wallet/WalletPage'))
 const ProfilePage      = lazy(() => import('@/pages/profile/ProfilePage'))
+const PublicProfilePage= lazy(() => import('@/pages/profile/PublicProfilePage'))
 const NotFoundPage     = lazy(() => import('@/pages/NotFoundPage'))
 const AccessDeniedPage = lazy(() => import('@/pages/AccessDeniedPage'))
 
@@ -85,6 +86,7 @@ export default function App() {
               <Route path="/jobs/:id"        element={<JobDetailPage />} />
               <Route path="/marketplace"     element={<MarketplacePage />} />
               <Route path="/marketplace/:id" element={<ServiceDetailPage />} />
+              <Route path="/profile/:id"     element={<PublicProfilePage />} />
             </Route>
 
             {/* Authenticated — any role */}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -155,9 +155,11 @@ export default function ProposalListPage() {
               <div className="flex-1 space-y-4">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
-                    <img src={proposal.expertAvatar || 'https://ui-avatars.com/api/?name=' + proposal.expertName} alt={proposal.expertName} className="w-12 h-12 rounded-full" />
+                    <Link to={`/profile/${proposal.expertId}`} className="shrink-0 hover:ring-2 hover:ring-primary-500 rounded-full transition-all">
+                      <img src={proposal.expertAvatar || 'https://ui-avatars.com/api/?name=' + proposal.expertName} alt={proposal.expertName} className="w-12 h-12 rounded-full object-cover" />
+                    </Link>
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900">{proposal.expertName}</h3>
+                      <Link to={`/profile/${proposal.expertId}`} className="text-lg font-semibold text-slate-900 hover:text-primary-600 hover:underline">{proposal.expertName}</Link>
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         <span>⭐ {proposal.expertRating?.toFixed(1) || '0.0'}</span>
                         <span>•</span>

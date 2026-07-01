@@ -135,8 +135,8 @@ export default function JobDetailPage() {
             )}
             <div>
               <p className="text-xs text-slate-400 mb-1">Posted by</p>
-              <p className="font-medium text-slate-900">{job.client.fullName ?? 'Client anonymous'}</p>
-              {job.client.rating > 0 && <p className="text-xs text-warning-500">★ {job.client.rating.toFixed(1)}</p>}
+              <Link to={`/profile/${job.client.id}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{job.client.fullName ?? 'Client anonymous'}</Link>
+              {job.client.rating > 0 && <p className="text-xs text-warning-500 mt-1">★ {job.client.rating.toFixed(1)}</p>}
             </div>
           </div>
 
@@ -212,8 +212,8 @@ function ExpertRecommendations({ jobId }: { jobId: number }) {
         <h3 className="font-bold text-slate-900">AI Expert Proposals</h3>
       </div>
       <div className="space-y-4">
-        {experts.map(expert => (
-          <div key={expert.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-300">
+        {experts.map((expert: any) => (
+          <div key={expert.expertId} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-300">
             <div className="flex items-center gap-3">
               <img src={expert.avatarUrl || `https://ui-avatars.com/api/?name=${expert.fullName}`} alt={expert.fullName} className="w-10 h-10 rounded-full" />
               <div>
@@ -225,7 +225,7 @@ function ExpertRecommendations({ jobId }: { jobId: number }) {
                 </div>
               </div>
             </div>
-            <Link to={`/experts/${expert.id}`} className="btn-secondary btn-sm">View Profile</Link>
+            <Link to={`/profile/${expert.expertId}`} className="btn-secondary btn-sm">View Profile</Link>
           </div>
         ))}
       </div>
