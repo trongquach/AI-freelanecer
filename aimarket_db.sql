@@ -765,7 +765,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin@test.com','$2b$12$3.8/abw6Rb5hmVFRdD.ruuwXv6Is0Xub5AcF.Lk28fCGaCMQdAPN6','ADMIN','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:59:28'),(2,'client@test.com','$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy','CLIENT','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:48:07'),(3,'expert@test.com','$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy','EXPERT','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:48:07');
+INSERT INTO `users` VALUES (1,'admin@test.com','Password@123','ADMIN','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:59:28'),(2,'client@test.com','Password@123','CLIENT','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:48:07'),(3,'expert@test.com','Password@123','EXPERT','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:48:07');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

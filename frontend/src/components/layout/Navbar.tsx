@@ -22,7 +22,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to={isAuthenticated ? dashboardLink : "/"} className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-xl bg-gradient-primary flex items-center justify-center shadow-sm">
               <Sparkles className="w-4 h-4 text-white" />
             </div>

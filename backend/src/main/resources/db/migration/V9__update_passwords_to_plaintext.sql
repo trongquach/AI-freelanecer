@@ -3,4 +3,4 @@
 -- Update all users to use plain text 'password' for easier local development
 -- ============================================================
 
-UPDATE users SET password_hash = 'password';
+UPDATE users SET password_hash = 'Password@123';
