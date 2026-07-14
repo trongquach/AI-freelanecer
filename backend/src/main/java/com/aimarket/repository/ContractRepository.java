@@ -25,6 +25,11 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
         WHERE c.id = :id
         """)
     Optional<Contract> findByIdWithDetails(@Param("id") Long id);
+    @Query("SELECT COUNT(c) FROM Contract c WHERE c.expert.id = :expertId AND c.status = 'COMPLETED'")
+    long countCompletedByExpertId(@Param("expertId") Long expertId);
+
+    @Query("SELECT COUNT(c) FROM Contract c WHERE c.expert.id = :expertId AND c.status IN ('COMPLETED', 'CANCELLED', 'DISPUTED')")
+    long countFinishedByExpertId(@Param("expertId") Long expertId);
 
     Page<Contract> findByClientIdOrderByCreatedAtDesc(Long clientId, Pageable pageable);
     Page<Contract> findByExpertIdOrderByCreatedAtDesc(Long expertId, Pageable pageable);

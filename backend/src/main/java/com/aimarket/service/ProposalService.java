@@ -25,6 +25,7 @@ public class ProposalService {
     private final ContractRepository contractRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final EscrowService escrowService;
+    private final NotificationService notificationService;
 
     // ─── Submit Proposal ─────────────────────────────────
     @Transactional
@@ -118,6 +119,9 @@ public class ProposalService {
         
         escrowService.lockFunds(clientId, contract.getId(), proposal.getPrice());
         log.info("Contract created: {} for job: {}", contract.getId(), job.getId());
+
+        notificationService.send(proposal.getExpert().getId(), "CONTRACT_CREATED", "Hợp đồng mới", 
+                "Khách hàng " + job.getClient().getEmail() + " đã thuê bạn cho Job: " + job.getTitle(), contract.getId());
 
         return toResponse(proposal);
     }

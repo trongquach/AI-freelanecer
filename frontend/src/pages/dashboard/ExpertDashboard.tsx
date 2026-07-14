@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { ShoppingBag, Plus, Star, DollarSign, TrendingUp, Clock } from 'lucide-react'
+import { ShoppingBag, Plus, Star, DollarSign, TrendingUp, Clock, CheckCircle } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { serviceApi } from '@/api/jobServiceApi'
 import { contractApi } from '@/api/contractApi'
@@ -29,7 +29,7 @@ export default function ExpertDashboard() {
   const stats = [
     { label: 'Services', value: myServices?.totalElements ?? 0, icon: ShoppingBag, color: 'text-primary-400', link: '/dashboard/expert' },
     { label: 'Active', value: myServices?.content?.filter((s: any) => s.status === 'ACTIVE').length ?? 0, icon: TrendingUp, color: 'text-success-500', link: '/dashboard/expert' },
-    { label: 'Pending Approval', value: myServices?.content?.filter((s: any) => s.status === 'PENDING_REVIEW').length ?? 0, icon: Clock, color: 'text-warning-500', link: '/dashboard/expert' },
+    { label: 'Completed Jobs', value: profile?.jobsDone ?? 0, icon: CheckCircle, color: 'text-success-500', link: '/dashboard/expert' },
     { label: 'Rating', value: profile?.rating && profile.totalReviews > 0 ? profile.rating.toFixed(1) : '0', icon: Star, color: 'text-warning-400', link: '/profile' },
   ]
 

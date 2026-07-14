@@ -37,8 +37,8 @@ public class NotificationService {
 
         // Push via WebSocket
         try {
-            messagingTemplate.convertAndSendToUser(
-                    String.valueOf(userId), "/queue/notifications",
+            messagingTemplate.convertAndSend(
+                    "/topic/notifications/" + userId,
                     Map.of("type", type, "title", title, "content", content, "referenceId", referenceId)
             );
         } catch (Exception e) {

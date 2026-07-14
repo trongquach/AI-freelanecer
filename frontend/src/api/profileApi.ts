@@ -36,6 +36,7 @@ export interface UserProfileResponse {
   hourlyRate: number | null
   rating: number
   totalReviews: number
+  jobsDone: number
   completionRate: number
   isAvailable: boolean
   createdAt: string

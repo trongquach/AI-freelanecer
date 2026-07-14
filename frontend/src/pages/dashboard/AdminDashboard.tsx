@@ -1,11 +1,13 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   Users, Briefcase, DollarSign, ShoppingBag, TrendingUp, Shield,
-  CheckCircle, AlertTriangle, BarChart3, Clock, Activity
+  CheckCircle, AlertTriangle, BarChart3, Clock, Activity, Megaphone, Send
 } from 'lucide-react'
 import { adminApi, PlatformStats } from '@/api/adminApi'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
+import { toast } from 'sonner'
 
 function StatCard({ label, value, icon: Icon, color, bg, suffix = '' }: {
   label: string; value: string | number; icon: any; color: string; bg: string; suffix?: string
@@ -41,6 +43,30 @@ export default function AdminDashboard() {
     queryFn: () => adminApi.getStats(),
   })
 
+  const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastContent, setBroadcastContent] = useState('');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+
+  const handleBroadcast = async () => {
+    if (!broadcastTitle || !broadcastContent) {
+      toast.error('Title and content are required');
+      return;
+    }
+    try {
+      setIsBroadcasting(true);
+      await adminApi.broadcastNotification(broadcastTitle, broadcastContent);
+      toast.success('Broadcast sent successfully to all users!');
+      setIsBroadcastOpen(false);
+      setBroadcastTitle('');
+      setBroadcastContent('');
+    } catch (e) {
+      toast.error('Failed to send broadcast');
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
+
   if (isLoading) return <div className="flex justify-center py-24"><LoadingSpinner size="lg" /></div>
 
   const successRate = stats
@@ -49,15 +75,23 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
-          <Shield className="w-6 h-6 text-primary-500" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center">
+            <Shield className="w-6 h-6 text-primary-500" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
+            <p className="text-sm text-slate-400">Platform overview & management tools</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-          <p className="text-sm text-slate-400">Platform overview & management tools</p>
-        </div>
+        <button 
+          onClick={() => setIsBroadcastOpen(true)}
+          className="btn-primary btn-md shrink-0 flex items-center gap-2"
+        >
+          <Megaphone className="w-4 h-4" />
+          Broadcast Message
+        </button>
       </div>
 
       {/* Stats Grid */}
@@ -170,6 +204,60 @@ export default function AdminDashboard() {
           />
         </div>
       </div>
+
+      {isBroadcastOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-fuchsia-500" />
+              Send System Broadcast
+            </h2>
+            <p className="text-sm text-slate-500 mb-4">
+              This message will be sent in real-time to all users in the system.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={broadcastTitle}
+                  onChange={e => setBroadcastTitle(e.target.value)}
+                  className="input-field"
+                  placeholder="e.g., System Maintenance"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
+                <textarea
+                  value={broadcastContent}
+                  onChange={e => setBroadcastContent(e.target.value)}
+                  className="input-field min-h-[100px]"
+                  placeholder="Type your message here..."
+                ></textarea>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setIsBroadcastOpen(false)}
+                  className="btn-secondary btn-md"
+                  disabled={isBroadcasting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBroadcast}
+                  className="btn-primary btn-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isBroadcasting || !broadcastTitle.trim() || !broadcastContent.trim()}
+                >
+                  {isBroadcasting ? <LoadingSpinner size="sm" /> : <Send className="w-4 h-4" />}
+                  Send Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

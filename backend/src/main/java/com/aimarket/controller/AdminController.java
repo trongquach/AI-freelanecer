@@ -40,6 +40,13 @@ public class AdminController {
         return Map.of("message", "User unbanned successfully");
     }
 
+    @Operation(summary = "Broadcast a notification to all users")
+    @PostMapping("/notifications/broadcast")
+    public Map<String, String> broadcastNotification(@RequestBody Map<String, String> payload) {
+        adminService.broadcastNotification(payload.get("title"), payload.get("content"));
+        return Map.of("message", "Broadcast sent successfully");
+    }
+
     @Operation(summary = "Activate a service listing")
     @PostMapping("/services/{id}/activate")
     public Map<String, String> activateService(@PathVariable Long id) {

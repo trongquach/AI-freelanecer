@@ -42,6 +42,7 @@ const ContractPage     = lazy(() => import('@/pages/contracts/ContractPage'))
 const WalletPage       = lazy(() => import('@/pages/wallet/WalletPage'))
 const ProfilePage      = lazy(() => import('@/pages/profile/ProfilePage'))
 const PublicProfilePage= lazy(() => import('@/pages/profile/PublicProfilePage'))
+const NotificationsPage= lazy(() => import('@/pages/notifications/NotificationsPage'))
 const NotFoundPage     = lazy(() => import('@/pages/NotFoundPage'))
 const AccessDeniedPage = lazy(() => import('@/pages/AccessDeniedPage'))
 
@@ -95,6 +96,7 @@ export default function App() {
                 <Route path="/profile"               element={<ProfilePage />} />
                 <Route path="/wallet"                element={<WalletPage />} />
                 <Route path="/contracts/:id"         element={<ContractPage />} />
+                <Route path="/notifications"         element={<NotificationsPage />} />
               </Route>
             </Route>
 

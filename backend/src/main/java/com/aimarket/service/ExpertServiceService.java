@@ -40,8 +40,9 @@ public class ExpertServiceService {
     private final com.aimarket.repository.JobRepository jobRepository;
     private final com.aimarket.repository.ProposalRepository proposalRepository;
     private final com.aimarket.repository.ContractRepository contractRepository;
-    private final com.aimarket.service.EscrowService escrowService;
-    private final com.aimarket.service.ContractService contractService;
+    private final EscrowService escrowService;
+    private final ContractService contractService;
+    private final NotificationService notificationService;
 
     // ─── Create ───────────────────────────────────────────
     @Transactional
@@ -213,6 +214,9 @@ public class ExpertServiceService {
 
         // 5. Lock funds
         escrowService.lockFunds(clientId, contract.getId(), svc.getPrice());
+
+        notificationService.send(svc.getExpert().getId(), "CONTRACT_CREATED", "Có người mua Service", 
+                "Khách hàng " + client.getEmail() + " đã mua Service: " + svc.getTitle(), contract.getId());
 
         return contractService.toResponse(contract);
     }

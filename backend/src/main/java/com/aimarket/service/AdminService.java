@@ -53,6 +53,13 @@ public class AdminService {
     }
 
     @Transactional
+    public void broadcastNotification(String title, String content) {
+        userRepository.findAll().forEach(user -> {
+            notificationService.send(user.getId(), "ADMIN_BROADCAST", title, content, null);
+        });
+    }
+
+    @Transactional
     public void banUser(Long userId) {
         userRepository.findById(userId).ifPresent(u -> {
             u.setStatus(com.aimarket.entity.enums.UserStatus.BANNED);

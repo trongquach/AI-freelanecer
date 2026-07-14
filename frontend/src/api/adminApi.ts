@@ -40,6 +40,10 @@ export const adminApi = {
     return res.data;
   },
 
+  broadcastNotification: async (title: string, content: string): Promise<void> => {
+    await axiosInstance.post('/admin/notifications/broadcast', { title, content });
+  },
+
   // Users
   getUsers: async (page = 0, size = 20): Promise<PageResponse<UserDto>> => {
     const res = await axiosInstance.get('/admin/users', { params: { page, size } });

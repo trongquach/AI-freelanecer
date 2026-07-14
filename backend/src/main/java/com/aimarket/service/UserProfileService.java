@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import com.aimarket.entity.PortfolioItem;
-
+import com.aimarket.repository.ContractRepository;
+import java.math.RoundingMode;
+import java.math.BigDecimal;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,6 +33,7 @@ public class UserProfileService {
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
     private final AIRecommendationService aiRecommendationService;
+    private final ContractRepository contractRepository;
 
     // ─── Get my profile ───────────────────────────────────
     @Transactional(readOnly = true)
@@ -172,6 +175,18 @@ public class UserProfileService {
 
     // ─── Mapper ───────────────────────────────────────────
     public UserProfileResponse toResponse(UserProfile p) {
+        Integer jobsDone = 0;
+        BigDecimal completionRate = p.getCompletionRate();
+        
+        if (p.getUser().getRole() == com.aimarket.entity.enums.UserRole.EXPERT) {
+            long completed = contractRepository.countCompletedByExpertId(p.getUser().getId());
+            long finished = contractRepository.countFinishedByExpertId(p.getUser().getId());
+            jobsDone = (int) completed;
+            if (finished > 0) {
+                completionRate = BigDecimal.valueOf(completed * 100.0 / finished).setScale(2, RoundingMode.HALF_UP);
+            }
+        }
+
         return new UserProfileResponse(
                 p.getUser().getId(),
                 p.getUser().getEmail(),
@@ -184,7 +199,8 @@ public class UserProfileService {
                 p.getHourlyRate(),
                 p.getRating(),
                 p.getTotalReviews(),
-                p.getCompletionRate(),
+                jobsDone,
+                completionRate,
                 p.getIsAvailable(),
                 p.getCreatedAt(),
                 p.getUpdatedAt(),

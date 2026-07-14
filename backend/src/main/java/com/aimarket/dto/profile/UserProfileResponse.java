@@ -17,6 +17,7 @@ public record UserProfileResponse(
         BigDecimal hourlyRate,
         BigDecimal rating,
         Integer totalReviews,
+        Integer jobsDone,
         BigDecimal completionRate,
         Boolean isAvailable,
         LocalDateTime createdAt,

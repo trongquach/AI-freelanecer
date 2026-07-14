@@ -15,16 +15,22 @@ export default function ClientDashboard() {
     queryFn: () => jobApi.myJobs(0, 6),
   })
 
+  // Fetch all jobs for accurate statistics
+  const { data: allJobs } = useQuery({
+    queryKey: ['my-jobs-stats'],
+    queryFn: () => jobApi.myJobs(0, 1000),
+  })
+
   const { data: myContracts, isLoading: isLoadingContracts } = useQuery({
     queryKey: ['my-contracts'],
     queryFn: () => contractApi.getMyContracts(0, 5),
   })
 
   const stats = [
-    { label: 'Total jobs posted',    value: myJobs?.totalElements ?? 0, icon: Briefcase,   color: 'text-primary-400', link: '/dashboard/client' },
-    { label: 'Recruiting',         value: myJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500', link: '/dashboard/client' },
-    { label: 'In progress',    value: myJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400', link: '/dashboard/client' },
-    { label: 'Completed',        value: myJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500', link: '/dashboard/client' },
+    { label: 'Total jobs posted',    value: allJobs?.totalElements ?? 0, icon: Briefcase,   color: 'text-primary-400', link: '/dashboard/client' },
+    { label: 'Recruiting',         value: allJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500', link: '/dashboard/client' },
+    { label: 'In progress',    value: allJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400', link: '/dashboard/client' },
+    { label: 'Completed',        value: allJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500', link: '/dashboard/client' },
   ]
 
   return (

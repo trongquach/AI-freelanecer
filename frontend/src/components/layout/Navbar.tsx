@@ -3,14 +3,17 @@ import { Sparkles, LogOut, LayoutDashboard, Briefcase, ShoppingBag, Wallet } fro
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from 'sonner'
 import { cn } from '@/utils/cn'
+import { useQueryClient } from '@tanstack/react-query'
 import NotificationBell from '@/components/notifications/NotificationBell'
 
 export default function Navbar() {
   const { isAuthenticated, user, logout, isClient, isExpert, isAdmin } = useAuth()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const handleLogout = async () => {
     await logout()
+    queryClient.clear()
     toast.success('Logged out successfully')
     navigate('/login')
   }

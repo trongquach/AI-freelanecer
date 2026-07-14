@@ -460,7 +460,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-400 mb-1">Jobs Done</p>
-                  <p className="text-xl font-bold text-slate-900">{profile?.totalReviews ?? 0}</p>
+                  <p className="text-xl font-bold text-slate-900">{profile?.jobsDone ?? 0}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400 mb-1">Success</p>
