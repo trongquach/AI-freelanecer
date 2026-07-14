@@ -329,12 +329,18 @@ export default function ContractPage() {
           <h3 className="font-semibold text-slate-900 border-b border-slate-300 pb-2">Contract Info</h3>
           
           <div>
-            <p className="text-xs text-slate-500">Client</p>
-            <Link to={`/profile/${contract.clientId}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{contract.clientName || 'Client'}</Link>
+            <p className="text-xs text-slate-500 mb-2">Client</p>
+            <div className="flex items-center gap-3">
+              <img src={contract.client.avatarUrl || `https://ui-avatars.com/api/?name=${contract.client.fullName}`} alt={contract.client.fullName} className="w-8 h-8 rounded-full border border-slate-200" />
+              <Link to={`/profile/${contract.client.id}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{contract.client.fullName}</Link>
+            </div>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Expert</p>
-            <Link to={`/profile/${contract.expertId}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{contract.expertName || 'Expert'}</Link>
+            <p className="text-xs text-slate-500 mb-2">Expert</p>
+            <div className="flex items-center gap-3">
+              <img src={contract.expert.avatarUrl || `https://ui-avatars.com/api/?name=${contract.expert.fullName}`} alt={contract.expert.fullName} className="w-8 h-8 rounded-full border border-slate-200" />
+              <Link to={`/profile/${contract.expert.id}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{contract.expert.fullName}</Link>
+            </div>
           </div>
           
           <div className="pt-4 border-t border-slate-300 space-y-2">

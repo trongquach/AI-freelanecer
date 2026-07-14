@@ -112,7 +112,7 @@ export default function ExpertDashboard() {
                 <div key={contract.id} className="bg-white border border-slate-200 p-4 rounded-xl flex justify-between items-center">
                   <div>
                     <h3 className="text-slate-900 font-medium">{contract.jobTitle || 'Contract #' + contract.id}</h3>
-                    <p className="text-xs text-slate-500">{contract.status} • Client: {contract.clientName}</p>
+                    <p className="text-xs text-slate-500">{contract.status} • Client: {contract.client.fullName}</p>
                   </div>
                   <Link to={`/contracts/${contract.id}`} className="btn-secondary btn-sm">View & Chat</Link>
                 </div>

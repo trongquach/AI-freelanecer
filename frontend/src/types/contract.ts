@@ -48,10 +48,16 @@ export interface Contract {
   jobId: number;
   jobTitle?: string;
   proposalId: number;
-  clientId: number;
-  clientName?: string;
-  expertId: number;
-  expertName?: string;
+  client: {
+    id: number;
+    fullName: string;
+    avatarUrl?: string;
+  };
+  expert: {
+    id: number;
+    fullName: string;
+    avatarUrl?: string;
+  };
   totalAmount: number;
   status: 'ACTIVE' | 'COMPLETED' | 'DISPUTED' | 'CANCELLED';
   startedAt: string;
