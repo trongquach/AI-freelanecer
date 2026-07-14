@@ -39,7 +39,36 @@ export function useChat(contractId: number) {
   }, [isConnected, contractId, user, subscribe]);
 
   const sendMsgMut = useMutation({
-    mutationFn: (content: string) => chatApi.sendMessage(contractId, content)
+    mutationFn: (content: string) => chatApi.sendMessage(contractId, content),
+    onMutate: async (content) => {
+      if (!user) return { tempId: null };
+      const tempId = -Date.now();
+      const tempMsg: ChatMessage = {
+        id: tempId,
+        contractId,
+        sender: {
+          id: user.id,
+          fullName: user.fullName || user.email,
+          avatarUrl: (user as any).avatarUrl || ''
+        },
+        content,
+        createdAt: new Date().toISOString(),
+        isRead: false
+      };
+      
+      setRealtimeMessages(prev => [tempMsg, ...prev]);
+      return { tempId };
+    },
+    onSuccess: (newMsg, variables, context) => {
+      if (context?.tempId) {
+        setRealtimeMessages(prev => prev.map(m => m.id === context.tempId ? newMsg : m));
+      }
+    },
+    onError: (err, variables, context) => {
+      if (context?.tempId) {
+        setRealtimeMessages(prev => prev.filter(m => m.id !== context.tempId));
+      }
+    }
   });
 
   const sendMessage = useCallback((content: string) => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Client, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useAuthStore } from '@/store/authStore';
@@ -40,20 +40,20 @@ export function useWebSocket() {
     };
   }, [accessToken]);
 
-  const subscribe = (topic: string, callback: (message: any) => void): StompSubscription | null => {
+  const subscribe = useCallback((topic: string, callback: (message: any) => void): StompSubscription | null => {
     if (!clientRef.current || !clientRef.current.connected) return null;
     return clientRef.current.subscribe(topic, (message) => {
       callback(JSON.parse(message.body));
     });
-  };
+  }, []);
 
-  const publish = (destination: string, body: any) => {
+  const publish = useCallback((destination: string, body: any) => {
     if (!clientRef.current || !clientRef.current.connected) return;
     clientRef.current.publish({
       destination,
       body: JSON.stringify(body),
     });
-  };
+  }, []);
 
   return { isConnected, subscribe, publish };
 }

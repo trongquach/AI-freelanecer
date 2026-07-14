@@ -38,7 +38,7 @@ const AcceptProposalModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white border border-slate-200 border border-slate-300 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">Accept Proposal: {proposal.expertName}</h2>
+        <h2 className="text-xl font-bold text-slate-900 mb-4">Accept Proposal: {proposal.expert?.fullName}</h2>
         <p className="text-sm text-slate-600 mb-6">Define the milestones for this contract. The total must equal the proposed price of <strong>${proposal.price}</strong>.</p>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -155,13 +155,13 @@ export default function ProposalListPage() {
               <div className="flex-1 space-y-4">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
-                    <Link to={`/profile/${proposal.expertId}`} className="shrink-0 hover:ring-2 hover:ring-primary-500 rounded-full transition-all">
-                      <img src={proposal.expertAvatar || 'https://ui-avatars.com/api/?name=' + proposal.expertName} alt={proposal.expertName} className="w-12 h-12 rounded-full object-cover" />
+                    <Link to={`/profile/${proposal.expert?.id}`} className="shrink-0 hover:ring-2 hover:ring-primary-500 rounded-full transition-all">
+                      <img src={proposal.expert?.avatarUrl || 'https://ui-avatars.com/api/?name=' + (proposal.expert?.fullName || 'Expert')} alt={proposal.expert?.fullName || 'Expert'} className="w-12 h-12 rounded-full object-cover" />
                     </Link>
                     <div>
-                      <Link to={`/profile/${proposal.expertId}`} className="text-lg font-semibold text-slate-900 hover:text-primary-600 hover:underline">{proposal.expertName}</Link>
+                      <Link to={`/profile/${proposal.expert?.id}`} className="text-lg font-semibold text-slate-900 hover:text-primary-600 hover:underline">{proposal.expert?.fullName || 'Unknown Expert'}</Link>
                       <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <span>⭐ {proposal.expertRating?.toFixed(1) || '0.0'}</span>
+                        <span>⭐ {proposal.expert?.rating?.toFixed(1) || '0.0'}</span>
                         <span>•</span>
                         <span>{new Date(proposal.createdAt).toLocaleDateString()}</span>
                       </div>

@@ -25,6 +25,7 @@ public class DisputeService {
     private final UserRepository userRepository;
     private final EscrowService escrowService;
     private final NotificationService notificationService;
+    private final com.aimarket.repository.JobRepository jobRepository;
 
     @Transactional
     public Dispute openDispute(Long contractId, Long openedById, String reason) {
@@ -93,6 +94,13 @@ public class DisputeService {
         contract.setStatus(resolution == DisputeResolution.RELEASE_EXPERT
                 ? ContractStatus.COMPLETED : ContractStatus.CANCELLED);
         contractRepository.save(contract);
+        
+        var job = contract.getJob();
+        if (job != null) {
+            job.setStatus(resolution == DisputeResolution.RELEASE_EXPERT 
+                ? com.aimarket.entity.enums.JobStatus.COMPLETED : com.aimarket.entity.enums.JobStatus.CANCELLED);
+            jobRepository.save(job);
+        }
 
         dispute.setStatus(DisputeStatus.RESOLVED);
         dispute.setResolution(resolution);

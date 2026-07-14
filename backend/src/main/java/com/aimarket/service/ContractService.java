@@ -26,6 +26,7 @@ public class ContractService {
     private final ContractRepository contractRepository;
     private final MilestoneRepository milestoneRepository;
     private final EscrowService escrowService;
+    private final com.aimarket.repository.JobRepository jobRepository;
 
     @Transactional(readOnly = true)
     public ContractResponse getContract(Long id, Long userId) {
@@ -74,11 +75,17 @@ public class ContractService {
 
         // Auto-complete contract if all milestones approved
         boolean allDone = contract.getMilestones().stream()
-                .allMatch(m -> m.getStatus() == MilestoneStatus.APPROVED);
+                .allMatch(m -> m.getId().equals(milestone.getId()) ? true : m.getStatus() == MilestoneStatus.APPROVED);
         if (allDone || contract.getMilestones().isEmpty()) {
             contract.setStatus(ContractStatus.COMPLETED);
             contract.setCompletedAt(LocalDateTime.now());
             contractRepository.save(contract);
+            
+            var job = contract.getJob();
+            if (job != null) {
+                job.setStatus(com.aimarket.entity.enums.JobStatus.COMPLETED);
+                jobRepository.save(job);
+            }
         }
         return toResponse(contract);
     }

@@ -1,10 +1,13 @@
 export interface Proposal {
   id: number;
   jobId: number;
-  expertId: number;
-  expertName?: string;
-  expertAvatar?: string;
-  expertRating?: number;
+  expert: {
+    id: number;
+    fullName: string;
+    avatarUrl?: string;
+    rating?: number;
+    totalReviews?: number;
+  };
   price: number;
   timelineDays: number;
   coverLetter: string;
