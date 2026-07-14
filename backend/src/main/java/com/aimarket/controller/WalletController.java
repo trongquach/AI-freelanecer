@@ -1,9 +1,12 @@
 package com.aimarket.controller;
 
+import com.aimarket.dto.wallet.WalletSummaryResponse;
 import com.aimarket.entity.EscrowAccount;
 import com.aimarket.entity.Transaction;
+import com.aimarket.repository.ContractRepository;
 import com.aimarket.security.CustomUserDetails;
 import com.aimarket.service.EscrowService;
+import com.aimarket.service.WithdrawService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,11 +26,31 @@ import java.util.Map;
 public class WalletController {
 
     private final EscrowService escrowService;
+    private final ContractRepository contractRepository;
+    private final WithdrawService withdrawService;
 
-    @Operation(summary = "Get wallet balance")
+    @Operation(summary = "Get wallet balance (raw)")
     @GetMapping
     public EscrowAccount getWallet(@AuthenticationPrincipal CustomUserDetails user) {
         return escrowService.getOrCreate(user.getUserId());
+    }
+
+    @Operation(summary = "Get wallet summary with dynamic pending earnings")
+    @GetMapping("/summary")
+    public WalletSummaryResponse getWalletSummary(@AuthenticationPrincipal CustomUserDetails user) {
+        EscrowAccount account = escrowService.getOrCreate(user.getUserId());
+
+        // For experts, pendingEarnings is now exactly the lockedAmount (funds in clearing)
+        BigDecimal pendingEarnings = account.getLockedAmount();
+
+        return new WalletSummaryResponse(
+                account.getBalance(),
+                account.getLockedAmount(),
+                account.getAvailableBalance(),
+                account.getTotalDeposited(),
+                account.getTotalReleased(),
+                pendingEarnings
+        );
     }
 
     @Operation(summary = "Transaction history")
@@ -40,9 +63,14 @@ public class WalletController {
 
     @Operation(summary = "Request withdrawal")
     @PostMapping("/withdraw")
-    public EscrowAccount withdraw(@RequestBody Map<String, String> body,
+    public Transaction withdraw(@RequestBody Map<String, String> body,
                                   @AuthenticationPrincipal CustomUserDetails user) {
         BigDecimal amount = new BigDecimal(body.get("amount"));
-        return escrowService.requestWithdraw(user.getUserId(), amount);
+        String bankName = body.getOrDefault("bankName", "N/A");
+        String accountNumber = body.getOrDefault("accountNumber", "N/A");
+        String accountHolder = body.getOrDefault("accountHolder", "N/A");
+        
+        return withdrawService.requestWithdraw(user.getUserId(), amount, bankName, accountNumber, accountHolder);
     }
 }
+

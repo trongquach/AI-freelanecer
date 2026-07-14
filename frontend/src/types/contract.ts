@@ -59,6 +59,7 @@ export interface Contract {
     avatarUrl?: string;
   };
   totalAmount: number;
+  escrowAmount?: number;
   status: 'ACTIVE' | 'COMPLETED' | 'DISPUTED' | 'CANCELLED';
   startedAt: string;
   completedAt?: string;

@@ -34,8 +34,19 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
     Page<Contract> findByClientIdOrderByCreatedAtDesc(Long clientId, Pageable pageable);
     Page<Contract> findByExpertIdOrderByCreatedAtDesc(Long expertId, Pageable pageable);
 
+    Page<Contract> findByStatus(ContractStatus status, Pageable pageable);
+
+    Page<Contract> findByStatusIn(java.util.List<ContractStatus> statuses, Pageable pageable);
+
     long countByStatus(ContractStatus status);
 
     @Query("SELECT c FROM Contract c WHERE c.status = 'ACTIVE' AND (c.client.id = :uid OR c.expert.id = :uid)")
     Page<Contract> findActiveByUserId(@Param("uid") Long userId, Pageable pageable);
+
+    @Query("""
+        SELECT COALESCE(SUM(c.totalAmount), 0)
+        FROM Contract c
+        WHERE c.expert.id = :expertId AND c.status = 'ACTIVE'
+        """)
+    java.math.BigDecimal sumPendingEarningsByExpertId(@Param("expertId") Long expertId);
 }

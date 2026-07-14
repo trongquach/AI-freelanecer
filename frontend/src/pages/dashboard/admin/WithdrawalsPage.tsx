@@ -79,7 +79,7 @@ export default function WithdrawalsPage() {
                   <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 font-mono text-xs text-slate-400">#{tx.id}</td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{tx.wallet?.user?.email || 'Unknown User'}</div>
+                      <div className="font-medium text-slate-900">{tx.userEmail || tx.wallet?.user?.email || 'Unknown User'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-semibold text-danger-600">${Number(tx.amount).toLocaleString()}</span>

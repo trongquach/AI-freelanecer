@@ -105,7 +105,7 @@ INSERT IGNORE INTO escrow_accounts (id, user_id, balance, locked_amount, total_d
 (5, 1, 0, 0, 0, 0, 'USD', NOW()),
 (6, 4, 5000, 3900, 10000, 1100, 'USD', NOW()),
 (7, 5, 10000, 6500, 15000, 300, 'USD', NOW()),
-(8, 6, 2000, 6000, 8000, 200, 'USD', NOW()),
+(8, 6, 8000, 6000, 8000, 200, 'USD', NOW()),
 (9, 7, 1500, 0, 0, 1500, 'USD', NOW()),
 (10, 8, 800, 0, 0, 800, 'USD', NOW()),
 (11, 9, 0, 0, 0, 0, 'USD', NOW()),

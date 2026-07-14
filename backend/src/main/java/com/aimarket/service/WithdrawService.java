@@ -73,9 +73,13 @@ public class WithdrawService {
 
         tx.setStatus("SUCCESS");
         transactionRepository.save(tx);
-        
-        notificationService.send(tx.getUser().getId(), "WITHDRAW_APPROVED", "Rút tiền thành công", 
+
+        notificationService.send(tx.getUser().getId(), "WITHDRAWAL_APPROVED", "Rút tiền thành công",
                 "Yêu cầu rút $" + tx.getAmount() + " đã được xử lý", null);
+        // Push real-time wallet refresh to the expert
+        notificationService.sendEvent(tx.getUser().getId(), "WALLET_UPDATED", null);
+        // Refresh admin withdrawal list
+        notificationService.broadcastAdminEvent("WITHDRAWAL_UPDATED");
 
         return tx;
     }
@@ -97,9 +101,12 @@ public class WithdrawService {
         tx.setStatus("FAILED");
         tx.setNote(tx.getNote() + " | Rejected: " + reason);
         transactionRepository.save(tx);
-        
-        notificationService.send(tx.getUser().getId(), "WITHDRAW_REJECTED", "Rút tiền thất bại", 
+
+        notificationService.send(tx.getUser().getId(), "WITHDRAWAL_REJECTED", "Rút tiền thất bại",
                 "Yêu cầu rút $" + tx.getAmount() + " bị từ chối: " + reason, null);
+        // Refund: push real-time wallet refresh
+        notificationService.sendEvent(tx.getUser().getId(), "WALLET_UPDATED", null);
+        notificationService.broadcastAdminEvent("WITHDRAWAL_UPDATED");
 
         return tx;
     }

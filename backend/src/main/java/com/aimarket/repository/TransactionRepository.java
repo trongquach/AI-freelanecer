@@ -11,12 +11,17 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.List;
+import java.time.LocalDateTime;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     Page<Transaction> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
     Page<Transaction> findByUserIdAndTypeOrderByCreatedAtDesc(Long userId, TransactionType type, Pageable pageable);
     Page<Transaction> findByTypeAndStatusOrderByCreatedAtDesc(TransactionType type, String status, Pageable pageable);
+    
+    List<Transaction> findByUserIdAndTypeAndStatus(Long userId, TransactionType type, String status);
+    List<Transaction> findByTypeAndStatusAndCreatedAtBefore(TransactionType type, String status, LocalDateTime createdAt);
 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.type = :type")
     Optional<BigDecimal> sumAmountByType(@Param("type") TransactionType type);

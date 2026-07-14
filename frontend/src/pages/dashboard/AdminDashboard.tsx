@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   Users, Briefcase, DollarSign, ShoppingBag, TrendingUp, Shield,
-  CheckCircle, AlertTriangle, BarChart3, Clock, Activity, Megaphone, Send
+  CheckCircle, AlertTriangle, BarChart3, Clock, Activity, Megaphone, Send, ShieldAlert
 } from 'lucide-react'
 import { adminApi, PlatformStats } from '@/api/adminApi'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -128,11 +128,13 @@ export default function AdminDashboard() {
             <p className="text-2xl font-bold text-slate-900">${(Number(stats?.platformFeeEarned) || 0).toLocaleString()}</p>
           </div>
           <div className="card p-5 col-span-1">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-warning-500" />
-              <p className="text-xs text-slate-400">Escrow Locked</p>
-            </div>
-            <p className="text-2xl font-bold text-slate-900">${(Number(stats?.totalEscrowLocked) || 0).toLocaleString()}</p>
+            <Link to="/admin/escrow" className="block hover:opacity-80 transition-opacity">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-4 h-4 text-warning-500" />
+                <p className="text-xs text-slate-400">Escrow Locked</p>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">${(Number(stats?.totalEscrowLocked) || 0).toLocaleString()}</p>
+            </Link>
           </div>
           <div className="card p-5 col-span-1">
             <div className="flex items-center gap-2 mb-2">
@@ -201,6 +203,14 @@ export default function AdminDashboard() {
             subtitle="Resolve conflicts between clients and experts"
             color="text-danger-500"
             bg="bg-danger-50"
+          />
+          <NavCard
+            to="/admin/escrow"
+            icon={ShieldAlert}
+            title="Escrow Management"
+            subtitle="View locked funds and disburse to experts"
+            color="text-primary-500"
+            bg="bg-primary-50"
           />
         </div>
       </div>

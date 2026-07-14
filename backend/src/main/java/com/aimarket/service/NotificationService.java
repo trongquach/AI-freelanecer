@@ -35,14 +35,49 @@ public class NotificationService {
                 .build();
         notificationRepository.save(n);
 
-        // Push via WebSocket
+        // Push via WebSocket — includes eventType so frontend can invalidate queries
         try {
             messagingTemplate.convertAndSend(
                     "/topic/notifications/" + userId,
-                    Map.of("type", type, "title", title, "content", content, "referenceId", referenceId)
+                    Map.of("type", type, "title", title, "content", content,
+                           "referenceId", referenceId != null ? referenceId : 0)
             );
         } catch (Exception e) {
             log.warn("Failed to push WS notification to user {}: {}", userId, e.getMessage());
+        }
+    }
+
+    /**
+     * Push-only WebSocket event — does NOT save to DB, used for lightweight data refresh signals.
+     */
+    @Async
+    public void sendEvent(Long userId, String eventType, Long referenceId) {
+        try {
+            messagingTemplate.convertAndSend(
+                    "/topic/notifications/" + userId,
+                    Map.of("type", eventType, "title", eventType, "content", "",
+                           "referenceId", referenceId != null ? referenceId : 0,
+                           "eventOnly", true)
+            );
+        } catch (Exception e) {
+            log.warn("Failed to push WS event to user {}: {}", userId, e.getMessage());
+        }
+    }
+
+    /**
+     * Broadcast an event to all connected admins via /topic/admin-events.
+     * Used to trigger real-time refresh of admin dashboards.
+     */
+    @Async
+    public void broadcastAdminEvent(String eventType) {
+        try {
+            messagingTemplate.convertAndSend(
+                    "/topic/admin-events",
+                    Map.of("type", eventType)
+            );
+            log.debug("Broadcast admin event: {}", eventType);
+        } catch (Exception e) {
+            log.warn("Failed to broadcast admin event {}: {}", eventType, e.getMessage());
         }
     }
 

@@ -1,11 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'sonner'
 import { useEffect } from 'react'
 
 import { useAuthStore } from '@/store/authStore'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import MainLayout from '@/components/layout/MainLayout'
+import { useRealtimeEvents } from '@/hooks/useRealtimeEvents'
 
 // Pages
 import LandingPage        from '@/pages/LandingPage'
@@ -29,6 +28,7 @@ const JobsModerationPage    = lazy(() => import('@/pages/dashboard/admin/JobsMod
 const TransactionsPage      = lazy(() => import('@/pages/dashboard/admin/TransactionsPage'))
 const DisputesPage          = lazy(() => import('@/pages/dashboard/admin/DisputesPage'))
 const WithdrawalsPage       = lazy(() => import('@/pages/dashboard/admin/WithdrawalsPage'))
+const EscrowManagementPage  = lazy(() => import('@/pages/dashboard/admin/EscrowManagementPage'))
 const JobDetailPage    = lazy(() => import('@/pages/jobs/JobDetailPage'))
 const CreateJobPage    = lazy(() => import('@/pages/jobs/CreateJobPage'))
 const EditJobPage      = lazy(() => import('@/pages/jobs/EditJobPage'))
@@ -46,15 +46,6 @@ const NotificationsPage= lazy(() => import('@/pages/notifications/NotificationsP
 const NotFoundPage     = lazy(() => import('@/pages/NotFoundPage'))
 const AccessDeniedPage = lazy(() => import('@/pages/AccessDeniedPage'))
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 1000 * 60,      // 1 minute
-      gcTime:    1000 * 60 * 5,  // 5 minutes
-    },
-  },
-})
 
 function PageLoader() {
   return (
@@ -70,6 +61,9 @@ export default function App() {
   useEffect(() => {
     initializeAuth()
   }, [])
+
+  // Mount global real-time event handler (WebSocket → React Query cache invalidation)
+  useRealtimeEvents()
 
   return (
     <>
@@ -132,6 +126,7 @@ export default function App() {
                 <Route path="/admin/transactions"    element={<TransactionsPage />} />
                 <Route path="/admin/disputes"        element={<DisputesPage />} />
                 <Route path="/admin/withdrawals"     element={<WithdrawalsPage />} />
+                <Route path="/admin/escrow"          element={<EscrowManagementPage />} />
               </Route>
             </Route>
 

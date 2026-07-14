@@ -9,8 +9,10 @@ import { toast } from 'sonner'
 interface WalletData {
   balance: number
   lockedAmount: number
+  availableBalance: number
   totalDeposited: number
   totalReleased: number
+  pendingEarnings: number  // for experts: sum of active contract values
 }
 
 interface Transaction {
@@ -31,7 +33,7 @@ export default function WalletPage() {
 
   const { data: wallet, isLoading } = useQuery<WalletData>({
     queryKey: ['wallet'],
-    queryFn: () => axiosInstance.get('/wallet').then(r => r.data),
+    queryFn: () => axiosInstance.get('/wallet/summary').then(r => r.data),
   })
 
   const { data: txPage } = useQuery<{ content: Transaction[] }>({
@@ -88,8 +90,11 @@ export default function WalletPage() {
     withdrawMutation.mutate(amt)
   }
 
-  const walletData = wallet ?? { balance: 0, lockedAmount: 0, totalDeposited: 0, totalReleased: 0 }
-  const available = (walletData.balance ?? 0) - (walletData.lockedAmount ?? 0)
+  const walletData = wallet ?? { balance: 0, lockedAmount: 0, availableBalance: 0, totalDeposited: 0, totalReleased: 0, pendingEarnings: 0 }
+  const available = walletData.availableBalance ?? ((walletData.balance ?? 0) - (walletData.lockedAmount ?? 0))
+  // For experts: show pendingEarnings as their locked indicator; for clients: show lockedAmount
+  const isExpert = user?.role === 'EXPERT'
+  const lockedDisplay = isExpert ? (walletData.pendingEarnings ?? 0) : (walletData.lockedAmount ?? 0)
 
   if (isLoading) return <div className="flex justify-center p-20"><LoadingSpinner /></div>
 
@@ -113,9 +118,11 @@ export default function WalletPage() {
             <div className="w-10 h-10 rounded-xl bg-warning-500/10 flex items-center justify-center">
               <Clock className="w-5 h-5 text-warning-400" />
             </div>
-            <p className="text-sm text-slate-400">Locked (Escrow)</p>
+            <p className="text-sm text-slate-400">
+              {isExpert ? 'Pending Earnings' : 'Locked (Escrow)'}
+            </p>
           </div>
-          <p className="text-4xl font-bold text-warning-400">${(walletData.lockedAmount ?? 0).toFixed(2)}</p>
+          <p className="text-4xl font-bold text-warning-400">${lockedDisplay.toFixed(2)}</p>
         </div>
       </div>
 

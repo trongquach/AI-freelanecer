@@ -1,5 +1,6 @@
 import axiosInstance from './axiosInstance';
 import { PageResponse } from '../types/common';
+import { Contract } from '../types/contract';
 
 export interface PlatformStats {
   totalUsers: number;
@@ -32,6 +33,7 @@ export interface TransactionDto {
   status: string;
   createdAt: string;
   wallet?: { user?: { email?: string } };
+  userEmail?: string;
 }
 
 export const adminApi = {
@@ -112,5 +114,28 @@ export const adminApi = {
   resolveDispute: async (id: number, resolution: string, adminNote: string): Promise<any> => {
     const res = await axiosInstance.post(`/disputes/${id}/resolve`, { resolution, adminNote });
     return res.data;
+  },
+
+  // Contracts / Escrow
+  getActiveContracts: async (page = 0, size = 15): Promise<PageResponse<Contract>> => {
+    const res = await axiosInstance.get('/admin/contracts/active', { params: { page, size } });
+    return res.data;
+  },
+
+  getAllContracts: async (page = 0, size = 30): Promise<PageResponse<Contract>> => {
+    const res = await axiosInstance.get('/admin/contracts/all', { params: { page, size } });
+    return res.data;
+  },
+
+  // Escrow
+  getPendingClearings: async (page = 0, size = 30): Promise<PageResponse<TransactionDto>> => {
+    const res = await axiosInstance.get('/admin/escrow/pending-clearings', { params: { page, size } });
+    return res.data;
+  },
+  settleClearing: async (id: number): Promise<void> => {
+    await axiosInstance.post(`/admin/escrow/clearings/${id}/settle`);
+  },
+  forceReleaseEscrow: async (contractId: number): Promise<void> => {
+    await axiosInstance.post(`/admin/contracts/${contractId}/release-escrow`);
   },
 };

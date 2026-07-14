@@ -26,6 +26,7 @@ public class ContractService {
     private final ContractRepository contractRepository;
     private final MilestoneRepository milestoneRepository;
     private final EscrowService escrowService;
+    private final NotificationService notificationService;
     private final com.aimarket.repository.JobRepository jobRepository;
 
     @Transactional(readOnly = true)
@@ -57,6 +58,15 @@ public class ContractService {
         milestone.setDeliverableUrl(deliverableUrl);
         milestone.setDeliverableNote(note);
         milestoneRepository.save(milestone);
+
+        // Notify client that expert submitted a milestone
+        notificationService.send(contract.getClient().getId(), "MILESTONE_SUBMITTED",
+                "Milestone đã được nộp",
+                String.format("Expert đã nộp milestone '%s' trong hợp đồng #%d. Vui lòng kiểm tra và phê duyệt.", milestone.getName(), contractId),
+                contractId);
+        // Push real-time contract update to both parties
+        notificationService.sendEvent(contract.getClient().getId(), "CONTRACT_UPDATED", contractId);
+
         return toResponse(contract);
     }
 
@@ -71,7 +81,11 @@ public class ContractService {
         milestone.setStatus(MilestoneStatus.APPROVED);
         milestoneRepository.save(milestone);
 
+        // releaseFunds already sends WALLET_UPDATED + PAYMENT_RECEIVED events
         escrowService.releaseFunds(contractId, clientId, contract.getExpert().getId(), milestone.getAmount());
+
+        // Push contract update to expert
+        notificationService.sendEvent(contract.getExpert().getId(), "CONTRACT_UPDATED", contractId);
 
         // Auto-complete contract if all milestones approved
         boolean allDone = contract.getMilestones().stream()
@@ -80,12 +94,19 @@ public class ContractService {
             contract.setStatus(ContractStatus.COMPLETED);
             contract.setCompletedAt(LocalDateTime.now());
             contractRepository.save(contract);
-            
+
             var job = contract.getJob();
             if (job != null) {
                 job.setStatus(com.aimarket.entity.enums.JobStatus.COMPLETED);
                 jobRepository.save(job);
             }
+            // Notify both parties contract is done
+            notificationService.send(contract.getExpert().getId(), "CONTRACT_COMPLETED",
+                    "Hợp đồng hoàn thành",
+                    String.format("Tất cả milestones đã hoàn thành. Hợp đồng #%d đã kết thúc.", contractId), contractId);
+            notificationService.sendEvent(contract.getClient().getId(), "CONTRACT_UPDATED", contractId);
+            notificationService.sendEvent(contract.getExpert().getId(), "CONTRACT_UPDATED", contractId);
+            notificationService.broadcastAdminEvent("CONTRACT_COMPLETED");
         }
         return toResponse(contract);
     }
@@ -98,6 +119,14 @@ public class ContractService {
             throw new BusinessException("Milestone must be SUBMITTED to reject");
         milestone.setStatus(MilestoneStatus.REJECTED);
         milestoneRepository.save(milestone);
+
+        // Notify expert that revision was requested
+        notificationService.send(contract.getExpert().getId(), "MILESTONE_REJECTED",
+                "Milestone bị từ chối",
+                String.format("Client yêu cầu chỉnh sửa milestone '%s' trong hợp đồng #%d.", milestone.getName(), contractId),
+                contractId);
+        notificationService.sendEvent(contract.getExpert().getId(), "CONTRACT_UPDATED", contractId);
+
         return toResponse(contract);
     }
 
@@ -131,10 +160,11 @@ public class ContractService {
                         m.getDueDate(), m.getStatus(), m.getOrderIndex(), m.getDeliverableUrl()))
                 .collect(Collectors.toList());
 
-        BigDecimal escrowAmount = c.getMilestones().stream()
-                .filter(m -> m.getStatus() != MilestoneStatus.APPROVED)
+        BigDecimal approvedAmount = c.getMilestones().stream()
+                .filter(m -> m.getStatus() == MilestoneStatus.APPROVED)
                 .map(Milestone::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal escrowAmount = c.getTotalAmount().subtract(approvedAmount);
 
         return new ContractResponse(
                 c.getId(), c.getJob().getId(), c.getJob().getTitle(),
