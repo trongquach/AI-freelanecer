@@ -17,7 +17,7 @@ interface Transaction {
   id: number
   type: string
   amount: number
-  description: string
+  note: string
   createdAt: string
 }
 
@@ -79,7 +79,7 @@ export default function WalletPage() {
             </div>
             <p className="text-sm text-slate-400">Available Balance</p>
           </div>
-          <p className="text-4xl font-bold">${available.toFixed(2)}</p>
+          <p className="text-4xl font-bold text-slate-900">${available.toFixed(2)}</p>
         </div>
         <div className="card p-6">
           <div className="flex items-center gap-3 mb-4">
@@ -130,8 +130,8 @@ export default function WalletPage() {
                     ? <CheckCircle className="w-5 h-5 text-success-400" />
                     : <XCircle className="w-5 h-5 text-error-400" />}
                   <div>
-                    <p className="text-sm font-medium text-slate-800">{tx.description}</p>
-                    <p className="text-xs text-slate-400">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                    <p className="font-medium text-slate-900">{tx.note}</p>
+                    <p className="text-sm text-slate-500">{new Date(tx.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <span className={`font-bold ${tx.amount > 0 ? 'text-success-500' : 'text-error-500'}`}>
@@ -163,7 +163,7 @@ export default function WalletPage() {
                 value={depositAmount}
                 onChange={e => setDepositAmount(e.target.value)}
                 placeholder="100"
-                className="input-field pl-8 text-lg w-full"
+                className="input-field pl-8 text-lg w-full text-slate-900"
                 autoFocus
               />
             </div>
