@@ -4,6 +4,7 @@ import { ShoppingBag, Plus, Star, DollarSign, TrendingUp, Clock } from 'lucide-r
 import { useAuth } from '@/hooks/useAuth'
 import { serviceApi } from '@/api/jobServiceApi'
 import { contractApi } from '@/api/contractApi'
+import { profileApi } from '@/api/profileApi'
 import ServiceCard from '@/components/cards/ServiceCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
@@ -20,11 +21,16 @@ export default function ExpertDashboard() {
     queryFn: () => contractApi.getMyContracts(0, 5),
   })
 
+  const { data: profile } = useQuery({
+    queryKey: ['my-profile'],
+    queryFn: profileApi.getMyProfile,
+  })
+
   const stats = [
-    { label: 'Services', value: myServices?.totalElements ?? 0, icon: ShoppingBag, color: 'text-primary-400' },
-    { label: 'Active', value: myServices?.content?.filter((s: any) => s.status === 'ACTIVE').length ?? 0, icon: TrendingUp, color: 'text-success-500' },
-    { label: 'Pending Approval', value: myServices?.content?.filter((s: any) => s.status === 'PENDING_REVIEW').length ?? 0, icon: Clock, color: 'text-warning-500' },
-    { label: 'Rating TB', value: '4.9', icon: Star, color: 'text-warning-400' },
+    { label: 'Services', value: myServices?.totalElements ?? 0, icon: ShoppingBag, color: 'text-primary-400', link: '/dashboard/expert' },
+    { label: 'Active', value: myServices?.content?.filter((s: any) => s.status === 'ACTIVE').length ?? 0, icon: TrendingUp, color: 'text-success-500', link: '/dashboard/expert' },
+    { label: 'Pending Approval', value: myServices?.content?.filter((s: any) => s.status === 'PENDING_REVIEW').length ?? 0, icon: Clock, color: 'text-warning-500', link: '/dashboard/expert' },
+    { label: 'Rating', value: profile?.rating && profile.totalReviews > 0 ? profile.rating.toFixed(1) : '0', icon: Star, color: 'text-warning-400', link: '/profile' },
   ]
 
   return (
@@ -47,12 +53,12 @@ export default function ExpertDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="card p-5">
+        {stats.map(({ label, value, icon: Icon, color, link }) => (
+          <Link to={link} key={label} className="card-hover p-5 block">
             <Icon className={`w-5 h-5 ${color} mb-3`} />
             <p className="text-2xl font-bold text-slate-900">{value}</p>
             <p className="text-xs text-slate-400 mt-1">{label}</p>
-          </div>
+          </Link>
         ))}
       </div>
 

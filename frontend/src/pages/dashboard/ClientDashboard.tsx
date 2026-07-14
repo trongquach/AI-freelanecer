@@ -21,10 +21,10 @@ export default function ClientDashboard() {
   })
 
   const stats = [
-    { label: 'Total jobs posted',    value: myJobs?.totalElements ?? 0, icon: Briefcase,   color: 'text-primary-400' },
-    { label: 'Recruiting',         value: myJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500' },
-    { label: 'In progress',    value: myJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400' },
-    { label: 'Completed',        value: myJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500' },
+    { label: 'Total jobs posted',    value: myJobs?.totalElements ?? 0, icon: Briefcase,   color: 'text-primary-400', link: '/dashboard/client' },
+    { label: 'Recruiting',         value: myJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500', link: '/dashboard/client' },
+    { label: 'In progress',    value: myJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400', link: '/dashboard/client' },
+    { label: 'Completed',        value: myJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500', link: '/dashboard/client' },
   ]
 
   return (
@@ -44,14 +44,14 @@ export default function ClientDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="card p-5">
+        {stats.map(({ label, value, icon: Icon, color, link }) => (
+          <Link to={link} key={label} className="card-hover p-5 block">
             <div className="flex items-center justify-between mb-3">
               <Icon className={`w-5 h-5 ${color}`} />
             </div>
             <p className="text-2xl font-bold text-slate-900">{value}</p>
             <p className="text-xs text-slate-400 mt-1">{label}</p>
-          </div>
+          </Link>
         ))}
       </div>
 

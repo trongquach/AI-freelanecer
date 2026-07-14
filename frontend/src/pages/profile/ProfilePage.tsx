@@ -229,7 +229,36 @@ export default function ProfilePage() {
           <div className="grid sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-medium text-slate-600 mb-1.5">Timezone</label>
-              <input {...register('timezone')} className="input" placeholder="e.g., Asia/Ho_Chi_Minh or UTC+7" />
+              <select {...register('timezone')} className="input appearance-none bg-white">
+                <option value="">Select your timezone</option>
+                <option value="UTC-12:00">UTC-12:00</option>
+                <option value="UTC-11:00">UTC-11:00</option>
+                <option value="UTC-10:00">UTC-10:00 (Hawaii)</option>
+                <option value="UTC-09:00">UTC-09:00 (Alaska)</option>
+                <option value="UTC-08:00">UTC-08:00 (Pacific Time)</option>
+                <option value="UTC-07:00">UTC-07:00 (Mountain Time)</option>
+                <option value="UTC-06:00">UTC-06:00 (Central Time)</option>
+                <option value="UTC-05:00">UTC-05:00 (Eastern Time)</option>
+                <option value="UTC-04:00">UTC-04:00 (Atlantic Time)</option>
+                <option value="UTC-03:00">UTC-03:00 (Brasilia)</option>
+                <option value="UTC-02:00">UTC-02:00 (Mid-Atlantic)</option>
+                <option value="UTC-01:00">UTC-01:00 (Azores)</option>
+                <option value="UTC">UTC (Coordinated Universal Time)</option>
+                <option value="UTC+01:00">UTC+01:00 (Central Europe)</option>
+                <option value="UTC+02:00">UTC+02:00 (Eastern Europe)</option>
+                <option value="UTC+03:00">UTC+03:00 (Moscow, East Africa)</option>
+                <option value="UTC+04:00">UTC+04:00 (Dubai)</option>
+                <option value="UTC+05:00">UTC+05:00 (Islamabad, Karachi)</option>
+                <option value="UTC+05:30">UTC+05:30 (India)</option>
+                <option value="UTC+06:00">UTC+06:00 (Dhaka)</option>
+                <option value="UTC+07:00">UTC+07:00 (Bangkok, Hanoi, Jakarta)</option>
+                <option value="UTC+08:00">UTC+08:00 (Beijing, Singapore)</option>
+                <option value="UTC+09:00">UTC+09:00 (Tokyo, Seoul)</option>
+                <option value="UTC+09:30">UTC+09:30 (Adelaide)</option>
+                <option value="UTC+10:00">UTC+10:00 (Sydney, Melbourne)</option>
+                <option value="UTC+11:00">UTC+11:00 (Solomon Is., New Caledonia)</option>
+                <option value="UTC+12:00">UTC+12:00 (Fiji, New Zealand)</option>
+              </select>
             </div>
           </div>
 
