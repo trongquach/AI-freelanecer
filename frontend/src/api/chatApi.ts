@@ -29,5 +29,9 @@ export const chatApi = {
     // History endpoint implicitly marks as read, but we can do a dummy or just ignore
     // Or we could implement an explicit markAsRead if backend supported it. For now, do nothing.
     return Promise.resolve();
+  },
+
+  sendTypingEvent: async (contractId: number, typing: boolean): Promise<void> => {
+    await axiosInstance.post(`/contracts/${contractId}/messages/typing?typing=${typing}`);
   }
 };

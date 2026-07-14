@@ -5,12 +5,12 @@ import { PageResponse } from '../types/common';
 export const contractApi = {
   // Proposals
   submitProposal: async (jobId: number, data: SubmitProposalRequest): Promise<Proposal> => {
-    const res = await axiosInstance.post(`/jobs/${jobId}/proposals`, data);
+    const res = await axiosInstance.post('/proposals', { ...data, jobId });
     return res.data;
   },
 
   getProposalsForJob: async (jobId: number, page = 0, size = 10): Promise<PageResponse<Proposal>> => {
-    const res = await axiosInstance.get(`/jobs/${jobId}/proposals`, { params: { page, size } });
+    const res = await axiosInstance.get(`/proposals/job/${jobId}`, { params: { page, size } });
     return res.data;
   },
 

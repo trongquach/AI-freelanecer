@@ -51,4 +51,13 @@ public class ChatController {
                                          @AuthenticationPrincipal CustomUserDetails user) {
         return Map.of("count", chatService.unreadCount(contractId, user.getUserId()));
     }
+
+    @Operation(summary = "Send typing event")
+    @PostMapping("/typing")
+    @PreAuthorize("isAuthenticated()")
+    public void typingEvent(@PathVariable Long contractId,
+                            @RequestParam boolean typing,
+                            @AuthenticationPrincipal CustomUserDetails user) {
+        chatService.sendTypingEvent(contractId, user.getUserId(), typing);
+    }
 }

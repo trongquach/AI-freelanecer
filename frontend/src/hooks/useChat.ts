@@ -47,9 +47,10 @@ export function useChat(contractId: number) {
   }, [sendMsgMut]);
 
   const sendTypingEvent = useCallback((typing: boolean) => {
-    // If backend doesn't support typing indicator, we can just skip or keep the WS publish if it has a handler.
-    // Since there is no WS handler in backend, typing events won't work anyway. We just do nothing to prevent errors.
-  }, []);
+    if (contractId) {
+      chatApi.sendTypingEvent(contractId, typing).catch(console.error);
+    }
+  }, [contractId]);
 
   const { mutate: mutateMarkAsRead } = useMutation({
     mutationFn: () => chatApi.markAsRead(contractId)

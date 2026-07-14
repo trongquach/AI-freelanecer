@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Briefcase, Plus, Clock, CheckCircle, DollarSign, TrendingUp } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { jobApi } from '@/api/jobServiceApi'
+import { contractApi } from '@/api/contractApi'
 import JobCard from '@/components/cards/JobCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
@@ -12,6 +13,11 @@ export default function ClientDashboard() {
   const { data: myJobs, isLoading } = useQuery({
     queryKey: ['my-jobs'],
     queryFn: () => jobApi.myJobs(0, 6),
+  })
+
+  const { data: myContracts, isLoading: isLoadingContracts } = useQuery({
+    queryKey: ['my-contracts'],
+    queryFn: () => contractApi.getMyContracts(0, 5),
   })
 
   const stats = [
@@ -83,18 +89,31 @@ export default function ClientDashboard() {
           )}
         </div>
 
-        {/* Active Contracts Placeholder */}
+        {/* Active Contracts */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-slate-900">Active Contracts</h2>
-            <Link to="/contracts" className="text-sm text-primary-600 hover:text-primary-700">
-              View all →
-            </Link>
           </div>
-          <div className="bg-white border border-slate-200 p-8 rounded-xl border border-slate-300 text-center">
-             <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-             <p className="text-slate-500 text-sm">Active contracts will be displayed here.</p>
-          </div>
+          {isLoadingContracts ? (
+            <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
+          ) : !myContracts?.content.length ? (
+            <div className="bg-white border border-slate-200 p-8 rounded-xl text-center">
+               <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+               <p className="text-slate-500 text-sm">No active contracts yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {myContracts.content.map(contract => (
+                <div key={contract.id} className="bg-white border border-slate-200 p-4 rounded-xl flex justify-between items-center">
+                  <div>
+                    <h3 className="text-slate-900 font-medium">{contract.jobTitle || 'Contract #' + contract.id}</h3>
+                    <p className="text-xs text-slate-500">{contract.status} • Expert: {contract.expertName}</p>
+                  </div>
+                  <Link to={`/contracts/${contract.id}`} className="btn-secondary btn-sm">View & Chat</Link>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ShoppingBag, Plus, Star, DollarSign, TrendingUp, Clock } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { serviceApi } from '@/api/jobServiceApi'
+import { contractApi } from '@/api/contractApi'
 import ServiceCard from '@/components/cards/ServiceCard'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
@@ -12,6 +13,11 @@ export default function ExpertDashboard() {
   const { data: myServices, isLoading } = useQuery({
     queryKey: ['my-services'],
     queryFn: () => serviceApi.myServices(0, 6),
+  })
+
+  const { data: myContracts, isLoading: isLoadingContracts } = useQuery({
+    queryKey: ['my-contracts'],
+    queryFn: () => contractApi.getMyContracts(0, 5),
   })
 
   const stats = [
@@ -50,27 +56,64 @@ export default function ExpertDashboard() {
         ))}
       </div>
 
-      {/* My Services */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900">My Services</h2>
-          <Link to="/services/my" className="text-sm text-primary-600 hover:text-primary-700">View all →</Link>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* My Services */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">My Services</h2>
+            <Link to="/services/my" className="text-sm text-primary-600 hover:text-primary-700">View all →</Link>
+          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
+          ) : !myServices?.content?.length ? (
+            <div className="card p-8 text-center h-full flex flex-col items-center justify-center">
+              <ShoppingBag className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-400 mb-4">You have no services yet</p>
+              <Link to="/services/new" className="btn-gradient btn-sm">
+                <Plus className="w-4 h-4" /> Create Service
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {myServices.content.slice(0, 3).map((svc: any) => (
+                <div key={svc.id} className="bg-white border border-slate-200 p-4 rounded-xl flex justify-between items-center">
+                  <div>
+                    <h3 className="text-slate-900 font-medium">{svc.title}</h3>
+                    <p className="text-xs text-slate-500">{svc.status} • ${svc.price} USD</p>
+                  </div>
+                  <Link to={`/services/${svc.id}/edit`} className="btn-secondary btn-sm">Edit</Link>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {isLoading ? (
-          <div className="flex justify-center py-12"><LoadingSpinner size="lg" /></div>
-        ) : !myServices?.content?.length ? (
-          <div className="card p-12 text-center">
-            <ShoppingBag className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400 mb-4">You have no services yet</p>
-            <Link to="/services/new" className="btn-gradient btn-md">
-              <Plus className="w-4 h-4" /> Create first Service
-            </Link>
+
+        {/* Active Contracts */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">Active Contracts</h2>
           </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {myServices.content.map((svc: any) => <ServiceCard key={svc.id} service={svc} />)}
-          </div>
-        )}
+          {isLoadingContracts ? (
+            <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
+          ) : !myContracts?.content.length ? (
+            <div className="bg-white border border-slate-200 p-8 rounded-xl text-center h-full flex flex-col items-center justify-center">
+               <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+               <p className="text-slate-500 text-sm">No active contracts yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {myContracts.content.map((contract: any) => (
+                <div key={contract.id} className="bg-white border border-slate-200 p-4 rounded-xl flex justify-between items-center">
+                  <div>
+                    <h3 className="text-slate-900 font-medium">{contract.jobTitle || 'Contract #' + contract.id}</h3>
+                    <p className="text-xs text-slate-500">{contract.status} • Client: {contract.clientName}</p>
+                  </div>
+                  <Link to={`/contracts/${contract.id}`} className="btn-secondary btn-sm">View & Chat</Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Quick links */}

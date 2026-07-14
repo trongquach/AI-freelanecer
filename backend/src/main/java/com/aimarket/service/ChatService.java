@@ -66,6 +66,16 @@ public class ChatService {
         return messageRepository.countByContractIdAndIsReadFalseAndSenderIdNot(contractId, userId);
     }
 
+    public void sendTypingEvent(Long contractId, Long userId, boolean typing) {
+        getContractAndCheckParty(contractId, userId);
+        java.util.Map<String, Object> event = java.util.Map.of(
+            "type", "TYPING",
+            "userId", userId,
+            "typing", typing
+        );
+        messagingTemplate.convertAndSend("/topic/contract." + contractId, event);
+    }
+
     // ─── Helpers ─────────────────────────────────────────
     private Contract getContractAndCheckParty(Long contractId, Long userId) {
         Contract contract = contractRepository.findByIdWithDetails(contractId)
