@@ -124,6 +124,9 @@ export default function WalletPage() {
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [accountNumber, setAccountNumber] = useState('')
+  const [accountHolder, setAccountHolder] = useState('')
 
   const { data: wallet, isLoading } = useQuery<WalletData>({
     queryKey: ['wallet'],
@@ -199,13 +202,25 @@ export default function WalletPage() {
       toast.error('Please enter a valid amount within your available balance.')
       return
     }
+    if (!bankName || !accountNumber || !accountHolder) {
+      toast.error('Please fill in all bank details.')
+      return
+    }
     try {
-      await axiosInstance.post('/wallet/withdraw', { amount: amt.toString() })
+      await axiosInstance.post('/wallet/withdraw', { 
+        amount: amt.toString(),
+        bankName,
+        accountNumber,
+        accountHolder
+      })
       toast.success(`Withdrawal request for $${amt.toFixed(2)} submitted!`)
       queryClient.invalidateQueries({ queryKey: ['wallet'] })
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
       setShowWithdrawModal(false)
       setWithdrawAmount('')
+      setBankName('')
+      setAccountNumber('')
+      setAccountHolder('')
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Withdrawal failed. Please try again.')
     }
@@ -324,21 +339,24 @@ export default function WalletPage() {
               }
               const sign = getTxSign(tx)
               return (
-                <div key={tx.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${sign > 0 ? 'bg-success-50 text-success-500' : 'bg-danger-50 text-danger-500'}`}>
-                      {sign > 0
-                        ? <CheckCircle className="w-5 h-5 text-success-400" />
-                        : <XCircle className="w-5 h-5 text-danger-400" />}
+                <div key={tx.id} className="flex flex-col p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2 rounded-lg ${sign > 0 ? 'bg-success-50 text-success-500' : 'bg-danger-50 text-danger-500'}`}>
+                        {sign > 0
+                          ? <CheckCircle className="w-5 h-5 text-success-400" />
+                          : <XCircle className="w-5 h-5 text-danger-400" />}
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{tx.type.replace('_', ' ')}</p>
+                        <p className="text-sm text-slate-500">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-slate-900">{tx.note}</p>
-                      <p className="text-sm text-slate-500">{new Date(tx.createdAt).toLocaleDateString()}</p>
-                    </div>
+                    <span className={`font-bold ${sign > 0 ? 'text-success-500' : 'text-danger-500'}`}>
+                      {sign > 0 ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                    </span>
                   </div>
-                  <span className={`font-bold ${sign > 0 ? 'text-success-500' : 'text-danger-500'}`}>
-                    {sign > 0 ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
-                  </span>
+                  {tx.note && <p className="text-sm text-slate-600 bg-slate-100 p-2 rounded-lg mt-1 whitespace-pre-wrap">{tx.note}</p>}
                 </div>
               )
             })}
@@ -379,30 +397,71 @@ export default function WalletPage() {
       {/* Withdraw Modal */}
       {showWithdrawModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-slate-800 mb-2">Withdraw funds</h2>
             <p className="text-sm text-slate-500 mb-6">
               Available balance: <span className="font-bold text-slate-900">${available.toFixed(2)}</span>
             </p>
-            <div className="relative mb-6">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
-              <input
-                id="withdraw-amount-input"
-                type="number"
-                min="10"
-                max={available}
-                step="1"
-                value={withdrawAmount}
-                onChange={e => setWithdrawAmount(e.target.value)}
-                placeholder="100"
-                className="input-field pl-8 text-lg w-full text-slate-900"
-                autoFocus
-              />
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Amount ($)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                  <input
+                    id="withdraw-amount-input"
+                    type="number"
+                    min="50"
+                    max={available}
+                    step="1"
+                    value={withdrawAmount}
+                    onChange={e => setWithdrawAmount(e.target.value)}
+                    placeholder="Min $50"
+                    className="input-field pl-8 w-full text-slate-900"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Bank Name</label>
+                <input
+                  type="text"
+                  value={bankName}
+                  onChange={e => setBankName(e.target.value)}
+                  placeholder="e.g. Vietcombank"
+                  className="input-field w-full text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Account Number</label>
+                <input
+                  type="text"
+                  value={accountNumber}
+                  onChange={e => setAccountNumber(e.target.value)}
+                  placeholder="e.g. 0123456789"
+                  className="input-field w-full text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-1 block">Account Holder Name</label>
+                <input
+                  type="text"
+                  value={accountHolder}
+                  onChange={e => setAccountHolder(e.target.value)}
+                  placeholder="e.g. NGUYEN VAN A"
+                  className="input-field w-full text-slate-900"
+                  style={{ textTransform: 'uppercase' }}
+                />
+              </div>
             </div>
+
             <div className="flex gap-3">
               <button
                 className="btn-secondary btn-md flex-1"
-                onClick={() => { setShowWithdrawModal(false); setWithdrawAmount('') }}
+                onClick={() => { setShowWithdrawModal(false); setWithdrawAmount(''); setBankName(''); setAccountNumber(''); setAccountHolder(''); }}
               >Cancel</button>
               <button
                 id="withdraw-confirm-btn"
