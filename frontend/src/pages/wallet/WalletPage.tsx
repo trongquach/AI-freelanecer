@@ -38,11 +38,12 @@ function CheckoutForm({ amount, onSuccess, onCancel }: { amount: number; onSucce
   const stripe = useStripe()
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isReady, setIsReady] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!stripe || !elements) return
+    if (!stripe || !elements || !isReady) return
 
     setIsProcessing(true)
     setErrorMsg('')
@@ -89,7 +90,7 @@ function CheckoutForm({ amount, onSuccess, onCancel }: { amount: number; onSucce
         <p className="text-2xl font-bold text-slate-900">${amount.toFixed(2)}</p>
       </div>
 
-      <PaymentElement />
+      <PaymentElement onReady={() => setIsReady(true)} />
 
       {errorMsg && (
         <p className="text-sm text-red-500 bg-red-50 rounded-lg px-4 py-3">{errorMsg}</p>
@@ -99,8 +100,8 @@ function CheckoutForm({ amount, onSuccess, onCancel }: { amount: number; onSucce
         <button type="button" className="btn-secondary btn-md flex-1" onClick={onCancel} disabled={isProcessing}>
           Cancel
         </button>
-        <button type="submit" className="btn-gradient btn-md flex-1" disabled={!stripe || isProcessing}>
-          {isProcessing ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
+        <button type="submit" className="btn-gradient btn-md flex-1" disabled={!stripe || !isReady || isProcessing}>
+          {isProcessing ? 'Processing...' : (!isReady ? 'Loading...' : `Pay $${amount.toFixed(2)}`)}
         </button>
       </div>
 
