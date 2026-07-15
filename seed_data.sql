@@ -3,16 +3,16 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- 10 Users (3 Clients, 6 Experts, 1 Admin)
 INSERT IGNORE INTO users (id, email, password_hash, role, status, email_verified, created_at, updated_at) VALUES 
-(1, 'admin@test.com', 'Password@123', 'ADMIN', 'ACTIVE', 1, NOW(), NOW()),
-(2, 'client1@test.com', 'Password@123', 'CLIENT', 'ACTIVE', 1, NOW(), NOW()),
-(3, 'client2@test.com', 'Password@123', 'CLIENT', 'ACTIVE', 1, NOW(), NOW()),
-(4, 'client3@test.com', 'Password@123', 'CLIENT', 'ACTIVE', 1, NOW(), NOW()),
-(5, 'expert1@test.com', 'Password@123', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
-(6, 'expert2@test.com', 'Password@123', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
-(7, 'expert3@test.com', 'Password@123', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
-(8, 'expert4@test.com', 'Password@123', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
-(9, 'expert5@test.com', 'Password@123', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
-(10, 'expert6@test.com', 'Password@123', 'EXPERT', 'ACTIVE', 1, NOW(), NOW());
+(1, 'admin@test.com', 'password', 'ADMIN', 'ACTIVE', 1, NOW(), NOW()),
+(2, 'client1@test.com', 'password', 'CLIENT', 'ACTIVE', 1, NOW(), NOW()),
+(3, 'client2@test.com', 'password', 'CLIENT', 'ACTIVE', 1, NOW(), NOW()),
+(4, 'client3@test.com', 'password', 'CLIENT', 'ACTIVE', 1, NOW(), NOW()),
+(5, 'expert1@test.com', 'password', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
+(6, 'expert2@test.com', 'password', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
+(7, 'expert3@test.com', 'password', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
+(8, 'expert4@test.com', 'password', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
+(9, 'expert5@test.com', 'password', 'EXPERT', 'ACTIVE', 1, NOW(), NOW()),
+(10, 'expert6@test.com', 'password', 'EXPERT', 'ACTIVE', 1, NOW(), NOW());
 
 -- 10 User Profiles
 INSERT IGNORE INTO user_profiles (id, user_id, full_name, bio, avatar_url, hourly_rate, timezone, created_at, updated_at) VALUES 
@@ -74,41 +74,6 @@ INSERT IGNORE INTO services (id, expert_id, title, description, price, delivery_
 (9, 10, 'Deep Learning Research', 'Implement research papers in PyTorch.', 2000, 45, 'ACTIVE', 15, NOW(), NOW()),
 (10, 5, 'Machine Learning Consultation', '1 hour consultation on ML architecture.', 100, 1, 'ACTIVE', 90, NOW(), NOW());
 
--- 10 Proposals
-INSERT IGNORE INTO proposals (id, job_id, expert_id, cover_letter, price, timeline_days, status, created_at, updated_at) VALUES 
-(1, 1, 6, 'I am great at YOLO.', 800, 21, 'PENDING', NOW(), NOW()),
-(2, 2, 7, 'I have built many chatbots.', 1500, 60, 'PENDING', NOW(), NOW()),
-(3, 3, 5, 'Data cleaning is my specialty.', 300, 7, 'PENDING', NOW(), NOW()),
-(4, 4, 10, 'I am a researcher specializing in LLMs.', 4500, 90, 'PENDING', NOW(), NOW()),
-(5, 5, 8, 'I can write amazing prompts.', 200, 5, 'PENDING', NOW(), NOW()),
-(6, 6, 9, 'I have experience with voice cloning.', 6000, 120, 'PENDING', NOW(), NOW()),
-(7, 7, 5, 'I built a recsys for Netflix clone.', 1200, 30, 'PENDING', NOW(), NOW()),
-(8, 8, 9, 'LSTM is perfect for this.', 2000, 60, 'PENDING', NOW(), NOW()),
-(9, 9, 6, 'I train LoRAs daily.', 600, 14, 'PENDING', NOW(), NOW()),
-(10, 10, 6, 'OCR is my core skill.', 900, 21, 'PENDING', NOW(), NOW());
 
--- 10 Contracts
-INSERT IGNORE INTO contracts (id, job_id, proposal_id, client_id, expert_id, total_amount, status, created_at) VALUES 
-(1, 1, 1, 2, 6, 800, 'ACTIVE', NOW()),
-(2, 2, 2, 2, 7, 1500, 'ACTIVE', NOW()),
-(3, 3, 3, 3, 5, 300, 'COMPLETED', NOW()),
-(4, 4, 4, 3, 10, 4500, 'ACTIVE', NOW()),
-(5, 5, 5, 4, 8, 200, 'COMPLETED', NOW()),
-(6, 6, 6, 4, 9, 6000, 'ACTIVE', NOW()),
-(7, 7, 7, 2, 5, 1200, 'ACTIVE', NOW()),
-(8, 8, 8, 3, 9, 2000, 'DISPUTED', NOW()),
-(9, 9, 9, 4, 6, 600, 'CANCELLED', NOW()),
-(10, 10, 10, 2, 6, 900, 'ACTIVE', NOW());
-
--- 10 Escrow Accounts
-INSERT IGNORE INTO escrow_accounts (id, user_id, balance, locked_amount, total_deposited, total_released, currency, updated_at) VALUES 
-(5, 1, 0, 0, 0, 0, 'USD', NOW()),
-(6, 4, 5000, 3900, 10000, 1100, 'USD', NOW()),
-(7, 5, 10000, 6500, 15000, 300, 'USD', NOW()),
-(8, 6, 8000, 6000, 8000, 200, 'USD', NOW()),
-(9, 7, 1500, 0, 0, 1500, 'USD', NOW()),
-(10, 8, 800, 0, 0, 800, 'USD', NOW()),
-(11, 9, 0, 0, 0, 0, 'USD', NOW()),
-(12, 10, 200, 0, 0, 200, 'USD', NOW());
 
 SET FOREIGN_KEY_CHECKS = 1;

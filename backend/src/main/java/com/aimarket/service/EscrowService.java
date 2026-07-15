@@ -49,6 +49,11 @@ public class EscrowService {
     // ─── Deposit (after Stripe webhook confirms payment) ──
     @Transactional
     public EscrowAccount deposit(Long userId, BigDecimal amount, String stripePaymentId) {
+        if (transactionRepository.existsByRefCode(stripePaymentId)) {
+            log.info("Deposit already processed for {}", stripePaymentId);
+            return getOrCreate(userId);
+        }
+
         EscrowAccount account = getOrCreate(userId);
         account.setBalance(account.getBalance().add(amount));
         account.setTotalDeposited(account.getTotalDeposited().add(amount));
@@ -59,6 +64,24 @@ public class EscrowService {
         notificationService.send(userId, "DEPOSIT", "Nạp tiền thành công",
                 String.format("Đã nạp $%.2f vào ví", amount), null);
         return account;
+    }
+
+    @Transactional
+    public boolean confirmStripeDeposit(Long userId, com.stripe.model.PaymentIntent intent) {
+        if (transactionRepository.existsByRefCode(intent.getId())) {
+            return false;
+        }
+        
+        // Verify userId matches (optional but good for security)
+        String intentUserId = intent.getMetadata().get("userId");
+        if (intentUserId != null && !intentUserId.equals(String.valueOf(userId))) {
+            log.warn("User ID mismatch for deposit confirmation. Expected {}, got {}", intentUserId, userId);
+            return false;
+        }
+
+        BigDecimal amount = BigDecimal.valueOf(intent.getAmount()).divide(BigDecimal.valueOf(100));
+        deposit(userId, amount, intent.getId());
+        return true;
     }
 
     // ─── Lock funds for a contract (client escrows payment) ──

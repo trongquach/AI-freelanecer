@@ -104,3 +104,19 @@ services:
       - backend
     networks:
       - aimarket-vps-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: aimarket-phpmyadmin-prod
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    depends_on:
+      - mysql
+    networks:
+      - aimarket-vps-network

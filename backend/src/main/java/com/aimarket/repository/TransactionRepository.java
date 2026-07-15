@@ -25,5 +25,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.type = :type")
     Optional<BigDecimal> sumAmountByType(@Param("type") TransactionType type);
+
+    boolean existsByRefCode(String refCode);
 }
 

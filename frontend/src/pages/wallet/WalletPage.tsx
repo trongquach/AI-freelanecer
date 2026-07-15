@@ -14,7 +14,7 @@ import {
 } from '@stripe/react-stripe-js'
 
 // Stripe publishable key (test mode)
-const stripePromise = loadStripe('pk_test_51TbHgBDd5MFXC9r4YNNe5mgz7wXNvqrYHjNRCYh6gqoE0TcN80NsLZ7UBBo9VBqK8R2gTVUMEsf84WrBfKRsXf100YcOmqNfQ')
+const stripePromise = loadStripe('pk_test_51TtV8dCoN2iP2TT9pUibui0iFQopfpm8S8S1hGSYbVoAiuc9PvS7OXY7YYCvs2rXOIHSdY9OfvDcdQL6hd9YdrXK00RSGPZRHU')
 
 interface WalletData {
   balance: number
@@ -47,23 +47,37 @@ function CheckoutForm({ amount, onSuccess, onCancel }: { amount: number; onSucce
     setIsProcessing(true)
     setErrorMsg('')
 
-    const result = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        // After payment, Stripe redirects here
-        return_url: `${window.location.origin}/wallet?deposit=success`,
-      },
-      redirect: 'if_required',
-    })
+    try {
+      const result = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          // After payment, Stripe redirects here
+          return_url: `${window.location.origin}/wallet?deposit=success`,
+        },
+        redirect: 'if_required',
+      })
 
-    if (result.error) {
-      setErrorMsg(result.error.message || 'Payment failed.')
-      setIsProcessing(false)
-    } else if (result.paymentIntent?.status === 'succeeded') {
-      toast.success(`$${amount.toFixed(2)} deposited successfully! Wallet will update shortly.`)
-      onSuccess()
-    } else {
-      setErrorMsg('Payment did not complete. Please try again.')
+      if (result.error) {
+        setErrorMsg(result.error.message || 'Payment failed.')
+        setIsProcessing(false)
+      } else if (result.paymentIntent?.status === 'succeeded') {
+        axiosInstance.post('/wallet/confirm-deposit', { paymentIntentId: result.paymentIntent.id })
+          .then(() => {
+            toast.success(`$${amount.toFixed(2)} deposited successfully!`)
+            onSuccess()
+          })
+          .catch((err) => {
+            console.error('Confirm deposit error:', err)
+            toast.success(`$${amount.toFixed(2)} deposited successfully! Wallet will update shortly.`)
+            onSuccess()
+          })
+      } else {
+        setErrorMsg('Payment did not complete. Please try again.')
+        setIsProcessing(false)
+      }
+    } catch (err: any) {
+      console.error('Stripe error:', err)
+      setErrorMsg(err.message || 'An unexpected error occurred during payment.')
       setIsProcessing(false)
     }
   }
@@ -124,10 +138,27 @@ export default function WalletPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('deposit') === 'success') {
-      toast.success('Deposit successful! Wallet will update shortly.')
-      queryClient.invalidateQueries({ queryKey: ['wallet'] })
-      queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
-      window.history.replaceState({}, '', '/wallet')
+      const paymentIntentId = params.get('payment_intent')
+      if (paymentIntentId) {
+        axiosInstance.post('/wallet/confirm-deposit', { paymentIntentId })
+          .then(() => {
+            toast.success('Deposit successful! Wallet updated.')
+          })
+          .catch(err => {
+            console.error('Confirm deposit error:', err)
+            toast.success('Deposit successful! Wallet will update shortly.')
+          })
+          .finally(() => {
+            queryClient.invalidateQueries({ queryKey: ['wallet'] })
+            queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
+            window.history.replaceState({}, '', '/wallet')
+          })
+      } else {
+        toast.success('Deposit successful! Wallet will update shortly.')
+        queryClient.invalidateQueries({ queryKey: ['wallet'] })
+        queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
+        window.history.replaceState({}, '', '/wallet')
+      }
     }
   }, [queryClient])
 

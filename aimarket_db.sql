@@ -765,7 +765,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin@test.com','Password@123','ADMIN','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:59:28'),(2,'client@test.com','Password@123','CLIENT','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:48:07'),(3,'expert@test.com','Password@123','EXPERT','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:48:07');
+INSERT INTO `users` VALUES (1,'admin@test.com','password','ADMIN','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:59:28'),(2,'client@test.com','password','CLIENT','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:48:07'),(3,'expert@test.com','password','EXPERT','ACTIVE',1,'2026-06-24 07:48:07','2026-06-24 07:48:07');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

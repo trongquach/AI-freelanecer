@@ -110,6 +110,35 @@ public class WalletController {
         }
     }
 
+    @Operation(summary = "Confirm Stripe Deposit")
+    @PostMapping("/confirm-deposit")
+    public ResponseEntity<?> confirmDeposit(
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        String paymentIntentId = body.get("paymentIntentId");
+        if (paymentIntentId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "paymentIntentId is required"));
+        }
+        
+        try {
+            Stripe.apiKey = stripeSecretKey;
+            PaymentIntent intent = PaymentIntent.retrieve(paymentIntentId);
+            if ("succeeded".equals(intent.getStatus())) {
+                boolean success = escrowService.confirmStripeDeposit(user.getUserId(), intent);
+                if (success) {
+                    return ResponseEntity.ok(Map.of("message", "Deposit confirmed successfully"));
+                } else {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Deposit already processed or user mismatch"));
+                }
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "Payment not succeeded: " + intent.getStatus()));
+            }
+        } catch (Exception e) {
+            log.error("Failed to confirm deposit: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @Operation(summary = "Request withdrawal")
     @PostMapping("/withdraw")
     public Transaction withdraw(@RequestBody Map<String, String> body,

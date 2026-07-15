@@ -5,7 +5,7 @@
 ---
 
 ## 1. THÔNG TIN CHUNG (SERVER INFO)
-- **VPS IP:** `77.237.234.132`
+- **VPS IP:** `116.118.6.40`
 - **Domain Đang Chạy:** `aimarketswp.duckdns.org` (và IP trực tiếp)
 - **OS:** Ubuntu / Debian (Linux)
 - **Môi trường:** Docker Compose (Chạy toàn bộ dịch vụ trong container cách ly)
@@ -60,7 +60,7 @@ Dự án sử dụng **2 tầng Nginx** để tối ưu và bảo mật:
 
 ## 5. CÁC LỆNH QUẢN TRỊ DÀNH CHO DEVELOPER (GỬI BẠN CỦA BẠN)
 
-Nếu bạn của bạn đăng nhập SSH vào VPS (`root@77.237.234.132`), họ cần dùng các lệnh sau để thao tác:
+Nếu bạn của bạn đăng nhập SSH vào VPS (`root@116.118.6.40`), họ cần dùng các lệnh sau để thao tác:
 
 **A. Di chuyển vào thư mục dự án (Bắt buộc trước khi chạy lệnh khác):**
 ```bash
