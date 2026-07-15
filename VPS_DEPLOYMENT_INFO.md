@@ -5,11 +5,9 @@
 ---
 
 ## 1. THÔNG TIN CHUNG (SERVER INFO)
-- **IP Address**: `116.118.6.40`
-- **Username**: `root`
-- **Password**: `&UTrh@FRHRDeDq6`
-- **OS**: Ubuntu (Mặc định)
-- **Domain**: `aimarketswp.duckdns.org` (Cần cập nhật IP trên DuckDNS về `116.118.6.40`)
+- **VPS IP:** `77.237.234.132`
+- **Domain Đang Chạy:** `aimarketswp.duckdns.org` (và IP trực tiếp)
+- **OS:** Ubuntu / Debian (Linux)
 - **Môi trường:** Docker Compose (Chạy toàn bộ dịch vụ trong container cách ly)
 
 ---
@@ -105,3 +103,18 @@ nano /etc/nginx/conf.d/aimarket.conf
 # Sau khi sửa xong, lưu lại và chạy lệnh này để áp dụng
 nginx -t && systemctl reload nginx
 ```
+
+---
+
+## 6. LỖI THƯỜNG GẶP (TROUBLESHOOTING & KNOWN ISSUES)
+
+### Lỗi 403 Forbidden khi đăng ký/gọi API qua Nginx
+- **Triệu chứng:** Khi truy cập API trực tiếp qua cổng 18080 thì hoạt động (hoặc trả về 400 Bad Request), nhưng khi truy cập qua cổng 80 (Nginx proxy) thì bị ném lỗi `403 Forbidden` do Spring Security đánh chặn (`AccessDeniedException`).
+- **Nguyên nhân gốc rễ:** Trong `frontend/nginx.conf`, khi sử dụng biến động để phân giải DNS (ví dụ: `set $backend_host backend; proxy_pass http://$backend_host:8080;`), NGINX sẽ tự động tắt tính năng nối đuôi URI (auto-append URI). Hậu quả là request `POST /api/v1/auth/register` bị cắt đuôi, chỉ còn `POST /api/` khi gửi cho Spring Boot. Spring Security không tìm thấy `/api/` trong danh sách `.permitAll()` nên đã chặn request bằng lỗi 403.
+- **Cách khắc phục:** Luôn phải chèn thêm biến `$request_uri` vào cuối lệnh `proxy_pass` khi sử dụng biến cấu hình host để đảm bảo Nginx truyền toàn bộ đường dẫn lên Backend. Ví dụ:
+  ```nginx
+  location /api/ {
+      set $backend_host backend;
+      proxy_pass http://$backend_host:8080$request_uri;
+  }
+  ```

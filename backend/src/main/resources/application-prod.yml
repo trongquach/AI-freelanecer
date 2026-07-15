@@ -21,7 +21,8 @@ spring:
 logging:
   level:
     com.aimarket: INFO
-    org.springframework: WARN
+    org.springframework.security: TRACE
+    org.springframework.web: TRACE
 
 stripe:
   mock: false
