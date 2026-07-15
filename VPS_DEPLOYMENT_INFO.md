@@ -5,9 +5,11 @@
 ---
 
 ## 1. THÔNG TIN CHUNG (SERVER INFO)
-- **VPS IP:** `77.237.234.132`
-- **Domain Đang Chạy:** `aimarketswp.duckdns.org` (và IP trực tiếp)
-- **OS:** Ubuntu / Debian (Linux)
+- **IP Address**: `116.118.6.40`
+- **Username**: `root`
+- **Password**: `&UTrh@FRHRDeDq6`
+- **OS**: Ubuntu (Mặc định)
+- **Domain**: `aimarketswp.duckdns.org` (Cần cập nhật IP trên DuckDNS về `116.118.6.40`)
 - **Môi trường:** Docker Compose (Chạy toàn bộ dịch vụ trong container cách ly)
 
 ---

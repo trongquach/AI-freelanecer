@@ -1,10 +1,20 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { Wallet, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle, XCircle } from 'lucide-react'
 import axiosInstance from '@/api/axiosInstance'
 import { toast } from 'sonner'
+import { loadStripe } from '@stripe/stripe-js'
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js'
+
+// Stripe publishable key (test mode)
+const stripePromise = loadStripe('pk_test_51TbHgBDd5MFXC9r4YNNe5mgz7wXNvqrYHjNRCYh6gqoE0TcN80NsLZ7UBBo9VBqK8R2gTVUMEsf84WrBfKRsXf100YcOmqNfQ')
 
 interface WalletData {
   balance: number
@@ -12,7 +22,7 @@ interface WalletData {
   availableBalance: number
   totalDeposited: number
   totalReleased: number
-  pendingEarnings: number  // for experts: sum of active contract values
+  pendingEarnings: number
 }
 
 interface Transaction {
@@ -23,11 +33,80 @@ interface Transaction {
   createdAt: string
 }
 
+// ─── Inner Stripe Checkout Form ───────────────────────────────────────────────
+function CheckoutForm({ amount, onSuccess, onCancel }: { amount: number; onSuccess: () => void; onCancel: () => void }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!stripe || !elements) return
+
+    setIsProcessing(true)
+    setErrorMsg('')
+
+    const result = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        // After payment, Stripe redirects here
+        return_url: `${window.location.origin}/wallet?deposit=success`,
+      },
+      redirect: 'if_required',
+    })
+
+    if (result.error) {
+      setErrorMsg(result.error.message || 'Payment failed.')
+      setIsProcessing(false)
+    } else if (result.paymentIntent?.status === 'succeeded') {
+      toast.success(`$${amount.toFixed(2)} deposited successfully! Wallet will update shortly.`)
+      onSuccess()
+    } else {
+      setErrorMsg('Payment did not complete. Please try again.')
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+        <p className="text-xs text-slate-500 mb-1">Amount to deposit</p>
+        <p className="text-2xl font-bold text-slate-900">${amount.toFixed(2)}</p>
+      </div>
+
+      <PaymentElement />
+
+      {errorMsg && (
+        <p className="text-sm text-red-500 bg-red-50 rounded-lg px-4 py-3">{errorMsg}</p>
+      )}
+
+      <div className="flex gap-3 pt-2">
+        <button type="button" className="btn-secondary btn-md flex-1" onClick={onCancel} disabled={isProcessing}>
+          Cancel
+        </button>
+        <button type="submit" className="btn-gradient btn-md flex-1" disabled={!stripe || isProcessing}>
+          {isProcessing ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
+        </button>
+      </div>
+
+      <p className="text-xs text-slate-400 text-center">
+        🔒 Secured by <strong>Stripe</strong>. Your card info is never stored on our servers.
+      </p>
+    </form>
+  )
+}
+
+// ─── Main WalletPage ──────────────────────────────────────────────────────────
 export default function WalletPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
+
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [depositAmount, setDepositAmount] = useState('')
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [isCreatingIntent, setIsCreatingIntent] = useState(false)
+
   const [showWithdrawModal, setShowWithdrawModal] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
 
@@ -38,61 +117,70 @@ export default function WalletPage() {
 
   const { data: txPage } = useQuery<{ content: Transaction[] }>({
     queryKey: ['wallet-transactions'],
-    queryFn: () => axiosInstance.get('/wallet/transactions?page=0&size=10').then(r => r.data),
+    queryFn: () => axiosInstance.get('/wallet/transactions?page=0&size=20').then(r => r.data),
   })
 
-  const depositMutation = useMutation({
-    mutationFn: (amount: number) =>
-      axiosInstance.post(`/stripe/mock-deposit?userId=${user?.id}&amount=${amount}`),
-    onSuccess: () => {
-      toast.success(`$${depositAmount} has been successfully deposited to wallet!`)
+  // Check for redirect-back from Stripe (3DS cards, etc.)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('deposit') === 'success') {
+      toast.success('Deposit successful! Wallet will update shortly.')
       queryClient.invalidateQueries({ queryKey: ['wallet'] })
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
-      setShowDepositModal(false)
-      setDepositAmount('')
-    },
-    onError: () => {
-      toast.error('Deposit failed. Please try again.')
+      window.history.replaceState({}, '', '/wallet')
     }
-  })
+  }, [queryClient])
 
-  const handleDeposit = () => {
+  const handleOpenDeposit = async () => {
     const amt = parseFloat(depositAmount)
-    if (!amt || amt <= 0) {
-      toast.error('Please enter a valid amount.')
+    if (!amt || amt < 1) {
+      toast.error('Minimum deposit is $1.')
       return
     }
-    depositMutation.mutate(amt)
+    setIsCreatingIntent(true)
+    try {
+      const res = await axiosInstance.post('/wallet/create-payment-intent', { amount: amt })
+      setClientSecret(res.data.clientSecret)
+      setShowDepositModal(true)
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to initialize payment. Please try again.')
+    } finally {
+      setIsCreatingIntent(false)
+    }
   }
 
-  const withdrawMutation = useMutation({
-    mutationFn: (amount: number) =>
-      axiosInstance.post('/wallet/withdraw', { amount: amount.toString() }),
-    onSuccess: () => {
-      toast.success(`Withdrawal request for $${withdrawAmount} submitted!`)
+  const handleDepositSuccess = () => {
+    setShowDepositModal(false)
+    setClientSecret(null)
+    setDepositAmount('')
+    // Polling: refresh wallet after 3s (webhook processing time)
+    setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['wallet'] })
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
-      setShowWithdrawModal(false)
-      setWithdrawAmount('')
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Withdrawal failed. Please try again.')
-    }
-  })
+    }, 3000)
+  }
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const amt = parseFloat(withdrawAmount)
-    const available = (walletData?.balance ?? 0) - (walletData?.lockedAmount ?? 0)
+    const available = walletData.availableBalance ?? (walletData.balance - walletData.lockedAmount)
     if (!amt || amt <= 0 || amt > available) {
       toast.error('Please enter a valid amount within your available balance.')
       return
     }
-    withdrawMutation.mutate(amt)
+    try {
+      await axiosInstance.post('/wallet/withdraw', { amount: amt.toString() })
+      toast.success(`Withdrawal request for $${amt.toFixed(2)} submitted!`)
+      queryClient.invalidateQueries({ queryKey: ['wallet'] })
+      queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] })
+      setShowWithdrawModal(false)
+      setWithdrawAmount('')
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Withdrawal failed. Please try again.')
+    }
   }
 
   const walletData = wallet ?? { balance: 0, lockedAmount: 0, availableBalance: 0, totalDeposited: 0, totalReleased: 0, pendingEarnings: 0 }
-  const available = walletData.availableBalance ?? ((walletData.balance ?? 0) - (walletData.lockedAmount ?? 0))
-  // For experts: show pendingEarnings as their locked indicator; for clients: show lockedAmount
+  const available = walletData.availableBalance ?? (walletData.balance - walletData.lockedAmount)
   const isExpert = user?.role === 'EXPERT'
   const lockedDisplay = isExpert ? (walletData.pendingEarnings ?? 0) : (walletData.lockedAmount ?? 0)
 
@@ -131,16 +219,49 @@ export default function WalletPage() {
         <button
           id="wallet-deposit-btn"
           className="btn-gradient btn-md flex-1"
-          onClick={() => setShowDepositModal(true)}
+          onClick={() => setDepositAmount('')}
+          // Show the amount input section below
         >
           <ArrowDownLeft className="w-4 h-4" /> Deposit
         </button>
-        <button 
+        <button
           className="btn-secondary btn-md flex-1"
           onClick={() => setShowWithdrawModal(true)}
         >
           <ArrowUpRight className="w-4 h-4" /> Withdraw
         </button>
+      </div>
+
+      {/* Deposit amount input (always visible below actions) */}
+      <div className="card p-6">
+        <h2 className="font-semibold text-slate-800 mb-3">Deposit Funds</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Enter the amount and click <strong>Proceed to Pay</strong> to be taken to our secure Stripe checkout.
+        </p>
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
+            <input
+              id="deposit-amount-input"
+              type="number"
+              min="1"
+              step="1"
+              value={depositAmount}
+              onChange={e => setDepositAmount(e.target.value)}
+              placeholder="Enter amount (min $1)"
+              className="input-field pl-8 text-lg w-full text-slate-900"
+            />
+          </div>
+          <button
+            id="deposit-confirm-btn"
+            className="btn-gradient btn-md"
+            onClick={handleOpenDeposit}
+            disabled={isCreatingIntent || !depositAmount}
+          >
+            {isCreatingIntent ? 'Loading...' : 'Proceed to Pay'}
+          </button>
+        </div>
+        <p className="text-xs text-slate-400 mt-3">🔒 All payments are secured by Stripe. Test card: 4242 4242 4242 4242</p>
       </div>
 
       {/* Stats */}
@@ -162,77 +283,63 @@ export default function WalletPage() {
           <div className="space-y-3">
             {txPage.content.map(tx => {
               const getTxSign = (tx: Transaction) => {
-                if (tx.type === 'DEPOSIT' || tx.type === 'REFUND') return 1;
-                if (tx.type === 'WITHDRAW' || tx.type === 'ESCROW_LOCK' || tx.type === 'FEE') return -1;
+                if (tx.type === 'DEPOSIT' || tx.type === 'REFUND') return 1
+                if (tx.type === 'WITHDRAW' || tx.type === 'ESCROW_LOCK' || tx.type === 'FEE') return -1
                 if (tx.type === 'RELEASE') {
-                  return tx.note?.toLowerCase().includes('received') ? 1 : -1;
+                  return tx.note?.toLowerCase().includes('received') ? 1 : -1
                 }
-                return 1;
+                return 1
               }
-              const sign = getTxSign(tx);
-              
+              const sign = getTxSign(tx)
               return (
-              <div key={tx.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-lg ${sign > 0 ? 'bg-success-50 text-success-500' : 'bg-danger-50 text-danger-500'}`}>
-                    {sign > 0
-                      ? <CheckCircle className="w-5 h-5 text-success-400" />
-                      : <XCircle className="w-5 h-5 text-danger-400" />}
+                <div key={tx.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-2 rounded-lg ${sign > 0 ? 'bg-success-50 text-success-500' : 'bg-danger-50 text-danger-500'}`}>
+                      {sign > 0
+                        ? <CheckCircle className="w-5 h-5 text-success-400" />
+                        : <XCircle className="w-5 h-5 text-danger-400" />}
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{tx.note}</p>
+                      <p className="text-sm text-slate-500">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-slate-900">{tx.note}</p>
-                    <p className="text-sm text-slate-500">{new Date(tx.createdAt).toLocaleDateString()}</p>
-                  </div>
+                  <span className={`font-bold ${sign > 0 ? 'text-success-500' : 'text-danger-500'}`}>
+                    {sign > 0 ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                  </span>
                 </div>
-                <span className={`font-bold ${sign > 0 ? 'text-success-500' : 'text-danger-500'}`}>
-                  {sign > 0 ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
-                </span>
-              </div>
-            )})}
+              )
+            })}
           </div>
         ) : (
           <p className="text-slate-400 text-center py-4">No transactions yet</p>
         )}
       </div>
 
-      {/* Deposit Modal */}
-      {showDepositModal && (
+      {/* Stripe Payment Modal */}
+      {showDepositModal && clientSecret && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Deposit to wallet</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Complete Payment</h2>
             <p className="text-sm text-slate-500 mb-6">
-              Enter the amount you want to deposit. The system is running in <span className="font-semibold text-primary-600">Sandbox</span> mode, funds will be added instantly.
+              Enter your card details below to deposit funds into your AIMarket wallet.
             </p>
-            <div className="relative mb-6">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
-              <input
-                id="deposit-amount-input"
-                type="number"
-                min="1"
-                step="1"
-                value={depositAmount}
-                onChange={e => setDepositAmount(e.target.value)}
-                placeholder="100"
-                className="input-field pl-8 text-lg w-full text-slate-900"
-                autoFocus
+            <Elements
+              stripe={stripePromise}
+              options={{
+                clientSecret,
+                appearance: {
+                  theme: 'stripe',
+                  variables: { colorPrimary: '#6366f1' },
+                },
+              }}
+            >
+              <CheckoutForm
+                amount={parseFloat(depositAmount)}
+                onSuccess={handleDepositSuccess}
+                onCancel={() => { setShowDepositModal(false); setClientSecret(null) }}
               />
-            </div>
-            <div className="flex gap-3">
-              <button
-                className="btn-secondary btn-md flex-1"
-                onClick={() => { setShowDepositModal(false); setDepositAmount('') }}
-              >
-                Cancel
-              </button>
-              <button
-                id="deposit-confirm-btn"
-                className="btn-gradient btn-md flex-1"
-                onClick={handleDeposit}
-                disabled={depositMutation.isPending}
-              >
-                {depositMutation.isPending ? 'Processing...' : 'Confirm Deposit'}
-              </button>
-            </div>
+            </Elements>
           </div>
         </div>
       )}
@@ -243,14 +350,14 @@ export default function WalletPage() {
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
             <h2 className="text-xl font-bold text-slate-800 mb-2">Withdraw funds</h2>
             <p className="text-sm text-slate-500 mb-6">
-              Enter the amount you want to withdraw. Available balance: <span className="font-bold text-slate-900">${available.toFixed(2)}</span>
+              Available balance: <span className="font-bold text-slate-900">${available.toFixed(2)}</span>
             </p>
             <div className="relative mb-6">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">$</span>
               <input
                 id="withdraw-amount-input"
                 type="number"
-                min="1"
+                min="10"
                 max={available}
                 step="1"
                 value={withdrawAmount}
@@ -264,17 +371,12 @@ export default function WalletPage() {
               <button
                 className="btn-secondary btn-md flex-1"
                 onClick={() => { setShowWithdrawModal(false); setWithdrawAmount('') }}
-              >
-                Cancel
-              </button>
+              >Cancel</button>
               <button
                 id="withdraw-confirm-btn"
                 className="btn-gradient btn-md flex-1"
                 onClick={handleWithdraw}
-                disabled={withdrawMutation.isPending}
-              >
-                {withdrawMutation.isPending ? 'Processing...' : 'Confirm Withdraw'}
-              </button>
+              >Confirm Withdraw</button>
             </div>
           </div>
         </div>
