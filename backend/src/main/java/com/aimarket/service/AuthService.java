@@ -17,7 +17,8 @@ import com.aimarket.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -44,7 +45,10 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final StringRedisTemplate redisTemplate;
+    
+    private final Map<String, ResetTokenInfo> passwordResetTokens = new ConcurrentHashMap<>();
+
+    private record ResetTokenInfo(Long userId, LocalDateTime expiry) {}
 
     @Value("${jwt.refresh-token-expiration:604800000}")
     private long refreshTokenExpiration;
@@ -119,11 +123,8 @@ public class AuthService {
     // ─── Logout ───────────────────────────────────────────────
     @Transactional
     public void logout(String accessToken, String refreshTokenValue) {
-        // Blacklist access token in Redis
-        long ttl = jwtTokenProvider.getAccessTokenExpiration();
-        redisTemplate.opsForValue().set(
-                "jwt:blacklist:" + accessToken, "1", ttl, TimeUnit.MILLISECONDS
-        );
+        // Without Redis, JWT token blacklist is not implemented.
+        // The token will remain valid until it expires.
 
         // Revoke refresh token
         if (refreshTokenValue != null) {
@@ -139,10 +140,9 @@ public class AuthService {
     public void forgotPassword(String email) {
         userRepository.findByEmail(email).ifPresent(user -> {
             String resetToken = UUID.randomUUID().toString();
-            redisTemplate.opsForValue().set(
-                    "password:reset:" + resetToken, String.valueOf(user.getId()),
-                    15, TimeUnit.MINUTES
-            );
+            // Store token in memory for 15 minutes
+            passwordResetTokens.put(resetToken, new ResetTokenInfo(user.getId(), LocalDateTime.now().plusMinutes(15)));
+            
             // In prod: send email with reset link
             log.debug("Password reset token generated for user: {}", user.getId());
         });
@@ -151,20 +151,23 @@ public class AuthService {
     // ─── Reset Password ───────────────────────────────────────
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        String key = "password:reset:" + token;
-        String userIdStr = redisTemplate.opsForValue().get(key);
-        if (userIdStr == null) {
+        ResetTokenInfo tokenInfo = passwordResetTokens.get(token);
+        
+        if (tokenInfo == null || tokenInfo.expiry().isBefore(LocalDateTime.now())) {
+            if (tokenInfo != null) {
+                passwordResetTokens.remove(token); // cleanup expired
+            }
             throw new BusinessException("Reset token invalid or expired");
         }
 
-        Long userId = Long.parseLong(userIdStr);
+        Long userId = tokenInfo.userId();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        redisTemplate.delete(key);
+        passwordResetTokens.remove(token);
         refreshTokenRepository.revokeAllByUserId(userId);
     }
 
