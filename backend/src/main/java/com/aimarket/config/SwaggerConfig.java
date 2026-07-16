@@ -25,7 +25,7 @@ public class SwaggerConfig {
                         .contact(new Contact().name("Developer").email("dev@aimarket.com")))
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("Development Server"),
-                        new Server().url("https://api.aimarket.com").description("Production Server")
+                        new Server().url("http://aimarketswp.duckdns.org:18080").description("VPS Server")
                 ))
                 .components(new Components()
                         .addSecuritySchemes("BearerAuth",
