@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -69,10 +68,8 @@ public class AIRecommendationService {
     // ─── Public API ───────────────────────────────────────────────────────────
 
     /**
-     * Returns top-N recommended experts for a given job.
-     * Results are cached in Redis for 10 minutes (see {@code CacheConfig}).
+     * Recommend jobs for a given user profile based on matching skills and history.
      */
-    @Cacheable(value = "expert-recommendations", key = "#jobId")
     public List<ExpertRecommendationDTO> getTopExperts(Long jobId) {
         // 1. Load job
         var job = jobRepository.findByIdWithDetails(jobId)

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * A simple, Jackson-serializable wrapper for paginated results.
  * Replaces direct use of Spring's {@code PageImpl} in cached methods to avoid
- * deserialization errors when reading from Redis.
+ * deserialization errors.
  */
 public class PageResponse<T> {
 

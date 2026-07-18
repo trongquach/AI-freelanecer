@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +42,6 @@ public class AuthService {
     private final UserProfileRepository userProfileRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
-    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     
     private final Map<String, ResetTokenInfo> passwordResetTokens = new ConcurrentHashMap<>();
@@ -62,7 +60,7 @@ public class AuthService {
 
         User user = User.builder()
                 .email(request.email())
-                .passwordHash(passwordEncoder.encode(request.password()))
+                .passwordHash(request.password())
                 .role(request.role())
                 .status(UserStatus.ACTIVE) // Auto-activate in dev; prod needs email verification
                 .emailVerified(false)
@@ -123,7 +121,6 @@ public class AuthService {
     // ─── Logout ───────────────────────────────────────────────
     @Transactional
     public void logout(String accessToken, String refreshTokenValue) {
-        // Without Redis, JWT token blacklist is not implemented.
         // The token will remain valid until it expires.
 
         // Revoke refresh token
@@ -164,7 +161,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setPasswordHash(newPassword);
         userRepository.save(user);
 
         passwordResetTokens.remove(token);

@@ -175,11 +175,13 @@ export default function CreateJobPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Minimum Budget ($)</label>
-                <input type="number" {...register('budgetMin', { valueAsNumber: true })} className="input" placeholder="500" />
+                <input type="number" {...register('budgetMin', { valueAsNumber: true })} className={`input ${errors.budgetMin ? 'input-error' : ''}`} placeholder="500" />
+                {errors.budgetMin && <p className="mt-1 text-xs text-danger-500">{errors.budgetMin.message}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Maximum Budget ($)</label>
-                <input type="number" {...register('budgetMax', { valueAsNumber: true })} className="input" placeholder="5000" />
+                <input type="number" {...register('budgetMax', { valueAsNumber: true })} className={`input ${errors.budgetMax ? 'input-error' : ''}`} placeholder="5000" />
+                {errors.budgetMax && <p className="mt-1 text-xs text-danger-500">{errors.budgetMax.message}</p>}
               </div>
             </div>
 

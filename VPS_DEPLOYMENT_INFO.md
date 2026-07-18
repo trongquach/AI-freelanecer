@@ -6,10 +6,12 @@
 
 ## 1. THÔNG TIN CHUNG (SERVER INFO)
 - **VPS IP:** `116.118.6.40`
+- 📖 **Tài liệu API Swagger UI**: [http://116.118.6.40:18080/swagger-ui/index.html](http://116.118.6.40:18080/swagger-ui/index.html)
 - **Domain Đang Chạy:** `aimarketswp.duckdns.org` (và IP trực tiếp)
 - **OS:** Ubuntu / Debian (Linux)
 - **Môi trường:** Docker Compose (Chạy toàn bộ dịch vụ trong container cách ly)
-
+- **Root User:** root (Nếu là Linux) hoặc administrator (Nếu là Windows)
+- **Root Password:** &UTrh@FRHRDeDq6
 ---
 
 ## 2. CẤU TRÚC THƯ MỤC TRÊN VPS
@@ -29,11 +31,11 @@ Bao gồm các file và thư mục quan trọng:
 Hệ thống sử dụng mạng nội bộ ảo `aimarket-vps-network` để các container nói chuyện với nhau. 
 Gồm 4 container đang chạy nền:
 
-| Tên Container | Hình ảnh (Image) | Cổng Nội Bộ (Exposed) | Chức năng |
+| Tên Container | Hình ảnh (Image) | Cổng Máy Chủ (Exposed) | Chức năng |
 | :--- | :--- | :--- | :--- |
-| **`aimarket-mysql-prod`** | `mysql:8.0` | `3306` (Chỉ nội bộ) | Database chính. Không map ra ngoài để bảo mật. |
-| **`aimarket-redis-prod`** | `redis:7-alpine` | `6379` (Chỉ nội bộ) | Bộ nhớ đệm (Cache) & Websocket Pub/Sub. |
-| **`aimarket-backend-prod`**| `Spring Boot` (Java 21) | `127.0.0.1:18080` | Xử lý API & Websocket, kết nối tới DB và Redis. |
+| **`aimarket-mysql-prod`** | `mysql:8.0` | `3307` | Database chính. Có map ra port 3307 để dùng DataGrip/DBeaver. |
+| **`aimarket-phpmyadmin-prod`**| `phpmyadmin` | `8081` | Giao diện quản trị Database trực quan trên trình duyệt. |
+| **`aimarket-backend-prod`**| `Spring Boot` (Java 21) | `18080` | Xử lý API & Websocket, kết nối tới DB. |
 | **`aimarket-frontend-prod`**| `Nginx + React` (Node 18) | `127.0.0.1:13000` | Giao diện người dùng. Proxy ngược gọi tới backend. |
 
 ---

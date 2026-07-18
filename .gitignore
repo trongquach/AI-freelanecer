@@ -37,3 +37,6 @@ Thumbs.db
 *.pem
 *.zip
 *.py
+
+# E2E Tests
+e2e-tests/

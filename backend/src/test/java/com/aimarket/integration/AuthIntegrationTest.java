@@ -14,8 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -64,15 +62,10 @@ public class AuthIntegrationTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
-    @MockBean
-    private StringRedisTemplate redisTemplate;
 
-    @MockBean
-    private ValueOperations<String, String> valueOperations;
 
     @BeforeEach
     void setUp() {
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
     }

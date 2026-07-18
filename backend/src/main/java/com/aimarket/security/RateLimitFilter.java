@@ -36,8 +36,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         Bucket bucket;
         if (path.startsWith("/api/v1/ai/")) {
-            // AI Endpoints: 10 calls/hour/user
-            bucket = resolveBucket(userId + "-ai", 10, Duration.ofHours(1));
+            // AI Endpoints: 50 calls/hour/user
+            bucket = resolveBucket(userId + "-ai", 50, Duration.ofHours(1));
         } else if (!userId.equals("anonymous")) {
             // Authenticated: 1000 req/min
             bucket = resolveBucket(userId, 1000, Duration.ofMinutes(1));
