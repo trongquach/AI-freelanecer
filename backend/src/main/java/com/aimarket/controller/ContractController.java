@@ -26,7 +26,7 @@ public class ContractController {
     @PreAuthorize("isAuthenticated()")
     public ContractResponse getContract(@PathVariable Long id,
                                         @AuthenticationPrincipal CustomUserDetails user) {
-        return contractService.getContract(id, user.getUserId());
+        return contractService.getContract(id, user.getUserId(), user.getRole());
     }
 
     @Operation(summary = "My contracts")

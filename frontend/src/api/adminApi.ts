@@ -111,8 +111,8 @@ export const adminApi = {
     const res = await axiosInstance.get('/admin/disputes', { params: { page, size } });
     return res.data;
   },
-  resolveDispute: async (id: number, resolution: string, adminNote: string): Promise<any> => {
-    const res = await axiosInstance.post(`/disputes/${id}/resolve`, { resolution, adminNote });
+  resolveDispute: async (id: number, resolution: string, adminNote: string, reopenJob?: boolean): Promise<any> => {
+    const res = await axiosInstance.post(`/disputes/${id}/resolve`, { resolution, adminNote, reopenJob });
     return res.data;
   },
 

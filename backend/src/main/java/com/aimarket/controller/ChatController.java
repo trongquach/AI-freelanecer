@@ -32,7 +32,7 @@ public class ChatController {
                                             @AuthenticationPrincipal CustomUserDetails user,
                                             @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "50") int size) {
-        return chatService.getHistory(contractId, user.getUserId(), page, size);
+        return chatService.getHistory(contractId, user.getUserId(), user.getRole(), page, size);
     }
 
     @Operation(summary = "Send message via REST (also broadcasts via WS)")
@@ -41,7 +41,7 @@ public class ChatController {
     public MessageResponse sendMessage(@PathVariable Long contractId,
                                        @Valid @RequestBody SendMessageRequest request,
                                        @AuthenticationPrincipal CustomUserDetails user) {
-        return chatService.sendMessage(contractId, request.content(), user.getUserId());
+        return chatService.sendMessage(contractId, request.content(), user.getUserId(), user.getRole());
     }
 
     @Operation(summary = "Unread message count")
@@ -58,6 +58,6 @@ public class ChatController {
     public void typingEvent(@PathVariable Long contractId,
                             @RequestParam boolean typing,
                             @AuthenticationPrincipal CustomUserDetails user) {
-        chatService.sendTypingEvent(contractId, user.getUserId(), typing);
+        chatService.sendTypingEvent(contractId, user.getUserId(), user.getRole(), typing);
     }
 }

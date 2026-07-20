@@ -13,7 +13,9 @@ public class DisputeResponse {
     private Long id;
     private Long contractId;
     private String contractTitle;
-    private OpenedByInfo openedBy;
+    private UserInfo client;
+    private UserInfo expert;
+    private UserInfo openedBy;
     private String reason;
     private DisputeStatus status;
     private String adminNote;
@@ -23,7 +25,7 @@ public class DisputeResponse {
 
     @Data
     @Builder
-    public static class OpenedByInfo {
+    public static class UserInfo {
         private Long id;
         private String email;
         private String fullName;

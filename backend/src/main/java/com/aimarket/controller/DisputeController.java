@@ -22,7 +22,7 @@ public class DisputeController {
     private final DisputeService disputeService;
 
     public record OpenDisputeRequest(@NotBlank String reason) {}
-    public record ResolveDisputeRequest(DisputeResolution resolution, String adminNote) {}
+    public record ResolveDisputeRequest(DisputeResolution resolution, String adminNote, Boolean reopenJob) {}
 
     @Operation(summary = "Open dispute for a contract")
     @PostMapping("/api/v1/contracts/{contractId}/dispute")
@@ -55,6 +55,6 @@ public class DisputeController {
     @PreAuthorize("hasRole('ADMIN')")
     public DisputeResponse resolve(@PathVariable Long id, @RequestBody ResolveDisputeRequest req) {
         return disputeService.toResponse(
-                disputeService.resolve(id, req.resolution(), req.adminNote()));
+                disputeService.resolve(id, req.resolution(), req.adminNote(), req.reopenJob()));
     }
 }

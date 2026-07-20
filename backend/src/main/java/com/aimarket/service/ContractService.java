@@ -30,11 +30,11 @@ public class ContractService {
     private final com.aimarket.repository.JobRepository jobRepository;
 
     @Transactional(readOnly = true)
-    public ContractResponse getContract(Long id, Long userId) {
+    public ContractResponse getContract(Long id, Long userId, com.aimarket.entity.enums.UserRole role) {
         Contract contract = contractRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", id));
         boolean isParty = contract.getClient().getId().equals(userId) || contract.getExpert().getId().equals(userId);
-        if (!isParty) throw new ForbiddenException();
+        if (!isParty && role != com.aimarket.entity.enums.UserRole.ADMIN) throw new ForbiddenException();
         return toResponse(contract);
     }
 

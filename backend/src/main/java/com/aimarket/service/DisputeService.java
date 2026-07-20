@@ -76,7 +76,7 @@ public class DisputeService {
     }
 
     @Transactional
-    public Dispute resolve(Long disputeId, DisputeResolution resolution, String adminNote) {
+    public Dispute resolve(Long disputeId, DisputeResolution resolution, String adminNote, Boolean reopenJob) {
         Dispute dispute = disputeRepository.findById(disputeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Dispute", disputeId));
 
@@ -97,8 +97,12 @@ public class DisputeService {
         
         var job = contract.getJob();
         if (job != null) {
-            job.setStatus(resolution == DisputeResolution.RELEASE_EXPERT 
-                ? com.aimarket.entity.enums.JobStatus.COMPLETED : com.aimarket.entity.enums.JobStatus.CANCELLED);
+            if (resolution == DisputeResolution.RELEASE_EXPERT) {
+                job.setStatus(com.aimarket.entity.enums.JobStatus.COMPLETED);
+            } else {
+                job.setStatus(Boolean.TRUE.equals(reopenJob) 
+                    ? com.aimarket.entity.enums.JobStatus.OPEN : com.aimarket.entity.enums.JobStatus.CANCELLED);
+            }
             jobRepository.save(job);
         }
 
@@ -118,13 +122,25 @@ public class DisputeService {
 
     public DisputeResponse toResponse(Dispute d) {
         Contract c = d.getContract();
+        User client = c.getClient();
+        User expert = c.getExpert();
         User opener = d.getOpenedBy();
         return DisputeResponse.builder()
                 .id(d.getId())
                 .contractId(c.getId())
                 .contractTitle(c.getProposal() != null && c.getProposal().getJob() != null
                         ? c.getProposal().getJob().getTitle() : "Contract #" + c.getId())
-                .openedBy(DisputeResponse.OpenedByInfo.builder()
+                .client(DisputeResponse.UserInfo.builder()
+                        .id(client.getId())
+                        .email(client.getEmail())
+                        .fullName(client.getProfile() != null ? client.getProfile().getFullName() : client.getEmail())
+                        .build())
+                .expert(DisputeResponse.UserInfo.builder()
+                        .id(expert.getId())
+                        .email(expert.getEmail())
+                        .fullName(expert.getProfile() != null ? expert.getProfile().getFullName() : expert.getEmail())
+                        .build())
+                .openedBy(DisputeResponse.UserInfo.builder()
                         .id(opener.getId())
                         .email(opener.getEmail())
                         .fullName(opener.getProfile() != null ? opener.getProfile().getFullName() : opener.getEmail())
