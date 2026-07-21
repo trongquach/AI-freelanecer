@@ -34,15 +34,6 @@ public class ContractServiceTest {
     @Mock
     private MilestoneRepository milestoneRepository;
 
-    @Mock
-    private EscrowService escrowService;
-
-    @Mock
-    private NotificationService notificationService;
-
-    @Mock
-    private com.aimarket.repository.JobRepository jobRepository;
-
     @InjectMocks
     private ContractService contractService;
 

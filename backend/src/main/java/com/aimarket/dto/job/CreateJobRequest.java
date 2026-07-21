@@ -13,5 +13,12 @@ public record CreateJobRequest(
     @FutureOrPresent LocalDate deadline,
     @FutureOrPresent LocalDate startDate,
     String expectedDuration,
-    List<Long> skillIds
+    List<Long> skillIds,
+
+    /** Số ứng viên tối đa muốn phỏng vấn (1–20, mặc định 5) */
+    @Min(1) @Max(20) Integer maxShortlist,
+
+    /** Ngưỡng điểm AI tối thiểu để CV hiển thị cho Client (0.0–1.0, mặc định 0.6) */
+    @DecimalMin("0.0") @DecimalMax("1.0") Double aiScreeningThreshold
 ) {}
+

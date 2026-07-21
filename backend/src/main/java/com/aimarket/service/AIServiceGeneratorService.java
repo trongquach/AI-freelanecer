@@ -65,7 +65,7 @@ public class AIServiceGeneratorService {
     private ServiceGeneratedDTO fallback() {
         return new ServiceGeneratedDTO(
                 "I will provide professional services",
-                "AI tạm thời không khả dụng. Vui lòng nhập mô tả thủ công.",
+                "AI is temporarily unavailable. Please enter a description manually.",
                 100, 3, List.of("Freelance"));
     }
 }

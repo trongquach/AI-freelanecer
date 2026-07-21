@@ -67,7 +67,7 @@ export default function JobDetailPage() {
             <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-6">
               <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {job.viewCount} views</span>
               <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />
-                {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true, locale: vi })}
+                {job.createdAt ? formatDistanceToNow(new Date(!job.createdAt.endsWith('Z') && !job.createdAt.includes('+') ? job.createdAt + 'Z' : job.createdAt), { addSuffix: true, locale: vi }) : ''}
               </span>
             </div>
             <div className="prose-dark">

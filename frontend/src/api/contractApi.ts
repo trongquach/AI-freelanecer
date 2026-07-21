@@ -3,14 +3,40 @@ import { Proposal, SubmitProposalRequest, Contract, AcceptProposalRequest, Submi
 import { PageResponse } from '../types/common';
 
 export const contractApi = {
-  // Proposals
+  // ── Proposals ─────────────────────────────────────────────
+
   submitProposal: async (jobId: number, data: SubmitProposalRequest): Promise<Proposal> => {
     const res = await axiosInstance.post('/proposals', { ...data, jobId });
     return res.data;
   },
 
+  /** All proposals for a job (Admin/debug view) */
   getProposalsForJob: async (jobId: number, page = 0, size = 10): Promise<PageResponse<Proposal>> => {
     const res = await axiosInstance.get(`/proposals/job/${jobId}`, { params: { page, size } });
+    return res.data;
+  },
+
+  /** CV đã qua AI — Client xem, sort theo điểm AI */
+  getScreenedProposals: async (jobId: number, page = 0, size = 20): Promise<PageResponse<Proposal>> => {
+    const res = await axiosInstance.get(`/proposals/job/${jobId}/screened`, { params: { page, size } });
+    return res.data;
+  },
+
+  /** Danh sách đang trong vòng phỏng vấn */
+  getInterviewCandidates: async (jobId: number): Promise<Proposal[]> => {
+    const res = await axiosInstance.get(`/proposals/job/${jobId}/interview`);
+    return res.data;
+  },
+
+  /** Client mời ứng viên vào vòng phỏng vấn */
+  shortlistProposal: async (proposalId: number): Promise<Proposal> => {
+    const res = await axiosInstance.post(`/proposals/${proposalId}/shortlist`);
+    return res.data;
+  },
+
+  /** Client đánh dấu đã phỏng vấn + ghi chú */
+  markInterviewed: async (proposalId: number, notes: string): Promise<Proposal> => {
+    const res = await axiosInstance.post(`/proposals/${proposalId}/interviewed`, { notes });
     return res.data;
   },
 
@@ -27,7 +53,13 @@ export const contractApi = {
     await axiosInstance.post(`/proposals/${proposalId}/withdraw`);
   },
 
-  // Contracts
+  myProposals: async (page = 0, size = 10): Promise<PageResponse<Proposal>> => {
+    const res = await axiosInstance.get('/proposals/my', { params: { page, size } });
+    return res.data;
+  },
+
+  // ── Contracts ─────────────────────────────────────────────
+
   getMyContracts: async (page = 0, size = 10): Promise<PageResponse<Contract>> => {
     const res = await axiosInstance.get('/contracts/my', { params: { page, size } });
     return res.data;
@@ -38,7 +70,8 @@ export const contractApi = {
     return res.data;
   },
 
-  // Milestones
+  // ── Milestones ────────────────────────────────────────────
+
   submitMilestone: async (contractId: number, milestoneId: number, data: SubmitMilestoneRequest): Promise<void> => {
     await axiosInstance.post(`/contracts/${contractId}/milestones/${milestoneId}/submit`, data);
   },
@@ -55,3 +88,4 @@ export const contractApi = {
     await axiosInstance.post(`/contracts/${contractId}/dispute`, { reason, description });
   }
 };
+

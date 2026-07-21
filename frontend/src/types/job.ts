@@ -1,4 +1,4 @@
-export type JobStatus = 'DRAFT' | 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+export type JobStatus = 'DRAFT' | 'OPEN' | 'INTERVIEWING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
 
 export interface JobResponse {
   id: number
@@ -12,6 +12,8 @@ export interface JobResponse {
   status: JobStatus
   aiEnhanced: boolean
   viewCount: number
+  maxShortlist: number
+  aiScreeningThreshold: number
   client: {
     id: number
     fullName: string | null
@@ -21,6 +23,7 @@ export interface JobResponse {
   skills: Array<{ id: number; name: string; category: string }>
   createdAt: string
 }
+
 
 export type ServiceStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING_REVIEW'
 

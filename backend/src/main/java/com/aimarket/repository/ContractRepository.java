@@ -25,6 +25,8 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
         WHERE c.id = :id
         """)
     Optional<Contract> findByIdWithDetails(@Param("id") Long id);
+
+    Optional<Contract> findByProposalId(Long proposalId);
     @Query("SELECT COUNT(c) FROM Contract c WHERE c.expert.id = :expertId AND c.status = 'COMPLETED'")
     long countCompletedByExpertId(@Param("expertId") Long expertId);
 

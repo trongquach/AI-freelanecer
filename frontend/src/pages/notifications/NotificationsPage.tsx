@@ -26,7 +26,12 @@ const getNotificationConfig = (type: string) => {
   }
 };
 
-const formatTimeAgo = (dateStr: string) => {
+const formatTimeAgo = (dateStr?: string) => {
+  if (!dateStr) return 'Just now';
+  // Fix timezone issue if backend sends local datetime string without Z
+  if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+    dateStr += 'Z';
+  }
   const date = new Date(dateStr);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -100,7 +105,7 @@ export default function NotificationsPage() {
                       </p>
                       <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{notif.content}</p>
                       <p className="text-xs font-medium text-slate-400 mt-2">
-                        {formatTimeAgo(notif.createdAt)} · {new Date(notif.createdAt).toLocaleDateString()}
+                        {formatTimeAgo(notif.createdAt)} · {notif.createdAt ? new Date(!notif.createdAt.endsWith('Z') && !notif.createdAt.includes('+') ? notif.createdAt + 'Z' : notif.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
                       </p>
                     </div>
                     {!notif.isRead && (

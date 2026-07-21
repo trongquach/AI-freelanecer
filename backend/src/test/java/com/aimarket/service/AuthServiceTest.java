@@ -21,10 +21,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -48,7 +51,13 @@ public class AuthServiceTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
     @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
     private AuthenticationManager authenticationManager;
+    @Mock
+    private StringRedisTemplate redisTemplate;
+    @Mock
+    private ValueOperations<String, String> valueOperations;
 
     @InjectMocks
     private AuthService authService;
@@ -63,6 +72,7 @@ public class AuthServiceTest {
         RegisterRequest request = new RegisterRequest("test@test.com", "password", UserRole.CLIENT, "Test User");
         
         when(userRepository.existsByEmail("test@test.com")).thenReturn(false);
+        when(passwordEncoder.encode("password")).thenReturn("encoded_pwd");
         when(jwtTokenProvider.generateAccessToken(any(CustomUserDetails.class))).thenReturn("access_token");
         when(jwtTokenProvider.getAccessTokenExpiration()).thenReturn(900000L); // 15 mins
 
@@ -123,7 +133,8 @@ public class AuthServiceTest {
         String accessToken = "access_token";
         String refreshTokenValue = "refresh_token";
         
-
+        when(jwtTokenProvider.getAccessTokenExpiration()).thenReturn(900000L);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         
         RefreshToken storedToken = new RefreshToken();
         storedToken.setRevoked(false);
@@ -131,6 +142,7 @@ public class AuthServiceTest {
         
         authService.logout(accessToken, refreshTokenValue);
         
+        verify(valueOperations).set("jwt:blacklist:access_token", "1", 900000L, TimeUnit.MILLISECONDS);
         verify(refreshTokenRepository).save(storedToken);
         assertTrue(storedToken.getRevoked());
     }

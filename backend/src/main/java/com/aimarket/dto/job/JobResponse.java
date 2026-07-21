@@ -18,6 +18,10 @@ public record JobResponse(
     JobStatus status,
     Boolean aiEnhanced,
     Integer viewCount,
+    /** Số ứng viên tối đa cho vòng phỏng vấn */
+    Integer maxShortlist,
+    /** Ngưỡng điểm AI sàng lọc (0.0 – 1.0) */
+    Double aiScreeningThreshold,
     ClientInfo client,
     List<SkillInfo> skills,
     LocalDateTime createdAt
@@ -25,3 +29,4 @@ public record JobResponse(
     public record ClientInfo(Long id, String fullName, String avatarUrl, Double rating) {}
     public record SkillInfo(Long id, String name, String category) {}
 }
+

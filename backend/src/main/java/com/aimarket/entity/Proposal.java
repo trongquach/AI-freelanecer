@@ -39,6 +39,18 @@ public class Proposal {
     @Builder.Default
     private ProposalStatus status = ProposalStatus.PENDING;
 
+    /** Điểm AI chấm CV (0.0 → 1.0). Null = chưa chấm */
+    @Column(name = "ai_score")
+    private Double aiScore;
+
+    /** Nhận xét chi tiết của AI về mức độ phù hợp CV với Job */
+    @Column(name = "ai_feedback", columnDefinition = "TEXT")
+    private String aiFeedback;
+
+    /** Ghi chú của Client sau khi phỏng vấn ứng viên */
+    @Column(name = "interview_notes", columnDefinition = "TEXT")
+    private String interviewNotes;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

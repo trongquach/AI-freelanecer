@@ -24,7 +24,12 @@ const getNotificationConfig = (type: string) => {
   }
 };
 
-const formatTimeAgo = (dateStr: string) => {
+const formatTimeAgo = (dateStr?: string) => {
+  if (!dateStr) return 'Just now';
+  // Fix timezone issue if backend sends local datetime string without Z
+  if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
+    dateStr += 'Z';
+  }
   const date = new Date(dateStr);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);

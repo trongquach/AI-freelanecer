@@ -36,6 +36,9 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-1">
             <NavLink to="/jobs" icon={<Briefcase className="w-4 h-4" />}>Find Jobs</NavLink>
             <NavLink to="/marketplace" icon={<ShoppingBag className="w-4 h-4" />}>Marketplace</NavLink>
+            {isExpert() && (
+              <NavLink to="/cv" icon={<span className="text-xs font-bold text-indigo-600">CV</span>}>My CV</NavLink>
+            )}
           </div>
 
           {/* Right actions */}

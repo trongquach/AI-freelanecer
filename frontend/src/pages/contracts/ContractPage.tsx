@@ -245,9 +245,11 @@ export default function ContractPage() {
           </div>
         </div>
 
-        <h3 className="text-xl font-bold text-slate-900 mb-4">Milestones</h3>
-        <div className="space-y-4">
-          {contract.milestones?.map((m, index) => (
+        {contract.status !== 'INTERVIEWING' && (
+          <>
+            <h3 className="text-xl font-bold text-slate-900 mb-4">Milestones</h3>
+            <div className="space-y-4">
+              {contract.milestones?.map((m, index) => (
             <div key={m.id} className="bg-white border border-slate-200 p-6 rounded-xl space-y-4">
               <div className="flex justify-between items-start">
                 <div>
@@ -320,7 +322,9 @@ export default function ContractPage() {
               )}
             </div>
           ))}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Right Column: Info & Actions */}
@@ -343,19 +347,21 @@ export default function ContractPage() {
             </div>
           </div>
           
-          <div className="pt-4 border-t border-slate-300 space-y-2">
-            {/* Write Review - only Client when contract COMPLETED */}
-            {isClient() && contract.status === 'COMPLETED' && (
-              <Button variant="primary" className="w-full justify-center gap-2"
-                onClick={() => setIsReviewModalOpen(true)}>
-                ⭐ Write a Review
+          {contract.status !== 'INTERVIEWING' && (
+            <div className="pt-4 border-t border-slate-300 space-y-2">
+              {/* Write Review - only Client when contract COMPLETED */}
+              {isClient() && contract.status === 'COMPLETED' && (
+                <Button variant="primary" className="w-full justify-center gap-2"
+                  onClick={() => setIsReviewModalOpen(true)}>
+                  ⭐ Write a Review
+                </Button>
+              )}
+              <Button variant="outline" className="w-full justify-center gap-2 text-danger-400 hover:text-danger-300 hover:border-danger-500/50 hover:bg-danger-500/10"
+                onClick={() => setIsDisputeModalOpen(true)}>
+                <AlertTriangle size={16} /> Open Dispute
               </Button>
-            )}
-            <Button variant="outline" className="w-full justify-center gap-2 text-danger-400 hover:text-danger-300 hover:border-danger-500/50 hover:bg-danger-500/10"
-              onClick={() => setIsDisputeModalOpen(true)}>
-              <AlertTriangle size={16} /> Open Dispute
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Chat Widget */}

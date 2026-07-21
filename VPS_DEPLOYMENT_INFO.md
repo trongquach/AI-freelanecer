@@ -6,7 +6,6 @@
 
 ## 1. THÔNG TIN CHUNG (SERVER INFO)
 - **VPS IP:** `116.118.6.40`
-- 📖 **Tài liệu API Swagger UI**: [http://116.118.6.40:18080/swagger-ui/index.html](http://116.118.6.40:18080/swagger-ui/index.html)
 - **Domain Đang Chạy:** `aimarketswp.duckdns.org` (và IP trực tiếp)
 - **OS:** Ubuntu / Debian (Linux)
 - **Môi trường:** Docker Compose (Chạy toàn bộ dịch vụ trong container cách ly)

@@ -39,9 +39,6 @@ public class EscrowServiceTest {
     @Mock
     private NotificationService notificationService;
 
-    @Mock
-    private com.aimarket.repository.ContractRepository contractRepository;
-
     @InjectMocks
     private EscrowService escrowService;
 
@@ -132,7 +129,6 @@ public class EscrowServiceTest {
     void testRefundFunds_Success() {
         // EscrowService.refundAllLocked is currently a no-op in the implementation.
         // We will call it to ensure no exceptions are thrown.
-        when(contractRepository.findById(100L)).thenReturn(Optional.of(new com.aimarket.entity.Contract()));
         escrowService.refundAllLocked(100L);
         
         // As per the code, this just logs. We can't really verify much unless the implementation changes.

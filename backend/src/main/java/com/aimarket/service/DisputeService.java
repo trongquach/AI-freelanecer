@@ -58,8 +58,8 @@ public class DisputeService {
         disputeRepository.save(dispute);
 
         // Notify admin (userId = 1 by convention in dev)
-        notificationService.send(1L, "DISPUTE", "Tranh chấp mới",
-                "Hợp đồng #" + contractId + " có tranh chấp mới cần xử lý", contractId);
+        notificationService.send(1L, "DISPUTE", "New Dispute",
+                "Contract #" + contractId + " has a new dispute that needs review.", contractId);
 
         return dispute;
     }
@@ -113,9 +113,9 @@ public class DisputeService {
         disputeRepository.save(dispute);
 
         // Notify both parties
-        String msg = "Tranh chấp hợp đồng #" + contract.getId() + " đã được giải quyết: " + resolution;
-        notificationService.send(contract.getClient().getId(), "DISPUTE_RESOLVED", "Giải quyết tranh chấp", msg, contract.getId());
-        notificationService.send(contract.getExpert().getId(), "DISPUTE_RESOLVED", "Giải quyết tranh chấp", msg, contract.getId());
+        String msg = "Dispute for contract #" + contract.getId() + " has been resolved: " + resolution;
+        notificationService.send(contract.getClient().getId(), "DISPUTE_RESOLVED", "Dispute Resolved", msg, contract.getId());
+        notificationService.send(contract.getExpert().getId(), "DISPUTE_RESOLVED", "Dispute Resolved", msg, contract.getId());
 
         return dispute;
     }

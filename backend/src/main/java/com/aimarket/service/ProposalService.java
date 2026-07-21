@@ -7,12 +7,12 @@ import com.aimarket.exception.*;
 import com.aimarket.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -23,11 +23,13 @@ public class ProposalService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final ContractRepository contractRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final EscrowService escrowService;
     private final NotificationService notificationService;
+    private final AICVScreeningService aiCVScreeningService;
+    private final ExpertCVService expertCVService;
+    private final UserProfileRepository userProfileRepository;
 
-    // ─── Submit Proposal ─────────────────────────────────
+    // ─── Submit Proposal ─────────────────────────────────────
     @Transactional
     public ProposalResponse submit(SubmitProposalRequest request, Long expertId) {
         User expert = userRepository.findById(expertId)
@@ -36,7 +38,9 @@ public class ProposalService {
 
         Job job = jobRepository.findById(request.jobId())
                 .orElseThrow(() -> new ResourceNotFoundException("Job", request.jobId()));
-        if (job.getStatus() != JobStatus.OPEN) throw new BusinessException("Job is not open for proposals");
+        if (job.getStatus() != JobStatus.OPEN && job.getStatus() != JobStatus.INTERVIEWING) {
+            throw new BusinessException("Job is not open for proposals");
+        }
         if (job.getClient().getId().equals(expertId)) throw new BusinessException("Cannot propose on your own job");
         if (proposalRepository.existsByJobIdAndExpertId(job.getId(), expertId))
             throw new BusinessException("You have already submitted a proposal for this job");
@@ -47,123 +51,329 @@ public class ProposalService {
                 .price(request.price())
                 .timelineDays(request.timelineDays())
                 .coverLetter(request.coverLetter())
+                .status(ProposalStatus.PENDING)
                 .build();
 
-        return toResponse(proposalRepository.save(proposal));
+        Proposal saved = proposalRepository.save(proposal);
+
+        // Trigger AI CV screening bất đồng bộ
+        triggerAIScreening(saved, job, expert);
+
+        return toResponse(saved);
     }
 
-    // ─── List Proposals for Job (Client view) ────────────
+    // ─── List CV đã qua AI — Client xem ──────────────────────
+    @Transactional(readOnly = true)
+    public Page<ProposalResponse> listPassedForJob(Long jobId, Long clientId, int page, int size) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job", jobId));
+        if (!job.getClient().getId().equals(clientId)) throw new ForbiddenException();
+
+        return proposalRepository.findByJobIdAndStatusOrderByAiScoreDesc(
+                jobId, ProposalStatus.AI_PASSED, PageRequest.of(page, size)
+        ).map(this::toResponse);
+    }
+
+    // ─── List ứng viên đang trong vòng phỏng vấn ─────────────
+    @Transactional(readOnly = true)
+    public List<ProposalResponse> listInterviewCandidates(Long jobId, Long clientId) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job", jobId));
+        if (!job.getClient().getId().equals(clientId)) throw new ForbiddenException();
+
+        return proposalRepository.findByJobIdAndStatusIn(
+                jobId, List.of(ProposalStatus.SHORTLISTED, ProposalStatus.INTERVIEWED)
+        ).stream().map(this::toResponse).toList();
+    }
+
+    // ─── All proposals (Admin) ────────────────────────────────
     @Transactional(readOnly = true)
     public Page<ProposalResponse> listForJob(Long jobId, Long clientId, int page, int size) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job", jobId));
         if (!job.getClient().getId().equals(clientId)) throw new ForbiddenException();
-
-        return proposalRepository.findByJobId(jobId, PageRequest.of(page, size))
-                .map(this::toResponse);
+        return proposalRepository.findByJobId(jobId, PageRequest.of(page, size)).map(this::toResponse);
     }
 
-    // ─── My Proposals (Expert view) ──────────────────────
+    // ─── My Proposals (Expert view) ───────────────────────────
     @Transactional(readOnly = true)
     public Page<ProposalResponse> myProposals(Long expertId, int page, int size) {
         return proposalRepository.findByExpertIdOrderByCreatedAtDesc(expertId,
                 PageRequest.of(page, size)).map(this::toResponse);
     }
 
-    // ─── Accept Proposal — creates Contract ──────────────
+    // ─── Client shortlist ứng viên vào Vòng Phỏng Vấn ────────
     @Transactional
-    public ProposalResponse accept(Long proposalId, Long clientId) {
+    public ProposalResponse shortlist(Long proposalId, Long clientId) {
         Proposal proposal = proposalRepository.findByIdWithDetails(proposalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Proposal", proposalId));
 
         if (!proposal.getJob().getClient().getId().equals(clientId)) throw new ForbiddenException();
-        if (proposal.getStatus() != ProposalStatus.PENDING)
-            throw new BusinessException("Proposal is not in PENDING status");
+        if (proposal.getStatus() != ProposalStatus.AI_PASSED)
+            throw new BusinessException("Chỉ có thể mời ứng viên đã qua sàng lọc AI vào phỏng vấn");
 
-        proposal.setStatus(ProposalStatus.ACCEPTED);
+        // Kiểm tra giới hạn số ứng viên phỏng vấn
+        long currentShortlisted = proposalRepository.countByJobIdAndStatus(
+                proposal.getJob().getId(), ProposalStatus.SHORTLISTED)
+                + proposalRepository.countByJobIdAndStatus(
+                proposal.getJob().getId(), ProposalStatus.INTERVIEWED);
+
+        int maxShortlist = proposal.getJob().getMaxShortlist() != null
+                ? proposal.getJob().getMaxShortlist() : 5;
+
+        if (currentShortlisted >= maxShortlist) {
+            throw new BusinessException("Đã đạt tối đa " + maxShortlist + " ứng viên phỏng vấn. " +
+                    "Hãy loại bớt một ứng viên trước khi mời thêm.");
+        }
+
+        proposal.setStatus(ProposalStatus.SHORTLISTED);
         proposalRepository.save(proposal);
 
-        // Reject all other pending proposals for the same job
-        proposalRepository.findByJobId(proposal.getJob().getId(), Pageable.unpaged())
-                .stream()
-                .filter(p -> !p.getId().equals(proposalId) && p.getStatus() == ProposalStatus.PENDING)
-                .forEach(p -> { p.setStatus(ProposalStatus.REJECTED); proposalRepository.save(p); });
-
-        // Update job status
+        // Cập nhật Job status → INTERVIEWING nếu chưa
         Job job = proposal.getJob();
-        job.setStatus(JobStatus.IN_PROGRESS);
-        jobRepository.save(job);
+        if (job.getStatus() == JobStatus.OPEN) {
+            job.setStatus(JobStatus.INTERVIEWING);
+            jobRepository.save(job);
+        }
 
-        // Create Contract
+        // Tạo Contract tạm thời để có thể chat trong lúc phỏng vấn
         Contract contract = Contract.builder()
                 .proposal(proposal)
                 .job(job)
                 .client(job.getClient())
                 .expert(proposal.getExpert())
-                .totalAmount(proposal.getPrice())
+                .totalAmount(proposal.getPrice()) // tạm dùng giá proposal
+                .status(ContractStatus.INTERVIEWING)
                 .startedAt(LocalDateTime.now())
                 .build();
-                
-        Milestone m1 = Milestone.builder()
-                .contract(contract)
-                .name("Final Deliverable")
-                .description("Complete project delivery based on proposal")
-                .amount(proposal.getPrice())
-                .dueDate(java.time.LocalDate.now().plusDays(proposal.getTimelineDays()))
-                .status(MilestoneStatus.PENDING)
-                .orderIndex(1)
-                .build();
-        contract.getMilestones().add(m1);
-        
         contractRepository.save(contract);
-        
-        escrowService.lockFunds(clientId, contract.getId(), proposal.getPrice());
-        log.info("Contract created: {} for job: {}", contract.getId(), job.getId());
 
-        notificationService.send(proposal.getExpert().getId(), "CONTRACT_CREATED", "Hợp đồng mới", 
-                "Khách hàng " + job.getClient().getEmail() + " đã thuê bạn cho Job: " + job.getTitle(), contract.getId());
+        // Thông báo cho Expert
+        notificationService.send(
+                proposal.getExpert().getId(),
+                "SHORTLISTED",
+                "🎉 You are invited to an interview!",
+                "The client wants to interview you for the job: \"" + job.getTitle() + "\". " +
+                "Please go to the chat to discuss further!",
+                proposalId
+        );
 
         return toResponse(proposal);
     }
 
-    // ─── Reject Proposal ─────────────────────────────────
+    // ─── Client đánh dấu đã phỏng vấn + ghi chú ──────────────
+    @Transactional
+    public ProposalResponse markInterviewed(Long proposalId, Long clientId, String notes) {
+        Proposal proposal = proposalRepository.findByIdWithDetails(proposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Proposal", proposalId));
+
+        if (!proposal.getJob().getClient().getId().equals(clientId)) throw new ForbiddenException();
+        if (proposal.getStatus() != ProposalStatus.SHORTLISTED)
+            throw new BusinessException("Ứng viên phải ở trạng thái SHORTLISTED trước khi đánh dấu đã phỏng vấn");
+
+        proposal.setStatus(ProposalStatus.INTERVIEWED);
+        if (notes != null && !notes.isBlank()) {
+            proposal.setInterviewNotes(notes);
+        }
+        proposalRepository.save(proposal);
+
+        return toResponse(proposal);
+    }
+
+    // ─── Accept Proposal — tạo Contract ──────────────────────
+    @Transactional
+    public ProposalResponse accept(Long proposalId, AcceptProposalRequest request, Long clientId) {
+        Proposal proposal = proposalRepository.findByIdWithDetails(proposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Proposal", proposalId));
+
+        if (!proposal.getJob().getClient().getId().equals(clientId)) throw new ForbiddenException();
+
+        // Chỉ chấp nhận ứng viên đã qua phỏng vấn
+        if (proposal.getStatus() != ProposalStatus.INTERVIEWED) {
+            throw new BusinessException("Chỉ có thể chốt ứng viên sau khi đã phỏng vấn (trạng thái INTERVIEWED)");
+        }
+
+        // Validate milestones
+        if (request == null || request.milestones() == null || request.milestones().isEmpty()) {
+            throw new BusinessException("Cần ít nhất một milestone để tạo hợp đồng");
+        }
+        java.math.BigDecimal totalMilestoneAmount = request.milestones().stream()
+                .map(AcceptProposalRequest.MilestoneRequest::amount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        if (totalMilestoneAmount.compareTo(proposal.getPrice()) != 0) {
+            throw new BusinessException("Tổng tiền milestone phải bằng giá đề xuất: " + proposal.getPrice());
+        }
+
+        proposal.setStatus(ProposalStatus.ACCEPTED);
+        proposalRepository.save(proposal);
+
+        // Từ chối tất cả ứng viên còn lại (bulk update hiệu quả hơn)
+        proposalRepository.bulkUpdateStatus(
+                proposal.getJob().getId(),
+                ProposalStatus.REJECTED,
+                List.of(ProposalStatus.PENDING, ProposalStatus.AI_SCREENING,
+                        ProposalStatus.AI_PASSED, ProposalStatus.SHORTLISTED, ProposalStatus.INTERVIEWED),
+                proposalId
+        );
+
+        // Cập nhật Job → IN_PROGRESS
+        Job job = proposal.getJob();
+        job.setStatus(JobStatus.IN_PROGRESS);
+        jobRepository.save(job);
+
+        // Update existing Contract + Milestones
+        Contract contract = contractRepository.findByProposalId(proposalId)
+                .orElseThrow(() -> new BusinessException("Contract not found"));
+        
+        contract.setStatus(ContractStatus.ACTIVE);
+        contract.setTotalAmount(proposal.getPrice());
+        contract.setStartedAt(LocalDateTime.now());
+        
+        // Clear any existing milestones just in case
+        if (contract.getMilestones() != null) {
+            contract.getMilestones().clear();
+        }
+
+        int orderIndex = 1;
+        for (AcceptProposalRequest.MilestoneRequest mr : request.milestones()) {
+            Milestone milestone = Milestone.builder()
+                    .contract(contract)
+                    .name(mr.name())
+                    .description(mr.description())
+                    .amount(mr.amount())
+                    .dueDate(mr.dueDate())
+                    .status(MilestoneStatus.PENDING)
+                    .orderIndex(orderIndex++)
+                    .build();
+            contract.getMilestones().add(milestone);
+        }
+        contractRepository.save(contract);
+
+        // Khoá tiền Escrow
+        escrowService.lockFunds(clientId, contract.getId(), proposal.getPrice());
+        log.info("Contract {} created for job {} — expert {}", contract.getId(), job.getId(), proposal.getExpert().getId());
+
+        // Thông báo trúng tuyển
+        notificationService.send(
+                proposal.getExpert().getId(),
+                "CONTRACT_CREATED",
+                "🎉 Congratulations! You are hired!",
+                "The client has hired you for the job: \"" + job.getTitle() + "\". Your contract has been created.",
+                contract.getId()
+        );
+
+        return toResponse(proposal);
+    }
+
+    // ─── Reject Proposal ─────────────────────────────────────
     @Transactional
     public ProposalResponse reject(Long proposalId, Long clientId) {
         Proposal proposal = proposalRepository.findByIdWithDetails(proposalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Proposal", proposalId));
         if (!proposal.getJob().getClient().getId().equals(clientId)) throw new ForbiddenException();
-        if (proposal.getStatus() != ProposalStatus.PENDING)
-            throw new BusinessException("Proposal is not in PENDING status");
+
+        if (!List.of(ProposalStatus.AI_PASSED, ProposalStatus.SHORTLISTED, ProposalStatus.INTERVIEWED)
+                .contains(proposal.getStatus())) {
+            throw new BusinessException("Không thể từ chối ứng viên ở trạng thái: " + proposal.getStatus());
+        }
 
         proposal.setStatus(ProposalStatus.REJECTED);
         return toResponse(proposalRepository.save(proposal));
     }
 
-    // ─── Withdraw Proposal ───────────────────────────────
+    // ─── Withdraw Proposal ────────────────────────────────────
     @Transactional
     public void withdraw(Long proposalId, Long expertId) {
         Proposal proposal = proposalRepository.findById(proposalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Proposal", proposalId));
         if (!proposal.getExpert().getId().equals(expertId)) throw new ForbiddenException();
-        if (proposal.getStatus() != ProposalStatus.PENDING)
-            throw new BusinessException("Can only withdraw PENDING proposals");
+
+        if (!List.of(ProposalStatus.PENDING, ProposalStatus.AI_SCREENING,
+                ProposalStatus.AI_PASSED, ProposalStatus.SHORTLISTED)
+                .contains(proposal.getStatus())) {
+            throw new BusinessException("Không thể rút đơn ở trạng thái: " + proposal.getStatus());
+        }
 
         proposal.setStatus(ProposalStatus.WITHDRAWN);
         proposalRepository.save(proposal);
     }
 
-    // ─── Map ─────────────────────────────────────────────
-    private ProposalResponse toResponse(Proposal p) {
+    // ─── AI Screening trigger ─────────────────────────────────
+    private void triggerAIScreening(Proposal proposal, Job job, User expert) {
+        try {
+            List<String> jobSkills = job.getSkills().stream()
+                    .map(s -> s.getName()).toList();
+            List<String> expertSkills = userProfileRepository.findSkillNamesByUserId(expert.getId());
+
+            var profile = expert.getProfile();
+            String expertBio = profile != null ? profile.getBio() : "";
+
+            // Lấy nội dung CV từ hệ thống
+            String cvText = expertCVService.buildCvText(expert.getId());
+            String cvSummary = expertCVService.getYearsOfExperience(expert.getId()) != null
+                    ? cvText : "";
+            Integer yearsExp = expertCVService.getYearsOfExperience(expert.getId());
+
+            double threshold = job.getAiScreeningThreshold() != null
+                    ? job.getAiScreeningThreshold() : 0.6;
+
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            aiCVScreeningService.screenAsync(
+                                    proposal.getId(),
+                                    job.getTitle(),
+                                    job.getDescription(),
+                                    jobSkills,
+                                    proposal.getCoverLetter(),
+                                    expertBio,
+                                    expertSkills,
+                                    cvSummary,
+                                    cvText,
+                                    yearsExp,
+                                    threshold,
+                                    expert.getId()
+                            );
+                        } catch (Exception e) {
+                            log.warn("Failed to submit async AI screening task for proposal {}: {}", proposal.getId(), e.getMessage());
+                        }
+                    }
+                }
+            );
+        } catch (Exception e) {
+            log.warn("Failed to setup AI screening for proposal {}: {}", proposal.getId(), e.getMessage());
+        }
+    }
+
+    // ─── Map to Response ─────────────────────────────────────
+    public ProposalResponse toResponse(Proposal p) {
         var profile = p.getExpert().getProfile();
+        List<String> skills = userProfileRepository.findSkillNamesByUserId(p.getExpert().getId());
+        Integer yearsExp = expertCVService.getYearsOfExperience(p.getExpert().getId());
+
         var expertInfo = new ProposalResponse.ExpertInfo(
                 p.getExpert().getId(),
                 profile != null ? profile.getFullName() : null,
                 profile != null ? profile.getAvatarUrl() : null,
                 profile != null ? profile.getRating() : java.math.BigDecimal.ZERO,
-                profile != null ? profile.getTotalReviews() : 0
+                profile != null ? profile.getTotalReviews() : 0,
+                skills,
+                yearsExp
         );
-        return new ProposalResponse(p.getId(), p.getJob().getId(), p.getJob().getTitle(),
-                expertInfo, p.getPrice(), p.getTimelineDays(), p.getCoverLetter(),
-                p.getStatus(), p.getCreatedAt());
+
+        Contract contract = contractRepository.findByProposalId(p.getId()).orElse(null);
+        Long contractId = contract != null ? contract.getId() : null;
+
+        return new ProposalResponse(
+                p.getId(), contractId, p.getJob().getId(), p.getJob().getTitle(),
+                expertInfo,
+                p.getPrice(), p.getTimelineDays(), p.getCoverLetter(),
+                p.getStatus(),
+                p.getAiScore(), p.getAiFeedback(),
+                p.getInterviewNotes(),
+                p.getCreatedAt()
+        );
     }
 }

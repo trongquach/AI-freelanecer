@@ -30,7 +30,7 @@ export default function ExpertDashboard() {
     { label: 'Services', value: myServices?.totalElements ?? 0, icon: ShoppingBag, color: 'text-primary-400', link: '/dashboard/expert' },
     { label: 'Active', value: myServices?.content?.filter((s: any) => s.status === 'ACTIVE').length ?? 0, icon: TrendingUp, color: 'text-success-500', link: '/dashboard/expert' },
     { label: 'Completed Jobs', value: profile?.jobsDone ?? 0, icon: CheckCircle, color: 'text-success-500', link: '/dashboard/expert' },
-    { label: 'Rating', value: profile?.rating && profile.totalReviews > 0 ? profile.rating.toFixed(1) : '0', icon: Star, color: 'text-warning-400', link: '/profile' },
+    { label: 'Rating', value: profile?.rating && profile.totalReviews > 0 ? Number(profile.rating).toFixed(1) : '0', icon: Star, color: 'text-warning-400', link: '/profile' },
   ]
 
   return (
@@ -101,18 +101,18 @@ export default function ExpertDashboard() {
           </div>
           {isLoadingContracts ? (
             <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
-          ) : !myContracts?.content.length ? (
+          ) : !myContracts?.content?.length ? (
             <div className="bg-white border border-slate-200 p-8 rounded-xl text-center h-full flex flex-col items-center justify-center">
                <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
                <p className="text-slate-500 text-sm">No active contracts yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {myContracts.content.map((contract: any) => (
+              {myContracts?.content?.map((contract: any) => (
                 <div key={contract.id} className="bg-white border border-slate-200 p-4 rounded-xl flex justify-between items-center">
                   <div>
-                    <h3 className="text-slate-900 font-medium">{contract.jobTitle || 'Contract #' + contract.id}</h3>
-                    <p className="text-xs text-slate-500">{contract.status} • Client: {contract.client.fullName}</p>
+                    <h3 className="text-slate-900 font-medium">{contract?.jobTitle || 'Contract #' + contract.id}</h3>
+                    <p className="text-xs text-slate-500">{contract.status} • Client: {contract?.client?.fullName}</p>
                   </div>
                   <Link to={`/contracts/${contract.id}`} className="btn-secondary btn-sm">View & Chat</Link>
                 </div>

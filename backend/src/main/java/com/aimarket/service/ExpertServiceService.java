@@ -215,8 +215,8 @@ public class ExpertServiceService {
         // 5. Lock funds
         escrowService.lockFunds(clientId, contract.getId(), svc.getPrice());
 
-        notificationService.send(svc.getExpert().getId(), "CONTRACT_CREATED", "Có người mua Service", 
-                "Khách hàng " + client.getEmail() + " đã mua Service: " + svc.getTitle(), contract.getId());
+        notificationService.send(svc.getExpert().getId(), "CONTRACT_CREATED", "Service Purchased", 
+                "Client " + client.getEmail() + " has purchased your Service: " + svc.getTitle(), contract.getId());
 
         return contractService.toResponse(contract);
     }

@@ -61,8 +61,8 @@ public class ReviewService {
         // Update reviewee's average rating
         updateUserRating(revieweeId);
 
-        notificationService.send(revieweeId, "REVIEW", "Đánh giá mới",
-                String.format("Bạn nhận được đánh giá %.1f★ cho hợp đồng #%d", req.rating(), req.contractId()),
+        notificationService.send(revieweeId, "REVIEW", "New Review",
+                String.format("You received a %.1f★ review for contract #%d", req.rating(), req.contractId()),
                 req.contractId());
 
         return toResponse(review);

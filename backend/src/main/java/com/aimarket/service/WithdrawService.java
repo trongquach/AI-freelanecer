@@ -56,8 +56,8 @@ public class WithdrawService {
         transactionRepository.save(tx);
 
         // Notify Admin (userId = 1 in dev)
-        notificationService.send(1L, "WITHDRAW_REQUEST", "Yêu cầu rút tiền", 
-                "User " + expertId + " yêu cầu rút $" + amount, null);
+        notificationService.send(1L, "WITHDRAW_REQUEST", "Withdrawal Request", 
+                "User " + expertId + " requested to withdraw $" + amount, null);
 
         return tx;
     }
@@ -74,8 +74,8 @@ public class WithdrawService {
         tx.setStatus("SUCCESS");
         transactionRepository.save(tx);
 
-        notificationService.send(tx.getUser().getId(), "WITHDRAWAL_APPROVED", "Rút tiền thành công",
-                "Yêu cầu rút $" + tx.getAmount() + " đã được xử lý", null);
+        notificationService.send(tx.getUser().getId(), "WITHDRAWAL_APPROVED", "Withdrawal Approved",
+                "Withdrawal request for $" + tx.getAmount() + " has been processed", null);
         // Push real-time wallet refresh to the expert
         notificationService.sendEvent(tx.getUser().getId(), "WALLET_UPDATED", null);
         // Refresh admin withdrawal list
@@ -102,8 +102,8 @@ public class WithdrawService {
         tx.setNote(tx.getNote() + " | Rejected: " + reason);
         transactionRepository.save(tx);
 
-        notificationService.send(tx.getUser().getId(), "WITHDRAWAL_REJECTED", "Rút tiền thất bại",
-                "Yêu cầu rút $" + tx.getAmount() + " bị từ chối: " + reason, null);
+        notificationService.send(tx.getUser().getId(), "WITHDRAWAL_REJECTED", "Withdrawal Rejected",
+                "Withdrawal request for $" + tx.getAmount() + " was rejected: " + reason, null);
         // Refund: push real-time wallet refresh
         notificationService.sendEvent(tx.getUser().getId(), "WALLET_UPDATED", null);
         notificationService.broadcastAdminEvent("WITHDRAWAL_UPDATED");

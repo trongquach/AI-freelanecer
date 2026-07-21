@@ -61,8 +61,8 @@ public class EscrowService {
 
         recordTransaction(userId, null, null, TransactionType.DEPOSIT, amount, stripePaymentId, "Stripe deposit");
 
-        notificationService.send(userId, "DEPOSIT", "Nạp tiền thành công",
-                String.format("Đã nạp $%.2f vào ví", amount), null);
+        notificationService.send(userId, "DEPOSIT", "Deposit Successful",
+                String.format("Deposited $%.2f into wallet", amount), null);
         return account;
     }
 
@@ -121,11 +121,11 @@ public class EscrowService {
 
         String ref = UUID.randomUUID().toString();
         recordTransaction(clientId, contractId, null, TransactionType.RELEASE, amount, ref, "Payment released", "SUCCESS");
-        recordTransaction(expertId, contractId, null, TransactionType.RELEASE, expertAmount, ref, "Payment pending (Clearing)", "PENDING");
+        recordTransaction(expertId, contractId, null, TransactionType.RELEASE, expertAmount, ref, "Payment Received (Pending Clearing)", "PENDING");
         recordTransaction(expertId, contractId, null, TransactionType.FEE, fee, ref, "Platform fee 10%", "SUCCESS");
 
-        notificationService.send(expertId, "PAYMENT_RECEIVED", "Nhận thanh toán",
-                String.format("Đã nhận $%.2f cho hợp đồng #%d", expertAmount, contractId), contractId);
+        notificationService.send(expertId, "PAYMENT_RECEIVED", "Payment Received",
+                String.format("Received $%.2f for contract #%d", expertAmount, contractId), contractId);
 
         // Push real-time wallet refresh events (no notification stored in DB)
         notificationService.sendEvent(clientId, "WALLET_UPDATED", contractId);
@@ -150,8 +150,8 @@ public class EscrowService {
         recordTransaction(userId, null, null, TransactionType.WITHDRAW, amount,
                 UUID.randomUUID().toString(), "Withdrawal pending (Admin approval required)", "PENDING");
 
-        notificationService.send(userId, "WITHDRAWAL", "Rút tiền đang xử lý",
-                String.format("Yêu cầu rút $%.2f đang được xử lý", amount), null);
+        notificationService.send(userId, "WITHDRAWAL", "Withdrawal Processing",
+                String.format("Withdrawal request for $%.2f is processing", amount), null);
         notificationService.sendEvent(userId, "WALLET_UPDATED", null);
         notificationService.broadcastAdminEvent("WITHDRAWAL_REQUESTED");
         return account;
@@ -179,8 +179,6 @@ public class EscrowService {
             EscrowAccount clientAccount = getOrCreate(contract.getClient().getId());
             clientAccount.setLockedAmount(
                     clientAccount.getLockedAmount().subtract(lockedAmount).max(BigDecimal.ZERO));
-            clientAccount.setBalance(
-                    clientAccount.getBalance().subtract(lockedAmount).max(BigDecimal.ZERO));
             escrowAccountRepository.save(clientAccount);
             recordTransaction(contract.getClient(), contractId, null,
                     TransactionType.REFUND, lockedAmount,
@@ -222,15 +220,69 @@ public class EscrowService {
 
         // Notify both parties + trigger real-time updates
         notificationService.send(contract.getClient().getId(), "CONTRACT_COMPLETED",
-                "Hợp đồng hoàn thành",
-                String.format("Hợp đồng #%d đã hoàn thành và được giải ngân", contractId), contractId);
+                "Contract Completed",
+                String.format("Contract #%d has been completed and funds disbursed", contractId), contractId);
         notificationService.send(contract.getExpert().getId(), "CONTRACT_COMPLETED",
-                "Hợp đồng hoàn thành",
-                String.format("Hợp đồng #%d đã hoàn thành - tiền đã vào ví của bạn", contractId), contractId);
+                "Contract Completed",
+                String.format("Contract #%d has been completed - funds have been added to your wallet", contractId), contractId);
         // Push contract-update events so both dashboards refresh
         notificationService.sendEvent(contract.getClient().getId(), "CONTRACT_UPDATED", contractId);
         notificationService.sendEvent(contract.getExpert().getId(), "CONTRACT_UPDATED", contractId);
         notificationService.broadcastAdminEvent("CONTRACT_COMPLETED");
+    }
+
+    // ─── Dispute resolution: partial split ───────────────────
+    @Transactional
+    public void resolvePartial(Long contractId, BigDecimal clientAmount, BigDecimal expertAmount) {
+        log.info("Partial resolution for contract {}: client {}, expert {}", contractId, clientAmount, expertAmount);
+        var contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new com.aimarket.exception.ResourceNotFoundException("Contract", contractId));
+
+        if (contract.getStatus() == ContractStatus.COMPLETED) {
+            throw new com.aimarket.exception.BusinessException("Contract #" + contractId + " is already COMPLETED.");
+        }
+
+        BigDecimal approvedAmount = contract.getMilestones().stream()
+                .filter(m -> m.getStatus() == MilestoneStatus.APPROVED)
+                .map(Milestone::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal lockedAmount = contract.getTotalAmount().subtract(approvedAmount);
+
+        // Validate that the sum equals lockedAmount
+        if (clientAmount.add(expertAmount).compareTo(lockedAmount) != 0) {
+            throw new com.aimarket.exception.BusinessException("Sum of clientAmount and expertAmount must equal the locked amount of $" + lockedAmount);
+        }
+
+        // 1. Release to Expert
+        if (expertAmount.compareTo(BigDecimal.ZERO) > 0) {
+            releaseFunds(contractId, contract.getClient().getId(),
+                    contract.getExpert().getId(), expertAmount);
+            log.info("Released ${} to expert {} for contract {}", expertAmount,
+                    contract.getExpert().getId(), contractId);
+        }
+
+        // 2. Refund to Client
+        if (clientAmount.compareTo(BigDecimal.ZERO) > 0) {
+            EscrowAccount clientAccount = getOrCreate(contract.getClient().getId());
+            clientAccount.setLockedAmount(
+                    clientAccount.getLockedAmount().subtract(clientAmount).max(BigDecimal.ZERO));
+            // Note: balance is NOT subtracted because the client keeps it
+            escrowAccountRepository.save(clientAccount);
+
+            recordTransaction(contract.getClient().getId(), contractId, null,
+                    TransactionType.REFUND, clientAmount,
+                    UUID.randomUUID().toString(), "Dispute partial refund for contract " + contractId);
+            log.info("Refunded ${} to client {} for contract {}", clientAmount,
+                    contract.getClient().getId(), contractId);
+        }
+
+        // Mark contract as CANCELLED (or completed if they want? Usually cancelled for partial split)
+        contract.setStatus(ContractStatus.CANCELLED);
+        contract.setCompletedAt(LocalDateTime.now());
+        contractRepository.save(contract);
+        
+        notificationService.sendEvent(contract.getClient().getId(), "CONTRACT_UPDATED", contractId);
+        notificationService.sendEvent(contract.getExpert().getId(), "CONTRACT_UPDATED", contractId);
     }
 
     // ─── Auto-release after 7 days (BR-PRJ-03) ───────────
@@ -253,12 +305,12 @@ public class EscrowService {
                     releaseFunds(contract.getId(), contract.getClient().getId(),
                             contract.getExpert().getId(), m.getAmount());
                     notificationService.send(contract.getExpert().getId(), "PAYMENT_RECEIVED",
-                            "Tự động giải ngân",
-                            String.format("Milestone '%s' đã được tự động duyệt sau 7 ngày. Tiền đã vào ví.", m.getName()),
+                            "Automatic Disbursement",
+                            String.format("Milestone '%s' was automatically approved after 7 days. Funds are in your wallet.", m.getName()),
                             contract.getId());
                     notificationService.send(contract.getClient().getId(), "MILESTONE_AUTO_APPROVED",
-                            "Milestone tự động duyệt",
-                            String.format("Milestone '%s' của hợp đồng #%d đã tự động hoàn thành do không có phản hồi trong 7 ngày.", m.getName(), contract.getId()),
+                            "Milestone Automatically Approved",
+                            String.format("Milestone '%s' for contract #%d was automatically completed due to no response for 7 days.", m.getName(), contract.getId()),
                             contract.getId());
                     anyAutoApproved = true;
                 }
@@ -317,12 +369,21 @@ public class EscrowService {
         account.setLockedAmount(account.getLockedAmount().subtract(tx.getAmount()));
         escrowAccountRepository.save(account);
 
-        tx.setStatus("SUCCESS");
-        tx.setNote(tx.getNote().replace(" (Clearing)", "") + " | Cleared");
-        transactionRepository.save(tx);
+        // Delete the old pending transaction so it doesn't double-count in history
+        transactionRepository.delete(tx);
 
-        notificationService.send(tx.getUser().getId(), "EARNING_CLEARED", "Tiền đã vào ví",
-                String.format("Khoản tiền $%.2f đã vượt qua thời gian chờ và được cộng vào số dư khả dụng", tx.getAmount()), null);
+        // Create a new transaction so it appears at the top of the history today
+        Long milestoneId = tx.getMilestone() != null ? tx.getMilestone().getId() : null;
+        recordTransaction(tx.getUser().getId(), 
+                          tx.getContract() != null ? tx.getContract().getId() : null, 
+                          milestoneId, 
+                          TransactionType.RELEASE, 
+                          tx.getAmount(), 
+                          tx.getRefCode() + "-CLEAR", 
+                          "Earnings Cleared to Available Balance (Received)");
+
+        notificationService.send(tx.getUser().getId(), "EARNING_CLEARED", "Funds Cleared",
+                String.format("The amount $%.2f has cleared the holding period and is now available in your balance", tx.getAmount()), null);
         notificationService.sendEvent(tx.getUser().getId(), "WALLET_UPDATED", null);
     }
 

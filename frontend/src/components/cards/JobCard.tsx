@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { Calendar, DollarSign, Eye, Briefcase, Clock } from 'lucide-react'
 import { JobResponse } from '@/types/job'
 import { formatDistanceToNow } from 'date-fns'
-import { vi } from 'date-fns/locale'
 import { cn } from '@/utils/cn'
 
 const statusColors: Record<string, string> = {
@@ -13,8 +12,8 @@ const statusColors: Record<string, string> = {
   CANCELLED: 'badge-danger',
 }
 const statusLabels: Record<string, string> = {
-  OPEN: 'Recruiting', DRAFT: 'Nháp', IN_PROGRESS: 'In Progress',
-  COMPLETED: 'Completed', CANCELLED: 'Đã hủy',
+  OPEN: 'Recruiting', DRAFT: 'Draft', IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed', CANCELLED: 'Cancelled',
 }
 
 interface JobCardProps {
@@ -77,14 +76,14 @@ export default function JobCard({ job, compact }: JobCardProps) {
             {job.deadline && (
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                {new Date(job.deadline).toLocaleDateString('vi-VN')}
+                {new Date(job.deadline).toLocaleDateString('en-US')}
               </span>
             )}
             <span className="flex items-center gap-1">
               <Eye className="w-3 h-3" /> {job.viewCount}
             </span>
           </div>
-          <span>{formatDistanceToNow(new Date(job.createdAt), { addSuffix: true, locale: vi })}</span>
+          <span>{job.createdAt ? formatDistanceToNow(new Date(!job.createdAt.endsWith('Z') && !job.createdAt.includes('+') ? job.createdAt + 'Z' : job.createdAt), { addSuffix: true }) : ''}</span>
         </div>
       </article>
     </Link>

@@ -57,6 +57,16 @@ public class Job {
     @Builder.Default
     private Integer viewCount = 0;
 
+    /** Số ứng viên tối đa Client muốn mời vào vòng phỏng vấn (mặc định 5) */
+    @Column(name = "max_shortlist")
+    @Builder.Default
+    private Integer maxShortlist = 5;
+
+    /** Ngưỡng điểm AI tối thiểu để CV được hiển thị cho Client (0.0 → 1.0, mặc định 0.6) */
+    @Column(name = "ai_screening_threshold")
+    @Builder.Default
+    private Double aiScreeningThreshold = 0.6;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "job_skills",

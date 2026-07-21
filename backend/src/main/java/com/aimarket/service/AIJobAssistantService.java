@@ -9,6 +9,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import com.aimarket.repository.SkillRepository;
+import com.aimarket.entity.Skill;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -16,6 +20,7 @@ public class AIJobAssistantService {
 
     private final AIClient aiClient;
     private final ObjectMapper objectMapper;
+    private final SkillRepository skillRepository;
 
     private static final String SYSTEM_PROMPT = """
         You are an AI job assistant for an AI freelance marketplace.
@@ -28,6 +33,7 @@ public class AIJobAssistantService {
           "missingSkills": ["skill1", "skill2"],
           "reasoning": "brief explanation"
         }
+        IMPORTANT: For "missingSkills", you MUST ONLY select skills from the "Available Skills" list provided in the user prompt. Do not invent new skills.
         """;
 
     public record AIJobSuggestionDTO(
@@ -41,8 +47,12 @@ public class AIJobAssistantService {
 
     @Cacheable(value = "ai-job-enhance", key = "#title.concat(#description)")
     public AIJobSuggestionDTO enhanceJob(String title, String description, List<String> skills) {
-        String userMsg = String.format("Title: %s\nDescription: %s\nCurrent skills: %s",
-                title, description, String.join(", ", skills));
+        String availableSkills = skillRepository.findAll().stream()
+                .map(Skill::getName)
+                .collect(Collectors.joining(", "));
+                
+        String userMsg = String.format("Title: %s\nDescription: %s\nCurrent skills: %s\nAvailable Skills: %s",
+                title, description, String.join(", ", skills), availableSkills);
         try {
             String raw = aiClient.complete(SYSTEM_PROMPT, userMsg, 2048);
             if (raw == null) return fallback(title, description);
@@ -67,6 +77,6 @@ public class AIJobAssistantService {
 
     private AIJobSuggestionDTO fallback(String title, String description) {
         return new AIJobSuggestionDTO(title, description, null, null, List.of(),
-                "AI tạm thời không khả dụng. Vui lòng thử lại sau.");
+                "AI is temporarily unavailable. Please try again later.");
     }
 }

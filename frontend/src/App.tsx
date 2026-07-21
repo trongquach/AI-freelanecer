@@ -41,7 +41,9 @@ const MyServicesPage   = lazy(() => import('@/pages/marketplace/MyServicesPage')
 const ContractPage     = lazy(() => import('@/pages/contracts/ContractPage'))
 const WalletPage       = lazy(() => import('@/pages/wallet/WalletPage'))
 const ProfilePage      = lazy(() => import('@/pages/profile/ProfilePage'))
+const ExpertCVPage     = lazy(() => import('@/pages/profile/ExpertCVPage'))
 const PublicProfilePage= lazy(() => import('@/pages/profile/PublicProfilePage'))
+const PublicExpertCVPage = lazy(() => import('@/pages/profile/PublicExpertCVPage'))
 const NotificationsPage= lazy(() => import('@/pages/notifications/NotificationsPage'))
 const NotFoundPage     = lazy(() => import('@/pages/NotFoundPage'))
 const AccessDeniedPage = lazy(() => import('@/pages/AccessDeniedPage'))
@@ -82,6 +84,7 @@ export default function App() {
               <Route path="/marketplace"     element={<MarketplacePage />} />
               <Route path="/marketplace/:id" element={<ServiceDetailPage />} />
               <Route path="/profile/:id"     element={<PublicProfilePage />} />
+              <Route path="/cv/expert/:id"   element={<PublicExpertCVPage />} />
             </Route>
 
             {/* Authenticated — any role */}
@@ -110,6 +113,7 @@ export default function App() {
               <Route element={<MainLayout />}>
                 <Route path="/dashboard/expert"      element={<ExpertDashboard />} />
                 <Route path="/services/my"            element={<MyServicesPage />} />
+                <Route path="/cv"                    element={<ExpertCVPage />} />
                 <Route path="/jobs/:id/proposals/new" element={<ProposalFormPage />} />
                 <Route path="/services/new"          element={<CreateServicePage />} />
                 <Route path="/services/:id/edit"     element={<EditServicePage />} />

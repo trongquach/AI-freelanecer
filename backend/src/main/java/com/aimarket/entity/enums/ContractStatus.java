@@ -1,5 +1,5 @@
 package com.aimarket.entity.enums;
 
 public enum ContractStatus {
-    ACTIVE, FUNDED, COMPLETED, DISPUTED, CANCELLED
+    ACTIVE, FUNDED, COMPLETED, DISPUTED, CANCELLED, INTERVIEWING
 }

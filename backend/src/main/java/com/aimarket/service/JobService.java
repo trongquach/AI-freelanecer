@@ -61,6 +61,8 @@ public class JobService {
                 .expectedDuration(request.expectedDuration())
                 .status(JobStatus.DRAFT)
                 .skills(skills)
+                .maxShortlist(request.maxShortlist() != null ? request.maxShortlist() : 5)
+                .aiScreeningThreshold(request.aiScreeningThreshold() != null ? request.aiScreeningThreshold() : 0.6)
                 .build();
 
         return toResponse(jobRepository.save(job));
@@ -183,6 +185,7 @@ public class JobService {
                 job.getBudgetMin(), job.getBudgetMax(), job.getDeadline(),
                 job.getStartDate(), job.getExpectedDuration(),
                 job.getStatus(), job.getAiEnhanced(), job.getViewCount(),
+                job.getMaxShortlist(), job.getAiScreeningThreshold(),
                 clientInfo, skillInfos, job.getCreatedAt()
         );
     }

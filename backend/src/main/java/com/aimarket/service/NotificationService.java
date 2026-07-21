@@ -33,14 +33,21 @@ public class NotificationService {
         Notification n = Notification.builder()
                 .user(user).type(type).title(title).content(content).referenceId(referenceId)
                 .build();
-        notificationRepository.save(n);
+        n = notificationRepository.save(n);
 
         // Push via WebSocket — includes eventType so frontend can invalidate queries
         try {
             messagingTemplate.convertAndSend(
                     "/topic/notifications/" + userId,
-                    Map.of("type", type, "title", title, "content", content,
-                           "referenceId", referenceId != null ? referenceId : 0)
+                    Map.of(
+                            "id", n.getId(),
+                            "type", type, 
+                            "title", title, 
+                            "content", content,
+                            "referenceId", referenceId != null ? referenceId : 0,
+                            "isRead", false,
+                            "createdAt", n.getCreatedAt() != null ? n.getCreatedAt().toString() : java.time.LocalDateTime.now().toString()
+                    )
             );
         } catch (Exception e) {
             log.warn("Failed to push WS notification to user {}: {}", userId, e.getMessage());

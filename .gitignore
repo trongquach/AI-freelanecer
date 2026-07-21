@@ -36,7 +36,3 @@ Thumbs.db
 # Security & Secrets
 *.pem
 *.zip
-*.py
-
-# E2E Tests
-e2e-tests/
