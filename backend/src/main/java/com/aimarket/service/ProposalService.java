@@ -155,7 +155,7 @@ public class ProposalService {
                 "🎉 You are invited to an interview!",
                 "The client wants to interview you for the job: \"" + job.getTitle() + "\". " +
                 "Please go to the chat to discuss further!",
-                proposalId
+                contract.getId()
         );
 
         return toResponse(proposal);

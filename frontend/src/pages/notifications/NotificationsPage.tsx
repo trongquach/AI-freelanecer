@@ -4,6 +4,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { notificationApi } from '@/api/notificationApi';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const getNotificationConfig = (type: string) => {
   switch (type) {
@@ -43,6 +44,7 @@ const formatTimeAgo = (dateStr?: string) => {
 };
 
 export default function NotificationsPage() {
+  const navigate = useNavigate();
   const { markAsRead, markAllAsRead } = useNotifications();
   const [page, setPage] = useState(0);
 
@@ -90,7 +92,13 @@ export default function NotificationsPage() {
             return (
               <div 
                 key={notif.id} 
-                className={`p-6 flex gap-4 transition-colors ${!notif.isRead ? 'bg-primary-50/30' : 'hover:bg-slate-50'}`}
+                className={`p-6 flex gap-4 transition-colors cursor-pointer ${!notif.isRead ? 'bg-primary-50/30 hover:bg-primary-50' : 'hover:bg-slate-50'}`}
+                onClick={() => {
+                  if (!notif.isRead) markAsRead(notif.id);
+                  if (notif.type === 'SHORTLISTED' && notif.referenceId) {
+                    navigate(`/contracts/${notif.referenceId}`);
+                  }
+                }}
               >
                 <div className="mt-1 flex-shrink-0">
                   <div className={`w-10 h-10 rounded-full ${bg} flex items-center justify-center ${color}`}>

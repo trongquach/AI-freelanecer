@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, Info, DollarSign, Banknote, AlertTriangle, Megaphone, Briefcase } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const getNotificationConfig = (type: string) => {
   switch (type) {
@@ -41,6 +41,7 @@ const formatTimeAgo = (dateStr?: string) => {
 };
 
 export default function NotificationBell() {
+  const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -99,6 +100,11 @@ export default function NotificationBell() {
                       onClick={() => {
                         if (!notif.isRead) markAsRead(notif.id);
                         setIsOpen(false);
+                        if (notif.type === 'SHORTLISTED' && notif.referenceId) {
+                          navigate(`/contracts/${notif.referenceId}`);
+                        } else if (notif.referenceId) {
+                          // generic navigation if needed
+                        }
                       }}
                     >
                       <div className="mt-1 flex-shrink-0">
