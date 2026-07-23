@@ -42,6 +42,10 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
 
     long countByStatus(ContractStatus status);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Contract c SET c.status = 'CANCELLED' WHERE c.job.id = :jobId AND c.status = 'INTERVIEWING' AND c.proposal.id != :acceptedProposalId")
+    void bulkCancelInterviewingContracts(@Param("jobId") Long jobId, @Param("acceptedProposalId") Long acceptedProposalId);
+
     @Query("SELECT c FROM Contract c WHERE c.status = 'ACTIVE' AND (c.client.id = :uid OR c.expert.id = :uid)")
     Page<Contract> findActiveByUserId(@Param("uid") Long userId, Pageable pageable);
 

@@ -59,6 +59,14 @@ public class ExpertCV {
     @Column(name = "years_of_experience")
     private Integer yearsOfExperience;
 
+    /**
+     * Vector embedding của toàn bộ nội dung CV (summary + work experiences + skills).
+     * Được sinh tự động khi Expert tạo/cập nhật CV.
+     * Dùng bởi {@link com.aimarket.service.AICVScreeningService} để tính cosine similarity.
+     */
+    @Column(name = "cv_embedding", columnDefinition = "JSON")
+    private String cvEmbedding;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

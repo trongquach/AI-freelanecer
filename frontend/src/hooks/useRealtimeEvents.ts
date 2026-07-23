@@ -63,6 +63,8 @@ export function useRealtimeEvents() {
         case 'PROPOSAL_ACCEPTED':
         case 'PROPOSAL_REJECTED':
           queryClient.invalidateQueries({ queryKey: ['proposals'] });   // matches all ['proposals', id]
+          queryClient.invalidateQueries({ queryKey: ['screened-proposals'] });
+          queryClient.invalidateQueries({ queryKey: ['interview-candidates'] });
           queryClient.invalidateQueries({ queryKey: ['my-proposals'] });
           queryClient.invalidateQueries({ queryKey: ['job'] });         // matches all ['job', id]
           break;

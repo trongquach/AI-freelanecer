@@ -1,6 +1,7 @@
 package com.aimarket.service;
 
 import com.aimarket.dto.job.*;
+import com.aimarket.ai.EmbeddingService;
 import com.aimarket.entity.Job;
 import com.aimarket.entity.Skill;
 import com.aimarket.entity.User;
@@ -37,6 +38,7 @@ public class JobService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
+    private final EmbeddingService embeddingService;
 
     // ─── Create Job ───────────────────────────────────────
     @Transactional
@@ -120,7 +122,28 @@ public class JobService {
         }
 
         job.setStatus(JobStatus.OPEN);
-        return toResponse(jobRepository.save(job));
+        Job saved = jobRepository.save(job);
+        // Cache JD embedding ngay khi publish → tưँ bắt embedding API khi có Proposal
+        buildJdEmbeddingAsync(saved);
+        return toResponse(saved);
+    }
+
+    // ─── Build JD Embedding (async) ─────────────────────
+    @Async
+    public void buildJdEmbeddingAsync(Job job) {
+        try {
+            String skillText = job.getSkills().stream()
+                    .map(Skill::getName)
+                    .collect(Collectors.joining(", "));
+            String jdText = job.getTitle() + ". " + job.getDescription() + ". Skills: " + skillText;
+            List<Double> vector = embeddingService.embed(jdText);
+            if (vector == null) return;
+            job.setJdEmbedding(embeddingService.toJson(vector));
+            jobRepository.save(job);
+            log.info("JD embedding built for job_id={}", job.getId());
+        } catch (Exception e) {
+            log.warn("Failed to build JD embedding for job_id={}: {}", job.getId(), e.getMessage());
+        }
     }
 
     // ─── List Jobs (public) ───────────────────────────────
@@ -130,7 +153,7 @@ public class JobService {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
 
         return jobRepository.findJobsWithFilter(
-                filter.status(),
+                filter.statuses(),
                 filter.minBudget(),
                 filter.maxBudget(),
                 filter.keyword(),

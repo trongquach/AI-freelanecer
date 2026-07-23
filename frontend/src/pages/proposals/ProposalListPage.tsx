@@ -11,6 +11,7 @@ import { contractApi } from '@/api/contractApi';
 import { jobApi } from '@/api/jobServiceApi';
 import { Proposal, AcceptProposalRequest, ProposalStatus } from '@/types/contract';
 import Button from '@/components/ui/Button';
+import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
 
 // ─── Status badge ─────────────────────────────────────────────
 
@@ -84,6 +85,12 @@ const AcceptModal = ({ isOpen, onClose, proposal, onAccept }: {
             toast.error(`Total milestones ($${total}) must equal the proposed price ($${proposal.price})`);
             return;
           }
+          for (let i = 1; i < milestones.length; i++) {
+            if (new Date(milestones[i].dueDate) <= new Date(milestones[i-1].dueDate)) {
+              toast.error(`Milestone ${i+1} due date must be after Milestone ${i} due date`);
+              return;
+            }
+          }
           onAccept({ milestones });
         }} className="space-y-4">
           {milestones.map((m, i) => (
@@ -99,22 +106,24 @@ const AcceptModal = ({ isOpen, onClose, proposal, onAccept }: {
                 <div>
                   <label className="text-xs text-slate-500 mb-1 block">Milestone name</label>
                   <input required value={m.name} onChange={e => { const n = [...milestones]; n[i].name = e.target.value; setMilestones(n); }}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500" />
+                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500" />
                 </div>
                 <div>
                   <label className="text-xs text-slate-500 mb-1 block">Amount ($)</label>
                   <input required type="number" min="1" value={m.amount} onChange={e => { const n = [...milestones]; n[i].amount = Number(e.target.value); setMilestones(n); }}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500" />
+                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500" />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs text-slate-500 mb-1 block">Description</label>
                   <input value={m.description} onChange={e => { const n = [...milestones]; n[i].description = e.target.value; setMilestones(n); }}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500" />
+                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500" />
                 </div>
                 <div>
                   <label className="text-xs text-slate-500 mb-1 block">Due date</label>
-                  <input required type="date" value={m.dueDate} onChange={e => { const n = [...milestones]; n[i].dueDate = e.target.value; setMilestones(n); }}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500" />
+                  <input required type="date" 
+                    min={i > 0 && milestones[i-1].dueDate ? new Date(new Date(milestones[i-1].dueDate).getTime() + 86400000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                    value={m.dueDate} onChange={e => { const n = [...milestones]; n[i].dueDate = e.target.value; setMilestones(n); }}
+                    className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500" />
                 </div>
               </div>
             </div>
@@ -177,6 +186,8 @@ export default function ProposalListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  useRealtimeEvents(); // Listen for real-time WebSocket events
+
   const [tab, setTab] = useState<Tab>('screened');
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [interviewProposal, setInterviewProposal] = useState<Proposal | null>(null);
@@ -190,13 +201,13 @@ export default function ProposalListPage() {
   const { data: screenedData, isLoading: loadingScreened } = useQuery({
     queryKey: ['screened-proposals', id],
     queryFn: () => contractApi.getScreenedProposals(Number(id), 0, 50),
-    enabled: !!id && tab === 'screened',
+    enabled: !!id,
   });
 
   const { data: interviewList, isLoading: loadingInterview } = useQuery({
     queryKey: ['interview-candidates', id],
     queryFn: () => contractApi.getInterviewCandidates(Number(id)),
-    enabled: !!id && tab === 'interview',
+    enabled: !!id,
   });
 
   const shortlistMutation = useMutation({
@@ -232,10 +243,10 @@ export default function ProposalListPage() {
   const acceptMutation = useMutation({
     mutationFn: (data: AcceptProposalRequest) =>
       contractApi.acceptProposal(selectedProposal!.id, data),
-    onSuccess: (contract) => {
+    onSuccess: () => {
       toast.success('🎉 Contract created successfully!');
       setSelectedProposal(null);
-      navigate(`/contracts/${contract.id}`);
+      navigate(`/dashboard/client`);
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to create contract'),
   });

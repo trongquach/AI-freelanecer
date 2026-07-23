@@ -12,10 +12,10 @@ export default function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [showFilters, setShowFilters] = useState(false)
 
-  const keyword    = searchParams.get('keyword') ?? ''
-  const minBudget  = searchParams.get('minBudget') ? Number(searchParams.get('minBudget')) : undefined
-  const maxBudget  = searchParams.get('maxBudget') ? Number(searchParams.get('maxBudget')) : undefined
-  const page       = Number(searchParams.get('page') ?? '0')
+  const keyword = searchParams.get('keyword') ?? ''
+  const minBudget = searchParams.get('minBudget') ? Number(searchParams.get('minBudget')) : undefined
+  const maxBudget = searchParams.get('maxBudget') ? Number(searchParams.get('maxBudget')) : undefined
+  const page = Number(searchParams.get('page') ?? '0')
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['jobs', keyword, minBudget, maxBudget, page],
@@ -26,7 +26,7 @@ export default function JobsPage() {
   const setParam = (key: string, val: string | undefined) => {
     const next = new URLSearchParams(searchParams)
     if (val) next.set(key, val); else next.delete(key)
-    next.delete('page')
+    if (key !== 'page') next.delete('page')
     setSearchParams(next)
   }
 
@@ -42,7 +42,7 @@ export default function JobsPage() {
         </div>
         {isAuthenticated && isClient() && (
           <Link to="/jobs/new" className="btn-gradient btn-md shrink-0">
-            <Plus className="w-4 h-4" /> Post a Job
+            <Plus className="w-4 h-4" /> Post a New Job
           </Link>
         )}
       </div>

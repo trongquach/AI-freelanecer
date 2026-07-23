@@ -282,9 +282,9 @@ export default function ContractPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  {isExpert() && (m.status === 'PENDING' || m.status === 'IN_PROGRESS' || m.status === 'REJECTED') && (
+                  {isExpert() && (m.status === 'PENDING' || m.status === 'IN_PROGRESS' || m.status === 'REJECTED' || m.status === 'SUBMITTED') && (
                     <Button variant="primary" size="sm" onClick={() => setActiveMilestoneId(m.id)}>
-                      Submit Work
+                      {m.status === 'SUBMITTED' ? 'Update Work' : 'Submit Work'}
                     </Button>
                   )}
                   
@@ -370,7 +370,7 @@ export default function ContractPage() {
             <h3 className="font-semibold text-slate-900">Messages</h3>
           </div>
           <div className="flex-1 overflow-hidden">
-            <ChatWidget contractId={Number(id)} />
+            <ChatWidget contractId={Number(id)} contractStatus={contract.status} />
           </div>
         </div>
       </div>

@@ -39,7 +39,7 @@ export default function ExpertDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="section-title">
-            Welcome, {user?.fullName ?? user?.email}! 🚀
+            Welcome, {user?.fullName ?? user?.email}!
           </h1>
           <p className="section-subtitle">Manage services and project proposals</p>
         </div>
@@ -101,14 +101,14 @@ export default function ExpertDashboard() {
           </div>
           {isLoadingContracts ? (
             <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
-          ) : !myContracts?.content?.length ? (
+          ) : !myContracts?.content?.filter((c: any) => c.status !== 'CANCELLED').length ? (
             <div className="bg-white border border-slate-200 p-8 rounded-xl text-center h-full flex flex-col items-center justify-center">
-               <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-               <p className="text-slate-500 text-sm">No active contracts yet.</p>
+              <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-500 text-sm">No active contracts yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {myContracts?.content?.map((contract: any) => (
+              {myContracts?.content?.filter((c: any) => c.status !== 'CANCELLED').map((contract: any) => (
                 <div key={contract.id} className="bg-white border border-slate-200 p-4 rounded-xl flex justify-between items-center">
                   <div>
                     <h3 className="text-slate-900 font-medium">{contract?.jobTitle || 'Contract #' + contract.id}</h3>

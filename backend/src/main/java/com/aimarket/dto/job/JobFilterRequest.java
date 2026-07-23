@@ -9,7 +9,7 @@ public record JobFilterRequest(
     String keyword,
     BigDecimal minBudget,
     BigDecimal maxBudget,
-    JobStatus status,
+    List<JobStatus> statuses,
     List<Long> skillIds,
     int page,
     int size

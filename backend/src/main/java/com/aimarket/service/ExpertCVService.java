@@ -2,6 +2,7 @@ package com.aimarket.service;
 
 import com.aimarket.dto.cv.ExpertCVRequest;
 import com.aimarket.dto.cv.ExpertCVResponse;
+import com.aimarket.ai.EmbeddingService;
 import com.aimarket.entity.ExpertCV;
 import com.aimarket.entity.User;
 import com.aimarket.entity.UserProfile;
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class ExpertCVService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final AIRecommendationService aiRecommendationService;
+    private final EmbeddingService embeddingService;
     private final ObjectMapper objectMapper;
 
     // ── Upsert (tạo mới hoặc cập nhật) ───────────────────────
@@ -62,11 +65,35 @@ public class ExpertCVService {
 
         ExpertCV saved = expertCVRepository.save(cv);
 
-        // Khi CV cập nhật → rebuild embedding để AI Recommendation chính xác hơn
+        // Rebuild profile embedding cho AI Recommendation
         aiRecommendationService.updateExpertEmbedding(userId);
+        // Rebuild CV embedding cho vector-based CV Screening
+        buildCvEmbeddingAsync(saved.getId(), buildCvText(userId));
 
         log.info("CV upserted for user {}", userId);
         return toResponse(saved);
+    }
+
+    // ── Build CV embedding (async) ─────────────────────────────
+
+    /**
+     * Sinh embedding vector cho nội dung CV và lưu vào {@code expert_cvs.cv_embedding}.
+     * Được gọi async sau khi Expert lưu CV để không block HTTP response.
+     */
+    @Async
+    public void buildCvEmbeddingAsync(Long cvId, String cvText) {
+        if (cvText == null || cvText.isBlank()) return;
+        try {
+            List<Double> vector = embeddingService.embed(cvText);
+            if (vector == null) return;
+            expertCVRepository.findById(cvId).ifPresent(cv -> {
+                cv.setCvEmbedding(embeddingService.toJson(vector));
+                expertCVRepository.save(cv);
+                log.info("CV embedding rebuilt for cv_id={}", cvId);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to build CV embedding for cv_id={}: {}", cvId, e.getMessage());
+        }
     }
 
     // ── Xem CV của chính mình ─────────────────────────────────

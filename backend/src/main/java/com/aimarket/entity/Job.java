@@ -67,6 +67,13 @@ public class Job {
     @Builder.Default
     private Double aiScreeningThreshold = 0.6;
 
+    /**
+     * Vector embedding của job description + skills — được sinh khi Job publish.
+     * Cached để tránh gọi embedding API mỗi lần Proposal được nộp.
+     */
+    @Column(name = "jd_embedding", columnDefinition = "JSON")
+    private String jdEmbedding;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "job_skills",

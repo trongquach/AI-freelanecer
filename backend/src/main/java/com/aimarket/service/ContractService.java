@@ -51,8 +51,16 @@ public class ContractService {
         Contract contract = getContractAndCheckExpert(contractId, expertId);
         Milestone milestone = getMilestoneOrThrow(milestoneId, contractId);
 
-        if (milestone.getStatus() != MilestoneStatus.PENDING && milestone.getStatus() != MilestoneStatus.IN_PROGRESS)
-            throw new BusinessException("Milestone cannot be submitted in status: " + milestone.getStatus());
+        if (milestone.getStatus() == MilestoneStatus.APPROVED)
+            throw new BusinessException("Milestone cannot be submitted because it is already APPROVED");
+
+        boolean hasPendingPrevious = contract.getMilestones().stream()
+                .anyMatch(m -> m.getOrderIndex() < milestone.getOrderIndex() 
+                            && m.getStatus() != MilestoneStatus.APPROVED);
+
+        if (hasPendingPrevious) {
+            throw new BusinessException("Bạn phải đợi Client duyệt xong Milestone trước đó thì mới được nộp Milestone tiếp theo.");
+        }
 
         milestone.setStatus(MilestoneStatus.SUBMITTED);
         milestone.setDeliverableUrl(deliverableUrl);

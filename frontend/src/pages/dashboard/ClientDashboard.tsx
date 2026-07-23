@@ -27,10 +27,10 @@ export default function ClientDashboard() {
   })
 
   const stats = [
-    { label: 'Total jobs posted',    value: allJobs?.totalElements ?? 0, icon: Briefcase,   color: 'text-primary-400', link: '/dashboard/client' },
-    { label: 'Recruiting',         value: allJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500', link: '/dashboard/client' },
-    { label: 'In progress',    value: allJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400', link: '/dashboard/client' },
-    { label: 'Completed',        value: allJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500', link: '/dashboard/client' },
+    { label: 'Total jobs posted', value: allJobs?.totalElements ?? 0, icon: Briefcase, color: 'text-primary-400', link: '/dashboard/client' },
+    { label: 'Recruiting', value: allJobs?.content.filter(j => j.status === 'OPEN').length ?? 0, icon: Clock, color: 'text-warning-500', link: '/dashboard/client' },
+    { label: 'In progress', value: allJobs?.content.filter(j => j.status === 'IN_PROGRESS').length ?? 0, icon: TrendingUp, color: 'text-blue-400', link: '/dashboard/client' },
+    { label: 'Completed', value: allJobs?.content.filter(j => j.status === 'COMPLETED').length ?? 0, icon: CheckCircle, color: 'text-success-500', link: '/dashboard/client' },
   ]
 
   return (
@@ -39,7 +39,7 @@ export default function ClientDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="section-title">
-            Hello, {user?.fullName ?? user?.email}! 👋
+            Hello, {user?.fullName ?? user?.email}!
           </h1>
           <p className="section-subtitle">Manage projects and find AI experts</p>
         </div>
@@ -102,14 +102,14 @@ export default function ClientDashboard() {
           </div>
           {isLoadingContracts ? (
             <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
-          ) : !myContracts?.content.length ? (
+          ) : !myContracts?.content.filter(c => c.status !== 'CANCELLED').length ? (
             <div className="bg-white border border-slate-200 p-8 rounded-xl text-center">
-               <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-               <p className="text-slate-500 text-sm">No active contracts yet.</p>
+              <Clock className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-500 text-sm">No active contracts yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {myContracts.content.map(contract => (
+              {myContracts.content.filter(c => c.status !== 'CANCELLED').map(contract => (
                 <div key={contract.id} className="bg-white border border-slate-200 p-4 rounded-xl flex justify-between items-center">
                   <div>
                     <h3 className="text-slate-900 font-medium">{contract.jobTitle || 'Contract #' + contract.id}</h3>

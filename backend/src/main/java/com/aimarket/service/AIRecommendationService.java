@@ -1,19 +1,14 @@
 package com.aimarket.service;
 
+import com.aimarket.ai.EmbeddingService;
 import com.aimarket.entity.UserProfile;
-import com.aimarket.entity.enums.UserRole;
 import com.aimarket.repository.JobRepository;
 import com.aimarket.repository.UserProfileRepository;
 import com.aimarket.util.CosineSimilarityUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,17 +34,8 @@ public class AIRecommendationService {
     private final UserProfileRepository userProfileRepository;
     private final JobRepository jobRepository;
     private final CosineSimilarityUtil cosineSimilarityUtil;
-    private final ObjectMapper objectMapper;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final EmbeddingService embeddingService;
 
-    @Value("${openai.api-key:}")
-    private String openAiApiKey;
-
-    @Value("${ai.provider:OPENAI}")
-    private String aiProvider;
-
-    private static final String OPENAI_EMBEDDING_URL = "https://api.openai.com/v1/embeddings";
-    private static final String OPENAI_EMBEDDING_MODEL = "text-embedding-3-small";
     private static final int TOP_N = 5;
 
     // ─── DTO ──────────────────────────────────────────────────────────────────
@@ -83,7 +69,7 @@ public class AIRecommendationService {
         );
 
         // 3. Get job embedding
-        List<Double> jobEmbedding = getEmbedding(jobText);
+        List<Double> jobEmbedding = embeddingService.embed(jobText);
         if (jobEmbedding == null || jobEmbedding.isEmpty()) {
             log.warn("Could not generate embedding for job {}, falling back to skill-based matching", jobId);
             return fallbackBySkills(job);
@@ -126,11 +112,11 @@ public class AIRecommendationService {
 
             if (text.isBlank()) return;
 
-            List<Double> embedding = getEmbedding(text);
+            List<Double> embedding = embeddingService.embed(text);
             if (embedding == null || embedding.isEmpty()) return;
 
             // Serialize and persist
-            profile.setSkillsEmbedding(objectMapper.writeValueAsString(embedding));
+            profile.setSkillsEmbedding(embeddingService.toJson(embedding));
             userProfileRepository.save(profile);
             log.info("Updated embedding for user {}", userId);
         } catch (Exception e) {
@@ -145,52 +131,13 @@ public class AIRecommendationService {
                 String.join(", ", skills));
     }
 
-    /**
-     * Calls OpenAI text-embedding-3-small to create a vector.
-     * Falls back to null if API is unavailable (no crash).
-     */
-    @SuppressWarnings("unchecked")
-    private List<Double> getEmbedding(String text) {
-        if (openAiApiKey == null || openAiApiKey.isBlank()) {
-            log.debug("OpenAI API key not configured – skipping embedding");
-            return null;
-        }
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(openAiApiKey);
-
-            Map<String, Object> body = Map.of(
-                    "model", OPENAI_EMBEDDING_MODEL,
-                    "input", text.length() > 8000 ? text.substring(0, 8000) : text
-            );
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    OPENAI_EMBEDDING_URL, request, Map.class);
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List<Map<String, Object>> dataList = (List<Map<String, Object>>) response.getBody().get("data");
-                if (dataList != null && !dataList.isEmpty()) {
-                    List<Number> rawEmbedding = (List<Number>) dataList.get(0).get("embedding");
-                    return rawEmbedding.stream().map(Number::doubleValue).collect(Collectors.toList());
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Embedding API call failed: {}", e.getMessage());
-        }
-        return null;
-    }
 
     private ExpertRecommendationDTO toDTO(UserProfile profile, List<Double> jobEmbedding) {
         double score = 0.0;
         if (profile.getSkillsEmbedding() != null) {
-            try {
-                List<Double> expertEmbedding = objectMapper.readValue(
-                        profile.getSkillsEmbedding(), new TypeReference<List<Double>>() {});
+            List<Double> expertEmbedding = embeddingService.fromJson(profile.getSkillsEmbedding());
+            if (expertEmbedding != null) {
                 score = cosineSimilarityUtil.cosineSimilarity(jobEmbedding, expertEmbedding);
-            } catch (Exception e) {
-                log.debug("Could not parse embedding for profile {}: {}", profile.getId(), e.getMessage());
             }
         }
 

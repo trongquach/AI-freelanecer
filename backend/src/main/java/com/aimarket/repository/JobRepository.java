@@ -27,7 +27,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
         LEFT JOIN FETCH j.client c
         LEFT JOIN FETCH c.profile
         LEFT JOIN j.skills s
-        WHERE (:status IS NULL OR j.status = :status)
+        WHERE (:statuses IS NULL OR j.status IN :statuses)
           AND (:minBudget IS NULL OR j.budgetMax >= :minBudget)
           AND (:maxBudget IS NULL OR j.budgetMin <= :maxBudget)
           AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -35,7 +35,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
           AND (:skillIds IS NULL OR s.id IN :skillIds)
         """)
     Page<Job> findJobsWithFilter(
-        @Param("status")    JobStatus status,
+        @Param("statuses")  List<JobStatus> statuses,
         @Param("minBudget") BigDecimal minBudget,
         @Param("maxBudget") BigDecimal maxBudget,
         @Param("keyword")   String keyword,

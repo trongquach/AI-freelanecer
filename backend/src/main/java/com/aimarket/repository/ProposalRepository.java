@@ -18,6 +18,8 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
 
     boolean existsByJobIdAndExpertId(Long jobId, Long expertId);
 
+    boolean existsByJobIdAndExpertIdAndStatusNotIn(Long jobId, Long expertId, List<ProposalStatus> statuses);
+
     /** Danh sách tất cả proposals của 1 job (Admin/debug) */
     @Query("""
         SELECT p FROM Proposal p
@@ -71,6 +73,10 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
     Optional<Proposal> findByIdWithDetails(@Param("id") Long id);
 
     long countByJobIdAndStatus(Long jobId, ProposalStatus status);
+
+    long countByJobId(Long jobId);
+
+    long countByJobIdAndStatusNotIn(Long jobId, List<ProposalStatus> statuses);
 
     /** Cập nhật trạng thái hàng loạt (dùng khi reject tất cả sau khi chốt) */
     @Modifying

@@ -42,8 +42,16 @@ public class ProposalService {
             throw new BusinessException("Job is not open for proposals");
         }
         if (job.getClient().getId().equals(expertId)) throw new BusinessException("Cannot propose on your own job");
-        if (proposalRepository.existsByJobIdAndExpertId(job.getId(), expertId))
-            throw new BusinessException("You have already submitted a proposal for this job");
+        if (proposalRepository.existsByJobIdAndExpertIdAndStatusNotIn(job.getId(), expertId, List.of(ProposalStatus.REJECTED, ProposalStatus.WITHDRAWN)))
+            throw new BusinessException("You already have an active proposal for this job");
+
+        long currentProposals = proposalRepository.countByJobIdAndStatusNotIn(
+                job.getId(), 
+                List.of(ProposalStatus.REJECTED, ProposalStatus.WITHDRAWN)
+        );
+        if (currentProposals >= 5) {
+            throw new BusinessException("Công việc này đã nhận đủ tối đa 5 CV.");
+        }
 
         Proposal proposal = Proposal.builder()
                 .job(job)
@@ -55,6 +63,12 @@ public class ProposalService {
                 .build();
 
         Proposal saved = proposalRepository.save(proposal);
+
+        // Nếu đã đủ 5 CV, chuyển trạng thái Job sang INTERVIEWING để không nhận thêm
+        if (currentProposals + 1 == 5 && job.getStatus() == JobStatus.OPEN) {
+            job.setStatus(JobStatus.INTERVIEWING);
+            jobRepository.save(job);
+        }
 
         // Trigger AI CV screening bất đồng bộ
         triggerAIScreening(saved, job, expert);
@@ -204,6 +218,18 @@ public class ProposalService {
             throw new BusinessException("Tổng tiền milestone phải bằng giá đề xuất: " + proposal.getPrice());
         }
 
+        // Validate milestone dates are strictly sequential
+        for (int i = 1; i < request.milestones().size(); i++) {
+            java.time.LocalDate prevDate = request.milestones().get(i-1).dueDate();
+            java.time.LocalDate currDate = request.milestones().get(i).dueDate();
+            if (currDate == null || prevDate == null) {
+                throw new BusinessException("Ngày hoàn thành của Milestone không được để trống");
+            }
+            if (!currDate.isAfter(prevDate)) {
+                throw new BusinessException("Ngày hết hạn của Milestone " + (i+1) + " phải sau ngày của Milestone " + i);
+            }
+        }
+
         proposal.setStatus(ProposalStatus.ACCEPTED);
         proposalRepository.save(proposal);
 
@@ -215,6 +241,9 @@ public class ProposalService {
                         ProposalStatus.AI_PASSED, ProposalStatus.SHORTLISTED, ProposalStatus.INTERVIEWED),
                 proposalId
         );
+
+        // Cancel all INTERVIEWING contracts of other candidates
+        contractRepository.bulkCancelInterviewingContracts(proposal.getJob().getId(), proposalId);
 
         // Cập nhật Job → IN_PROGRESS
         Job job = proposal.getJob();
@@ -278,6 +307,15 @@ public class ProposalService {
         }
 
         proposal.setStatus(ProposalStatus.REJECTED);
+        
+        // Cancel the interview contract if it exists
+        contractRepository.findByProposalId(proposalId).ifPresent(contract -> {
+            if (contract.getStatus() == ContractStatus.INTERVIEWING) {
+                contract.setStatus(ContractStatus.CANCELLED);
+                contractRepository.save(contract);
+            }
+        });
+
         return toResponse(proposalRepository.save(proposal));
     }
 
@@ -296,6 +334,14 @@ public class ProposalService {
 
         proposal.setStatus(ProposalStatus.WITHDRAWN);
         proposalRepository.save(proposal);
+
+        // Cancel the interview contract if it exists
+        contractRepository.findByProposalId(proposalId).ifPresent(contract -> {
+            if (contract.getStatus() == ContractStatus.INTERVIEWING) {
+                contract.setStatus(ContractStatus.CANCELLED);
+                contractRepository.save(contract);
+            }
+        });
     }
 
     // ─── AI Screening trigger ─────────────────────────────────
@@ -324,6 +370,7 @@ public class ProposalService {
                         try {
                             aiCVScreeningService.screenAsync(
                                     proposal.getId(),
+                                    job.getId(),
                                     job.getTitle(),
                                     job.getDescription(),
                                     jobSkills,

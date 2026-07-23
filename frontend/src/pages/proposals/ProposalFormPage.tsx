@@ -60,7 +60,7 @@ export default function ProposalFormPage() {
         <form onSubmit={handleSubmit} className="bg-white border border-slate-200 p-6 rounded-xl border border-slate-300 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-surface-200">Proposed Price (USD)</label>
+              <label className="text-sm font-medium text-slate-700">Proposed Price (USD)</label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-slate-500">$</span>
                 <input
@@ -76,7 +76,7 @@ export default function ProposalFormPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-surface-200">Timeline (Days)</label>
+              <label className="text-sm font-medium text-slate-700">Timeline (Days)</label>
               <input
                 type="number"
                 required
@@ -90,7 +90,7 @@ export default function ProposalFormPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-surface-200">Cover Letter</label>
+            <label className="text-sm font-medium text-slate-700">Cover Letter</label>
             <p className="text-xs text-slate-500">Introduce yourself and explain why you're a great fit.</p>
             <textarea
               required
@@ -128,7 +128,7 @@ export default function ProposalFormPage() {
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Job Summary</h3>
           <h4 className="text-md text-primary-400 font-medium mb-2">{job.title}</h4>
           <p className="text-sm text-slate-600 line-clamp-4 mb-4">{job.description}</p>
-          <div className="space-y-2 text-sm text-surface-200">
+          <div className="space-y-2 text-sm text-slate-700">
             <div className="flex justify-between">
               <span>Budget:</span>
               <span className="font-medium text-slate-900">${job.budgetMin} - ${job.budgetMax}</span>

@@ -29,8 +29,5 @@ logging:
 stripe:
   mock: true
 
-ai:
-  provider: ANTHROPIC
-
 app:
   frontend-url: http://localhost:3000

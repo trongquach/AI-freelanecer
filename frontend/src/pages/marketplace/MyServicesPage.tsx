@@ -19,7 +19,7 @@ export default function MyServicesPage() {
   const setParam = (key: string, val: string | undefined) => {
     const next = new URLSearchParams(searchParams)
     if (val) next.set(key, val); else next.delete(key)
-    next.delete('page')
+    if (key !== 'page') next.delete('page')
     setSearchParams(next)
   }
 

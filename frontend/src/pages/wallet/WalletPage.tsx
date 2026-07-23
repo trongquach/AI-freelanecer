@@ -366,10 +366,9 @@ export default function WalletPage() {
         )}
       </div>
 
-      {/* Stripe Payment Modal */}
       {showDepositModal && clientSecret && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-slate-800 mb-2">Complete Payment</h2>
             <p className="text-sm text-slate-500 mb-6">
               Enter your card details below to deposit funds into your AIMarket wallet.

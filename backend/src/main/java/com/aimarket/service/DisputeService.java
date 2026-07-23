@@ -88,7 +88,16 @@ public class DisputeService {
         switch (resolution) {
             case REFUND_CLIENT -> escrowService.refundAllLocked(contract.getId());
             case RELEASE_EXPERT -> escrowService.releaseAllPending(contract.getId());
-            case PARTIAL -> log.info("Partial resolution for dispute {} — manual split required", disputeId);
+            case PARTIAL -> {
+                java.math.BigDecimal approvedAmount = contract.getMilestones().stream()
+                        .filter(m -> m.getStatus() == com.aimarket.entity.enums.MilestoneStatus.APPROVED)
+                        .map(com.aimarket.entity.Milestone::getAmount)
+                        .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                java.math.BigDecimal lockedAmount = contract.getTotalAmount().subtract(approvedAmount);
+                java.math.BigDecimal half = lockedAmount.divide(java.math.BigDecimal.valueOf(2), 2, java.math.RoundingMode.HALF_UP);
+                java.math.BigDecimal otherHalf = lockedAmount.subtract(half);
+                escrowService.resolvePartial(contract.getId(), half, otherHalf);
+            }
         }
 
         contract.setStatus(resolution == DisputeResolution.RELEASE_EXPERT

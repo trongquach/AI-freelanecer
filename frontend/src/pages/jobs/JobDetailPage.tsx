@@ -62,7 +62,9 @@ export default function JobDetailPage() {
           <div className="card p-6">
             <div className="flex flex-wrap items-start gap-3 mb-4">
               <h1 className="text-2xl font-bold text-slate-900 flex-1">{job.title}</h1>
-              <span className="badge badge-success">{job.status}</span>
+              {job.status !== 'OPEN' && job.status !== 'INTERVIEWING' && (
+                <span className="badge badge-success">{job.status}</span>
+              )}
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-6">
               <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {job.viewCount} views</span>
@@ -140,7 +142,7 @@ export default function JobDetailPage() {
             </div>
           </div>
 
-          {isAuthenticated && isExpert() && job.status === 'OPEN' && (
+          {isAuthenticated && isExpert() && (job.status === 'OPEN' || job.status === 'INTERVIEWING') && (
             <Link to={`/jobs/${job.id}/proposals/new`} className="btn-gradient btn-lg w-full text-center">
               Send Proposal
             </Link>

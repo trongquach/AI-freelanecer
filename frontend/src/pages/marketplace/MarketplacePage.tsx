@@ -36,7 +36,7 @@ export default function MarketplacePage() {
   const setParam = (key: string, val: string | number | undefined) => {
     const next = new URLSearchParams(searchParams)
     if (val !== undefined && val !== '') next.set(key, String(val)); else next.delete(key)
-    next.delete('page')
+    if (key !== 'page') next.delete('page')
     setSearchParams(next)
   }
 

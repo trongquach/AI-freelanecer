@@ -4,9 +4,11 @@ import { useChat } from '@/hooks/useChat';
 import { useAuthStore } from '@/store/authStore';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-export default function ChatWidget({ contractId }: { contractId: number }) {
+export default function ChatWidget({ contractId, contractStatus }: { contractId: number; contractStatus?: string }) {
   const { user } = useAuthStore();
   const { messages, isLoading, sendMessage, sendTypingEvent, typingUsers, markAsRead } = useChat(contractId);
+  
+  const isCancelled = contractStatus === 'CANCELLED';
   
   const [content, setContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -112,14 +114,15 @@ export default function ChatWidget({ contractId }: { contractId: number }) {
               value={content}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder="Type your message here..."
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-5 pr-12 py-3.5 text-[15px] text-slate-900 resize-none focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all max-h-32 min-h-[52px]"
+              disabled={isCancelled}
+              placeholder={isCancelled ? "Chat is disabled for cancelled contracts." : "Type your message here..."}
+              className={`w-full bg-slate-50 border border-slate-300 rounded-xl pl-5 pr-12 py-3.5 text-[15px] text-slate-900 resize-none focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all max-h-32 min-h-[52px] ${isCancelled ? 'opacity-70 cursor-not-allowed' : ''}`}
               rows={1}
             />
           </div>
           <button 
             onClick={handleSend}
-            disabled={!content.trim()}
+            disabled={!content.trim() || isCancelled}
             className="p-3.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl shadow-md disabled:opacity-50 disabled:shadow-none transition-all flex-shrink-0 flex items-center justify-center"
           >
             <Send size={20} className={content.trim() ? "translate-x-0.5" : ""} />

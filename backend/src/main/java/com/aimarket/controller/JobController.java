@@ -33,12 +33,17 @@ public class JobController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) BigDecimal minBudget,
             @RequestParam(required = false) BigDecimal maxBudget,
-            @RequestParam(required = false) JobStatus status,
+            @RequestParam(required = false) List<JobStatus> statuses,
             @RequestParam(required = false) List<Long> skillIds,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        
+        if (statuses == null || statuses.isEmpty()) {
+            statuses = List.of(JobStatus.OPEN, JobStatus.INTERVIEWING);
+        }
+        
         return jobService.listJobs(new JobFilterRequest(keyword, minBudget, maxBudget,
-                status != null ? status : JobStatus.OPEN, skillIds, page, size));
+                statuses, skillIds, page, size));
     }
 
     @Operation(summary = "Create a new job — CLIENT only")

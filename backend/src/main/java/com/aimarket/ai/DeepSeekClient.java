@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -12,9 +11,12 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * DeepSeek LLM client — sole AI provider for this application.
+ * Used for: CV screening feedback, job assistant, service generator.
+ */
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "ai.provider", havingValue = "DEEPSEEK")
 public class DeepSeekClient implements AIClient {
 
     @Value("${deepseek.api-key:}")

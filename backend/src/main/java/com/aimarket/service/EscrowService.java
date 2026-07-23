@@ -31,6 +31,7 @@ public class EscrowService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final com.aimarket.repository.ContractRepository contractRepository;
+    private final com.aimarket.repository.JobRepository jobRepository;
 
     @Value("${app.platform-fee-percent:10}")
     private double platformFeePercent;
@@ -185,6 +186,12 @@ public class EscrowService {
                     UUID.randomUUID().toString(), "Dispute refund for contract " + contractId);
             log.info("Refunded ${} to client {} for contract {}", lockedAmount,
                     contract.getClient().getId(), contractId);
+                    
+            notificationService.send(contract.getClient().getId(), "DISPUTE_REFUND", "Refund Processed",
+                    String.format("You have been refunded $%.2f for contract #%d following a dispute resolution.", lockedAmount, contractId), contractId);
+            notificationService.sendEvent(contract.getClient().getId(), "WALLET_UPDATED", contractId);
+            notificationService.sendEvent(contract.getClient().getId(), "CONTRACT_UPDATED", contractId);
+            notificationService.sendEvent(contract.getExpert().getId(), "CONTRACT_UPDATED", contractId);
         }
     }
 
@@ -216,6 +223,12 @@ public class EscrowService {
         contract.setStatus(ContractStatus.COMPLETED);
         contract.setCompletedAt(LocalDateTime.now());
         contractRepository.save(contract);
+        
+        if (contract.getJob() != null) {
+            contract.getJob().setStatus(com.aimarket.entity.enums.JobStatus.COMPLETED);
+            jobRepository.save(contract.getJob());
+        }
+        
         log.info("Contract {} marked as COMPLETED", contractId);
 
         // Notify both parties + trigger real-time updates
@@ -281,6 +294,13 @@ public class EscrowService {
         contract.setCompletedAt(LocalDateTime.now());
         contractRepository.save(contract);
         
+        notificationService.send(contract.getClient().getId(), "DISPUTE_RESOLVED", "Dispute Resolved (Partial Refund)",
+                String.format("Dispute for contract #%d resolved. You were refunded $%.2f.", contractId, clientAmount), contractId);
+        notificationService.send(contract.getExpert().getId(), "DISPUTE_RESOLVED", "Dispute Resolved (Partial Payment)",
+                String.format("Dispute for contract #%d resolved. You received $%.2f.", contractId, expertAmount), contractId);
+        
+        notificationService.sendEvent(contract.getClient().getId(), "WALLET_UPDATED", contractId);
+        notificationService.sendEvent(contract.getExpert().getId(), "WALLET_UPDATED", contractId);
         notificationService.sendEvent(contract.getClient().getId(), "CONTRACT_UPDATED", contractId);
         notificationService.sendEvent(contract.getExpert().getId(), "CONTRACT_UPDATED", contractId);
     }
@@ -323,6 +343,11 @@ public class EscrowService {
                     contract.setStatus(ContractStatus.COMPLETED);
                     contract.setCompletedAt(LocalDateTime.now());
                     contractRepository.save(contract);
+                    
+                    if (contract.getJob() != null) {
+                        contract.getJob().setStatus(com.aimarket.entity.enums.JobStatus.COMPLETED);
+                        jobRepository.save(contract.getJob());
+                    }
                 }
             }
         }

@@ -1,9 +1,11 @@
 package com.aimarket.service;
 
-import com.aimarket.ai.AIClient;
+import com.aimarket.ai.EmbeddingService;
 import com.aimarket.entity.enums.ProposalStatus;
+import com.aimarket.repository.ExpertCVRepository;
+import com.aimarket.repository.JobRepository;
 import com.aimarket.repository.ProposalRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.aimarket.util.CosineSimilarityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -13,62 +15,45 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Service sàng lọc CV của Expert bằng AI.
+ * Service sàng lọc CV bằng Vector Embedding + Cosine Similarity.
  *
- * <p>Flow:
- * <ol>
- *   <li>Expert nộp Proposal → {@link ProposalService} gọi {@link #screenAsync} bất đồng bộ.</li>
- *   <li>Service xây dựng prompt gồm mô tả Job và nội dung CV từ hệ thống.</li>
- *   <li>Gọi {@link AIClient} (OpenAI/Anthropic/Gemini) để chấm điểm.</li>
- *   <li>Lưu aiScore + aiFeedback, đổi status → AI_PASSED hoặc AI_FAILED.</li>
- *   <li>Gửi thông báo kết quả cho Expert.</li>
- * </ol>
+ * <h2>Không dùng LLM/prompt để chấm điểm.</h2>
+ * Toàn bộ điểm số tính bằng công thức toán học:
+ *
+ * <pre>
+ * finalScore = cosine(jobSkills ↔ expertSkills) × 0.45
+ *            + cosine(jobDesc   ↔ expertCV)     × 0.30
+ *            + cosine(jobDesc   ↔ coverLetter)  × 0.15
+ *            + sigmoid(yearsExp)                × 0.10
+ * </pre>
+ *
+ * Feedback được sinh tự động từ điểm từng chiều, không gọi AI.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AICVScreeningService {
 
-    private final AIClient aiClient;
+    private final EmbeddingService embeddingService;
+    private final CosineSimilarityUtil cosineSimilarityUtil;
     private final ProposalRepository proposalRepository;
+    private final JobRepository jobRepository;
+    private final ExpertCVRepository expertCVRepository;
     private final NotificationService notificationService;
-    private final ObjectMapper objectMapper;
 
-    private static final String SYSTEM_PROMPT = """
-            You are an AI recruitment expert. Evaluate the suitability of the candidate's profile
-            against the job requirements and return ONLY valid JSON (no markdown, no explanations):
-            {
-              "score": 0.85,
-              "passed": true,
-              "strengths": ["strength 1", "strength 2"],
-              "weaknesses": ["weakness 1"],
-              "feedback": "General feedback in English, around 2-3 sentences"
-            }
-            score is a number from 0.0 to 1.0. passed is true if score >= threshold.
-            """;
+    // ── Trọng số ──────────────────────────────────────────────
+    private static final double W_SKILL    = 0.45;
+    private static final double W_EXP      = 0.30;
+    private static final double W_COVER    = 0.15;
+    private static final double W_SENIORITY = 0.10;
 
     // ── Public API ────────────────────────────────────────────
 
-    /**
-     * Chạy bất đồng bộ — được gọi ngay sau khi Expert submit Proposal.
-     *
-     * @param proposalId      ID của Proposal vừa tạo
-     * @param jobTitle        Tiêu đề công việc
-     * @param jobDescription  Mô tả công việc
-     * @param jobSkills       Danh sách kỹ năng yêu cầu
-     * @param coverLetter     Cover letter của Expert
-     * @param expertBio       Bio trong hồ sơ Expert
-     * @param expertSkills    Kỹ năng trong hồ sơ Expert
-     * @param cvSummary       Phần tóm tắt trong CV hệ thống của Expert
-     * @param workExperiences Kinh nghiệm làm việc (dạng text)
-     * @param yearsExp        Số năm kinh nghiệm
-     * @param threshold       Ngưỡng điểm tối thiểu để qua (do Client cấu hình)
-     * @param expertId        ID Expert để gửi thông báo kết quả
-     */
     @Async
     @Transactional
     public void screenAsync(
             Long proposalId,
+            Long jobId,
             String jobTitle,
             String jobDescription,
             List<String> jobSkills,
@@ -81,64 +66,97 @@ public class AICVScreeningService {
             double threshold,
             Long expertId
     ) {
-        // Đổi trạng thái → đang xử lý
         proposalRepository.findById(proposalId).ifPresent(p -> {
             p.setStatus(ProposalStatus.AI_SCREENING);
             proposalRepository.save(p);
         });
 
         try {
-            String userMessage = buildPrompt(
-                    jobTitle, jobDescription, jobSkills,
-                    coverLetter, expertBio, expertSkills,
-                    cvSummary, workExperiences, yearsExp, threshold
+            // ── 1. Lấy embedding JD (cache hoặc build mới) ────
+            List<Double> jdVec = loadOrBuildJdEmbedding(jobId, jobTitle, jobDescription, jobSkills);
+
+            // ── 2. Lấy CV embedding từ DB ─────────────────────
+            List<Double> cvVec = loadCvEmbedding(expertId);
+
+            // ── 3. Lấy skill embedding từ DB ──────────────────
+            List<Double> expertSkillVec = expertSkills != null && !expertSkills.isEmpty()
+                    ? embeddingService.embed(String.join(", ", expertSkills))
+                    : null;
+
+            // ── 4. Embed job skills (realtime) ────────────────
+            List<Double> jobSkillVec = jobSkills != null && !jobSkills.isEmpty()
+                    ? embeddingService.embed(String.join(", ", jobSkills))
+                    : null;
+
+            // ── 5. Embed cover letter (realtime) ──────────────
+            List<Double> coverVec = coverLetter != null && !coverLetter.isBlank()
+                    ? embeddingService.embed(coverLetter)
+                    : null;
+
+            // ── 6. Tính cosine từng chiều ─────────────────────
+            double skillSim  = safeCosine(jobSkillVec,  expertSkillVec);
+            double expSim    = safeCosine(jdVec,        cvVec);
+            double coverSim  = safeCosine(jdVec,        coverVec);
+            double expBonus  = calcExperienceBonus(yearsExp);
+
+            // ── 7. Tổng hợp điểm có trọng số ─────────────────
+            double finalScore = calcWeightedScore(
+                    skillSim, expSim, coverSim, expBonus,
+                    expertSkillVec != null, cvVec != null, coverVec != null
             );
+            finalScore = Math.max(0.0, Math.min(1.0, finalScore));
+            boolean passed = finalScore >= threshold;
 
-            String raw = aiClient.complete(SYSTEM_PROMPT, userMessage, 1024);
-            ScreeningResult result = parseResult(raw, threshold);
+            // ── 8. Sinh feedback từ điểm số (không dùng LLM) ─
+            String feedback = buildFeedback(skillSim, expSim, coverSim, expBonus,
+                    expertSkillVec != null, cvVec != null, passed);
 
-            // Lưu kết quả vào Proposal
+            // ── 9. Lưu kết quả ────────────────────────────────
+            double scoreToSave   = finalScore;
+            String feedbackToSave = feedback;
+            boolean passedToSave  = passed;
+
             proposalRepository.findById(proposalId).ifPresent(p -> {
-                p.setAiScore(result.score());
-                p.setAiFeedback(result.feedback());
-                p.setStatus(result.passed() ? ProposalStatus.AI_PASSED : ProposalStatus.AI_FAILED);
+                p.setAiScore(scoreToSave);
+                p.setAiFeedback(feedbackToSave);
+                p.setStatus(passedToSave ? ProposalStatus.AI_PASSED : ProposalStatus.AI_FAILED);
                 proposalRepository.save(p);
-                log.info("AI screening done for proposal {}: score={}, passed={}",
-                        proposalId, result.score(), result.passed());
+                log.info("Vector screening done — proposal={} score={} passed={}",
+                        proposalId, String.format("%.3f", scoreToSave), passedToSave);
             });
 
-            // Thông báo cho Expert
-            String title = result.passed() ? "✅ CV passed AI screening" : "❌ CV does not meet requirements";
-            String body = result.passed()
-                    ? "Your CV matches the job requirements! The client will review your profile."
-                    : "Your CV did not meet the criteria: " + result.feedback();
+            // ── 10. Thông báo ─────────────────────────────────
+            String title = passed ? "✅ CV passed AI screening" : "❌ CV does not meet requirements";
+            String body  = passed
+                    ? String.format("Your CV scored %.0f%%. The client will review your profile.", finalScore * 100)
+                    : String.format("Your CV scored %.0f%% (minimum %.0f%%). %s", finalScore * 100, threshold * 100, feedback);
             notificationService.send(expertId, "CV_SCREENING_RESULT", title, body, proposalId);
 
-            // Thông báo cho Client nếu passed
-            if (result.passed()) {
-                proposalRepository.findById(proposalId).ifPresent(p -> {
+            if (passed) {
+                proposalRepository.findById(proposalId).ifPresent(p ->
                     notificationService.send(
                             p.getJob().getClient().getId(),
                             "PROPOSAL_RECEIVED",
                             "New proposal received",
-                            "A new candidate has passed the AI screening for your job: " + p.getJob().getTitle(),
+                            "A candidate scored " + String.format("%.0f%%", finalScore * 100)
+                                    + " and passed AI screening for: " + p.getJob().getTitle(),
                             proposalId
-                    );
-                });
+                    )
+                );
             }
+
         } catch (Exception e) {
-            log.warn("AI screening failed for proposal {}, fallback to PENDING: {}", proposalId, e.getMessage());
-            // Nếu AI lỗi → trả về PENDING để Client tự xét thủ công
+            log.warn("Vector screening failed for proposal {}: {}", proposalId, e.getMessage());
             proposalRepository.findById(proposalId).ifPresent(p -> {
                 p.setStatus(ProposalStatus.PENDING);
-                p.setAiFeedback("AI screening is temporarily unavailable. Please review manually.");
+                p.setAiFeedback("AI screening unavailable. Please review manually.");
                 proposalRepository.save(p);
-                
                 notificationService.send(
                         p.getJob().getClient().getId(),
                         "PROPOSAL_RECEIVED",
                         "New proposal requires manual review",
-                        "A new proposal was submitted for your job '" + p.getJob().getTitle() + "' but AI screening is currently unavailable.",
+                        "A proposal was submitted for '" + p.getJob().getTitle()
+                                + "' but AI screening is currently unavailable.",
                         proposalId
                 );
             });
@@ -147,71 +165,84 @@ public class AICVScreeningService {
 
     // ── Private helpers ───────────────────────────────────────
 
-    private String buildPrompt(
-            String jobTitle, String jobDescription, List<String> jobSkills,
-            String coverLetter, String expertBio, List<String> expertSkills,
-            String cvSummary, String workExperiences, Integer yearsExp,
-            double threshold
+    private List<Double> loadOrBuildJdEmbedding(Long jobId, String title, String desc, List<String> skills) {
+        return jobRepository.findById(jobId).map(job -> {
+            if (job.getJdEmbedding() != null && !job.getJdEmbedding().isBlank()) {
+                return embeddingService.fromJson(job.getJdEmbedding());
+            }
+            String skillText = skills != null ? String.join(", ", skills) : "";
+            List<Double> vec = embeddingService.embed(title + ". " + desc + ". Skills: " + skillText);
+            if (vec != null) {
+                job.setJdEmbedding(embeddingService.toJson(vec));
+                jobRepository.save(job);
+            }
+            return vec;
+        }).orElse(null);
+    }
+
+    private List<Double> loadCvEmbedding(Long expertId) {
+        return expertCVRepository.findByUserId(expertId)
+                .map(cv -> embeddingService.fromJson(cv.getCvEmbedding()))
+                .orElse(null);
+    }
+
+    private double safeCosine(List<Double> a, List<Double> b) {
+        if (a == null || b == null) return 0.0;
+        return cosineSimilarityUtil.cosineSimilarity(a, b);
+    }
+
+    /**
+     * Seniority bonus: sigmoid centered at 3 years.
+     * 0yr→0.50, 3yr→0.50, 5yr→0.73, 8yr→0.83, 10yr→0.88
+     */
+    private double calcExperienceBonus(Integer yearsExp) {
+        if (yearsExp == null) return 0.5;
+        return 1.0 / (1.0 + Math.exp(-0.3 * (yearsExp - 3)));
+    }
+
+    /**
+     * Tính điểm tổng hợp. Nếu thiếu chiều → normalize lại weight.
+     */
+    private double calcWeightedScore(
+            double skillSim, double expSim, double coverSim, double expBonus,
+            boolean hasSkillVec, boolean hasCvVec, boolean hasCoverVec
     ) {
-        return String.format("""
-                === JOB REQUIREMENTS ===
-                Title: %s
-                Description: %s
-                Required Skills: %s
-                Passing Threshold: %.2f
+        double score = expBonus * W_SENIORITY;
+        double total = W_SENIORITY;
 
-                === CANDIDATE PROFILE ===
-                Cover Letter: %s
-                CV Summary: %s
-                Work Experiences: %s
-                Years of Experience: %s
-                Profile Bio: %s
-                Current Skills: %s
-                """,
-                jobTitle,
-                truncate(jobDescription, 1500),
-                String.join(", ", jobSkills),
-                threshold,
-                truncate(coverLetter, 800),
-                truncate(cvSummary != null ? cvSummary : "None", 500),
-                truncate(workExperiences != null ? workExperiences : "None", 800),
-                yearsExp != null ? yearsExp + " years" : "Not specified",
-                truncate(expertBio != null ? expertBio : "None", 300),
-                String.join(", ", expertSkills)
-        );
+        if (hasSkillVec) { score += skillSim * W_SKILL; total += W_SKILL; }
+        if (hasCvVec)    { score += expSim   * W_EXP;   total += W_EXP;   }
+        if (hasCoverVec) { score += coverSim * W_COVER; total += W_COVER; }
+
+        return total > 0 ? score / total : 0.0;
     }
 
-    private ScreeningResult parseResult(String raw, double threshold) {
-        if (raw == null || raw.isBlank()) {
-            return new ScreeningResult(0.0, false, "AI did not return a result.");
+    /**
+     * Sinh feedback dạng text từ điểm số — không gọi LLM.
+     */
+    private String buildFeedback(double skillSim, double expSim, double coverSim,
+                                  double expBonus, boolean hasSkill, boolean hasCv, boolean passed) {
+        StringBuilder sb = new StringBuilder();
+
+        if (hasSkill) {
+            sb.append("Skill match: ").append(toPercent(skillSim)).append(". ");
         }
-        try {
-            // Strip markdown code block nếu có
-            raw = raw.trim();
-            if (raw.startsWith("```json")) raw = raw.substring(7);
-            else if (raw.startsWith("```")) raw = raw.substring(3);
-            if (raw.endsWith("```")) raw = raw.substring(0, raw.length() - 3);
-            raw = raw.trim();
-
-            var node = objectMapper.readTree(raw);
-            double score = node.path("score").asDouble(0.0);
-            // Clamp về [0.0, 1.0]
-            score = Math.max(0.0, Math.min(1.0, score));
-            boolean passed = score >= threshold;
-            String feedback = node.path("feedback").asText("No feedback provided.");
-            return new ScreeningResult(score, passed, feedback);
-        } catch (Exception e) {
-            log.warn("Failed to parse AI screening result: {}", e.getMessage());
-            return new ScreeningResult(0.0, false, "Failed to parse AI result.");
+        if (hasCv) {
+            sb.append("Experience relevance: ").append(toPercent(expSim)).append(". ");
         }
+        sb.append("Cover letter fit: ").append(toPercent(coverSim)).append(". ");
+        sb.append("Seniority: ").append(toPercent(expBonus)).append(".");
+
+        if (!passed) {
+            if (hasSkill && skillSim < 0.5)  sb.append(" Consider strengthening your skill alignment with the job requirements.");
+            if (hasCv    && expSim   < 0.5)  sb.append(" Your work experience may not closely match this role.");
+            if (coverSim < 0.4)               sb.append(" A more targeted cover letter could improve your score.");
+        }
+
+        return sb.toString();
     }
 
-    private String truncate(String text, int maxLen) {
-        if (text == null) return "";
-        return text.length() > maxLen ? text.substring(0, maxLen) + "..." : text;
+    private String toPercent(double val) {
+        return String.format("%.0f%%", val * 100);
     }
-
-    // ── Internal DTO ──────────────────────────────────────────
-
-    private record ScreeningResult(double score, boolean passed, String feedback) {}
 }
