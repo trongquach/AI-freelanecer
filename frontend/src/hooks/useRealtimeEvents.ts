@@ -62,6 +62,9 @@ export function useRealtimeEvents() {
         case 'PROPOSAL_RECEIVED':
         case 'PROPOSAL_ACCEPTED':
         case 'PROPOSAL_REJECTED':
+        case 'PROPOSAL_SUBMITTED':
+        case 'CV_SCREENING_RESULT':
+        case 'SHORTLISTED':
           queryClient.invalidateQueries({ queryKey: ['proposals'] });   // matches all ['proposals', id]
           queryClient.invalidateQueries({ queryKey: ['screened-proposals'] });
           queryClient.invalidateQueries({ queryKey: ['interview-candidates'] });
@@ -69,7 +72,7 @@ export function useRealtimeEvents() {
           queryClient.invalidateQueries({ queryKey: ['job'] });         // matches all ['job', id]
           break;
 
-        // ── Job events ───────────────────────────────────────────────────
+        // ── Job events (for client) ──────────────────────────────────────
         case 'JOB_CREATED':
         case 'JOB_UPDATED':
           queryClient.invalidateQueries({ queryKey: ['jobs'] });
@@ -82,6 +85,21 @@ export function useRealtimeEvents() {
           queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
           break;
 
+        default:
+          break;
+      }
+    });
+
+    // ── Public broadcast channel (Marketplace updates) ─────────────────────
+    const publicSub = subscribe('/topic/public', (event: any) => {
+      const type: string = event?.type ?? '';
+      
+      switch (type) {
+        case 'JOB_CREATED':
+        case 'JOB_UPDATED':
+        case 'JOB_DELETED':
+          queryClient.invalidateQueries({ queryKey: ['jobs'] });
+          break;
         default:
           break;
       }
@@ -125,6 +143,7 @@ export function useRealtimeEvents() {
 
     return () => {
       userSub?.unsubscribe();
+      publicSub?.unsubscribe();
       adminSub?.unsubscribe();
     };
   }, [isConnected, user, subscribe, queryClient]);

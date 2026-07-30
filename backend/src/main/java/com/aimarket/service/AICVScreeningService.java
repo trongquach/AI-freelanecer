@@ -100,16 +100,16 @@ public class AICVScreeningService {
             double expBonus  = calcExperienceBonus(yearsExp);
 
             // ── 7. Tổng hợp điểm có trọng số ─────────────────
-            double finalScore = calcWeightedScore(
+            double rawScore = calcWeightedScore(
                     skillSim, expSim, coverSim, expBonus,
                     expertSkillVec != null, cvVec != null, coverVec != null
             );
-            finalScore = Math.max(0.0, Math.min(1.0, finalScore));
+            final double finalScore = Math.max(0.0, Math.min(1.0, rawScore));
             boolean passed = finalScore >= threshold;
 
             // ── 8. Sinh feedback từ điểm số (không dùng LLM) ─
             String feedback = buildFeedback(skillSim, expSim, coverSim, expBonus,
-                    expertSkillVec != null, cvVec != null, passed);
+                    expertSkillVec != null, cvVec != null, coverVec != null, passed);
 
             // ── 9. Lưu kết quả ────────────────────────────────
             double scoreToSave   = finalScore;
@@ -221,7 +221,7 @@ public class AICVScreeningService {
      * Sinh feedback dạng text từ điểm số — không gọi LLM.
      */
     private String buildFeedback(double skillSim, double expSim, double coverSim,
-                                  double expBonus, boolean hasSkill, boolean hasCv, boolean passed) {
+                                  double expBonus, boolean hasSkill, boolean hasCv, boolean hasCover, boolean passed) {
         StringBuilder sb = new StringBuilder();
 
         if (hasSkill) {
@@ -230,13 +230,15 @@ public class AICVScreeningService {
         if (hasCv) {
             sb.append("Experience relevance: ").append(toPercent(expSim)).append(". ");
         }
-        sb.append("Cover letter fit: ").append(toPercent(coverSim)).append(". ");
+        if (hasCover) {
+            sb.append("Cover letter fit: ").append(toPercent(coverSim)).append(". ");
+        }
         sb.append("Seniority: ").append(toPercent(expBonus)).append(".");
 
         if (!passed) {
             if (hasSkill && skillSim < 0.5)  sb.append(" Consider strengthening your skill alignment with the job requirements.");
             if (hasCv    && expSim   < 0.5)  sb.append(" Your work experience may not closely match this role.");
-            if (coverSim < 0.4)               sb.append(" A more targeted cover letter could improve your score.");
+            if (hasCover && coverSim < 0.4)  sb.append(" A more targeted cover letter could improve your score.");
         }
 
         return sb.toString();

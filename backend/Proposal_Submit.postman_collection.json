@@ -1,0 +1,548 @@
+{
+	"info": {
+		"_postman_id": "c1f7b9c9-5678-43e9-a3b0-c081e80816b3",
+		"name": "Proposal Submit Module",
+		"description": "10 Test cases cho tính năng nộp Proposal (chỉ dùng 1 API module)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "TC1: Nộp Proposal thành công (Happy Path)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Response body is a valid JSON and contains proposal data\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.be.an('object');",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{expert_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": 500.0,\n    \"timelineDays\": 10,\n    \"coverLetter\": \"Xin chào, tôi là một chuyên gia có nhiều năm kinh nghiệm trong lĩnh vực AI. Tôi hoàn toàn tự tin có thể hoàn thành tốt công việc này đúng thời hạn.\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC2: Lỗi không có Authorization Token (401)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 401 Unauthorized\", function () {",
+							"    pm.response.to.have.status(401);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": 500.0,\n    \"timelineDays\": 10,\n    \"coverLetter\": \"Xin chào, tôi là một chuyên gia có nhiều năm kinh nghiệm trong lĩnh vực AI. Tôi hoàn toàn tự tin có thể hoàn thành tốt công việc này đúng thời hạn.\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC3: Lỗi sai Role - User không phải EXPERT (403)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 403 Forbidden\", function () {",
+							"    pm.response.to.have.status(403);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{client_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": 500.0,\n    \"timelineDays\": 10,\n    \"coverLetter\": \"Xin chào, tôi là một chuyên gia có nhiều năm kinh nghiệm trong lĩnh vực AI. Tôi hoàn toàn tự tin có thể hoàn thành tốt công việc này đúng thời hạn.\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC4: Lỗi thiếu jobId (400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Error message mentions jobId is required\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"jobId\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{expert_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"price\": 500.0,\n    \"timelineDays\": 10,\n    \"coverLetter\": \"Xin chào, tôi là một chuyên gia có nhiều năm kinh nghiệm trong lĩnh vực AI. Tôi hoàn toàn tự tin có thể hoàn thành tốt công việc này đúng thời hạn.\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC5: Lỗi price là số âm (400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Validation error for price\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"price\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{expert_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": -50.0,\n    \"timelineDays\": 10,\n    \"coverLetter\": \"Xin chào, tôi là một chuyên gia có nhiều năm kinh nghiệm trong lĩnh vực AI. Tôi hoàn toàn tự tin có thể hoàn thành tốt công việc này đúng thời hạn.\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC6: Lỗi price bằng 0 (400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{expert_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": 0,\n    \"timelineDays\": 10,\n    \"coverLetter\": \"Xin chào, tôi là một chuyên gia có nhiều năm kinh nghiệm trong lĩnh vực AI. Tôi hoàn toàn tự tin có thể hoàn thành tốt công việc này đúng thời hạn.\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC7: Lỗi timelineDays nhỏ hơn 1 (400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{expert_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": 500.0,\n    \"timelineDays\": 0,\n    \"coverLetter\": \"Xin chào, tôi là một chuyên gia có nhiều năm kinh nghiệm trong lĩnh vực AI. Tôi hoàn toàn tự tin có thể hoàn thành tốt công việc này đúng thời hạn.\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC8: Lỗi timelineDays vượt quá 365 (400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{expert_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": 500.0,\n    \"timelineDays\": 400,\n    \"coverLetter\": \"Xin chào, tôi là một chuyên gia có nhiều năm kinh nghiệm trong lĩnh vực AI. Tôi hoàn toàn tự tin có thể hoàn thành tốt công việc này đúng thời hạn.\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC9: Lỗi coverLetter quá ngắn (400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Validation error for coverLetter\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"coverLetter\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{expert_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": 500.0,\n    \"timelineDays\": 10,\n    \"coverLetter\": \"Quá ngắn\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TC10: Lỗi coverLetter quá dài (400)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 Bad Request\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{expert_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jobId\": 1,\n    \"price\": 500.0,\n    \"timelineDays\": 10,\n    \"coverLetter\": \"\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/proposals",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"proposals"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "expert_token",
+			"value": "YOUR_EXPERT_BEARER_TOKEN_HERE",
+			"type": "string"
+		},
+		{
+			"key": "client_token",
+			"value": "YOUR_CLIENT_BEARER_TOKEN_HERE",
+			"type": "string"
+		}
+	]
+}

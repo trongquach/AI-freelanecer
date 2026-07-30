@@ -51,130 +51,130 @@ export default function JobDetailPage() {
 
   return (
     <>
-    <div className="max-w-4xl mx-auto py-4">
-      <Link to="/jobs" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-6 text-sm">
-        <ArrowLeft className="w-4 h-4" /> All jobs
-      </Link>
+      <div className="max-w-4xl mx-auto py-4">
+        <Link to="/jobs" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-6 text-sm">
+          <ArrowLeft className="w-4 h-4" /> All jobs
+        </Link>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="card p-6">
-            <div className="flex flex-wrap items-start gap-3 mb-4">
-              <h1 className="text-2xl font-bold text-slate-900 flex-1">{job.title}</h1>
-              {job.status !== 'OPEN' && job.status !== 'INTERVIEWING' && (
-                <span className="badge badge-success">{job.status}</span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-6">
-              <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {job.viewCount} views</span>
-              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />
-                {job.createdAt ? formatDistanceToNow(new Date(!job.createdAt.endsWith('Z') && !job.createdAt.includes('+') ? job.createdAt + 'Z' : job.createdAt), { addSuffix: true, locale: vi }) : ''}
-              </span>
-            </div>
-            <div className="prose-dark">
-              <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">Description</h3>
-              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{job.description}</p>
-            </div>
-          </div>
-
-          {/* Skills */}
-          {job.skills.length > 0 && (
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main content */}
+          <div className="lg:col-span-2 space-y-6">
             <div className="card p-6">
-              <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">Required Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {job.skills.map(s => <span key={s.id} className="badge badge-primary">{s.name}</span>)}
+              <div className="flex flex-wrap items-start gap-3 mb-4">
+                <h1 className="text-2xl font-bold text-slate-900 flex-1">{job.title}</h1>
+                {job.status !== 'OPEN' && job.status !== 'INTERVIEWING' && (
+                  <span className="badge badge-success">{job.status}</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-6">
+                <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {job.viewCount} views</span>
+                <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />
+                  {job.createdAt ? formatDistanceToNow(new Date(!job.createdAt.endsWith('Z') && !job.createdAt.includes('+') ? job.createdAt + 'Z' : job.createdAt), { addSuffix: true, locale: vi }) : ''}
+                </span>
+              </div>
+              <div className="prose-dark">
+                <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">Description</h3>
+                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{job.description}</p>
               </div>
             </div>
-          )}
 
-          {/* AI Recommendations (Client Only) */}
-          {isAuthenticated && !isExpert() && (
-            <ExpertRecommendations jobId={Number(id)} />
-          )}
-        </div>
+            {/* Skills */}
+            {job.skills.length > 0 && (
+              <div className="card p-6">
+                <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">Required Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {job.skills.map(s => <span key={s.id} className="badge badge-primary">{s.name}</span>)}
+                </div>
+              </div>
+            )}
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <div className="card p-6 space-y-4">
-            {(job.budgetMin || job.budgetMax) && (
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Budget</p>
-                <p className="text-xl font-bold text-success-400 flex items-center gap-1">
-                  <DollarSign className="w-5 h-5" />
-                  {job.budgetMin && job.budgetMax
-                    ? `${job.budgetMin.toLocaleString()} – ${job.budgetMax.toLocaleString()}`
-                    : (job.budgetMax ?? job.budgetMin)?.toLocaleString()}
-                </p>
-              </div>
+            {/* AI Recommendations (Client Only) */}
+            {isAuthenticated && !isExpert() && (
+              <ExpertRecommendations jobId={Number(id)} />
             )}
-            {job.startDate && (
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Start Date</p>
-                <p className="font-medium text-slate-900 flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  {new Date(job.startDate).toLocaleDateString('vi-VN')}
-                </p>
-              </div>
-            )}
-            {job.deadline && (
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Deadline</p>
-                <p className="font-medium text-slate-900 flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  {new Date(job.deadline).toLocaleDateString('vi-VN')}
-                </p>
-              </div>
-            )}
-            {job.expectedDuration && (
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Expected Duration</p>
-                <p className="font-medium text-slate-900 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-slate-400" />
-                  {job.expectedDuration}
-                </p>
-              </div>
-            )}
-            <div>
-              <p className="text-xs text-slate-400 mb-1">Posted by</p>
-              <Link to={`/profile/${job.client.id}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{job.client.fullName ?? 'Client anonymous'}</Link>
-              {job.client.rating > 0 && <p className="text-xs text-warning-500 mt-1">★ {job.client.rating.toFixed(1)}</p>}
-            </div>
           </div>
 
-          {isAuthenticated && isExpert() && (job.status === 'OPEN' || job.status === 'INTERVIEWING') && (
-            <Link to={`/jobs/${job.id}/proposals/new`} className="btn-gradient btn-lg w-full text-center">
-              Send Proposal
-            </Link>
-          )}
-
-          {isAuthenticated && user?.id === job.client.id && job.status === 'DRAFT' && (
-            <button 
-              onClick={() => publishMutation.mutate(job.id)} 
-              disabled={publishMutation.isPending} 
-              className="btn-gradient btn-lg w-full flex justify-center items-center"
-            >
-              {publishMutation.isPending ? <LoadingSpinner size="sm" /> : '🚀 Publish Project'}
-            </button>
-          )}
-
-          {isAuthenticated && user?.id === job.client.id && (job.status === 'DRAFT' || job.status === 'OPEN') && (
-            <div className="flex gap-2">
-              <Link to={`/jobs/${job.id}/edit`} className="btn-secondary btn-md flex-1 text-center">
-                Edit
-              </Link>
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={deleteMutation.isPending}
-                className="btn-danger btn-md flex-1 text-center"
-              >
-                Delete
-              </button>
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <div className="card p-6 space-y-4">
+              {(job.budgetMin || job.budgetMax) && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Budget</p>
+                  <p className="text-xl font-bold text-success-400 flex items-center gap-1">
+                    <DollarSign className="w-5 h-5" />
+                    {job.budgetMin && job.budgetMax
+                      ? `${job.budgetMin.toLocaleString()} – ${job.budgetMax.toLocaleString()}`
+                      : (job.budgetMax ?? job.budgetMin)?.toLocaleString()}
+                  </p>
+                </div>
+              )}
+              {job.startDate && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Start Date</p>
+                  <p className="font-medium text-slate-900 flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    {new Date(job.startDate).toLocaleDateString('vi-VN')}
+                  </p>
+                </div>
+              )}
+              {job.deadline && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Deadline</p>
+                  <p className="font-medium text-slate-900 flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    {new Date(job.deadline).toLocaleDateString('vi-VN')}
+                  </p>
+                </div>
+              )}
+              {job.expectedDuration && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Expected Duration</p>
+                  <p className="font-medium text-slate-900 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-slate-400" />
+                    {job.expectedDuration}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Posted by</p>
+                <Link to={`/profile/${job.client.id}`} className="font-medium text-slate-900 hover:text-primary-600 hover:underline">{job.client.fullName ?? 'Client anonymous'}</Link>
+                {job.client.rating > 0 && <p className="text-xs text-warning-500 mt-1">★ {job.client.rating.toFixed(1)}</p>}
+              </div>
             </div>
-          )}
+
+            {isAuthenticated && isExpert() && (job.status === 'OPEN' || job.status === 'INTERVIEWING') && (
+              <Link to={`/jobs/${job.id}/proposals/new`} className="btn-gradient btn-lg w-full text-center">
+                Send Proposal
+              </Link>
+            )}
+
+            {isAuthenticated && user?.id === job.client.id && job.status === 'DRAFT' && (
+              <button
+                onClick={() => publishMutation.mutate(job.id)}
+                disabled={publishMutation.isPending}
+                className="btn-gradient btn-lg w-full flex justify-center items-center"
+              >
+                {publishMutation.isPending ? <LoadingSpinner size="sm" /> : ' Publish Project'}
+              </button>
+            )}
+
+            {isAuthenticated && user?.id === job.client.id && (job.status === 'DRAFT' || job.status === 'OPEN') && (
+              <div className="flex gap-2">
+                <Link to={`/jobs/${job.id}/edit`} className="btn-secondary btn-md flex-1 text-center">
+                  Edit
+                </Link>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleteMutation.isPending}
+                  className="btn-danger btn-md flex-1 text-center"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
       {/* Delete Confirm Modal */}
       {showDeleteConfirm && (

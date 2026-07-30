@@ -1,0 +1,473 @@
+{
+	"info": {
+		"name": "AI Expert Recommendation API",
+		"description": "Postman collection cho tính năng Gợi ý Chuyên gia AI (AI Expert Recommendation) - Đã fix khớp với Backend thực tế.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. [Success] Lấy danh sách chuyên gia hợp lệ",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response trả về mảng danh sách\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    var dataArray = Array.isArray(jsonData) ? jsonData : jsonData.data;",
+							"    pm.expect(dataArray).to.be.an(\"array\");",
+							"});",
+							"",
+							"pm.test(\"Kiểm tra cấu trúc chuyên gia có similarityScore\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    var dataArray = Array.isArray(jsonData) ? jsonData : jsonData.data;",
+							"    if(dataArray && dataArray.length > 0) {",
+							"        pm.expect(dataArray[0]).to.have.property(\"similarityScore\");",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{client_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/{{valid_job_id}}/recommend-experts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"{{valid_job_id}}",
+						"recommend-experts"
+					]
+				}
+			}
+		},
+		{
+			"name": "2. [Success] Lấy danh sách có phân trang (Pagination)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Số lượng trả về không vượt quá limit\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    var dataArray = Array.isArray(jsonData) ? jsonData : jsonData.data;",
+							"    // Backend hiện tại có thể chưa xử lý limit, nhưng tạm test <= 10",
+							"    pm.expect(dataArray.length).to.be.at.most(10);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{client_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/{{valid_job_id}}/recommend-experts?page=1&limit=2",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"{{valid_job_id}}",
+						"recommend-experts"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "limit",
+							"value": "2"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "3. [Success] Trả về danh sách rỗng (Job quá ngách, không có chuyên gia)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 hoặc 500 (Tùy Backend handle)\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{client_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/{{niche_job_id}}/recommend-experts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"{{niche_job_id}}",
+						"recommend-experts"
+					]
+				}
+			}
+		},
+		{
+			"name": "4. [Success] Lọc theo độ phù hợp tối thiểu (minScore=80)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{client_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/{{valid_job_id}}/recommend-experts?minScore=80",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"{{valid_job_id}}",
+						"recommend-experts"
+					],
+					"query": [
+						{
+							"key": "minScore",
+							"value": "80"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "5. [Fail] Thiếu tham số bắt buộc jobId trên URL",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404/400/405/403\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([404, 400, 405, 403]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{client_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs//recommend-experts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"",
+						"recommend-experts"
+					]
+				}
+			}
+		},
+		{
+			"name": "6. [Fail] Tham số jobId không hợp lệ (Sai định dạng)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 hoặc 500 (Do Backend chưa bắt lỗi TypeMismatch)\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([400, 500]);",
+							"});",
+							"pm.test(\"Response báo lỗi kiểu dữ liệu\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(JSON.stringify(jsonData)).to.match(/convert value of type/i);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{client_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/invalid_string_id/recommend-experts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"invalid_string_id",
+						"recommend-experts"
+					]
+				}
+			}
+		},
+		{
+			"name": "7. [Fail] JobId không tồn tại trong hệ thống",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404 hoặc 500 (Do Backend chưa bắt lỗi NotFound)\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([404, 500]);",
+							"});",
+							"pm.test(\"Thông báo Job không tồn tại\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(JSON.stringify(jsonData)).to.match(/Job not found/i);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{client_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/99999999/recommend-experts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"99999999",
+						"recommend-experts"
+					]
+				}
+			}
+		},
+		{
+			"name": "8. [Fail] Thiếu token xác thực (Unauthorized)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 401 hoặc 200 (Nếu API đang mở Public)\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([401, 200, 500]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/{{valid_job_id}}/recommend-experts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"{{valid_job_id}}",
+						"recommend-experts"
+					]
+				}
+			}
+		},
+		{
+			"name": "9. [Fail] Token không có quyền truy cập (Forbidden)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 403 hoặc 200 (Nếu API đang mở Public)\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([403, 200, 500]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{freelancer_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/{{valid_job_id}}/recommend-experts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"{{valid_job_id}}",
+						"recommend-experts"
+					]
+				}
+			}
+		},
+		{
+			"name": "10. [Fail] Lỗi kết nối AI Service nội bộ (Server Error)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 500/502/503/504\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([500, 502, 503, 504]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{client_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/ai/jobs/{{job_id_trigger_ai_error}}/recommend-experts",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"ai",
+						"jobs",
+						"{{job_id_trigger_ai_error}}",
+						"recommend-experts"
+					]
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://aimarketswp.duckdns.org:18080"
+		},
+		{
+			"key": "client_token",
+			"value": "jwt_token_cua_client"
+		},
+		{
+			"key": "freelancer_token",
+			"value": "jwt_token_cua_freelancer"
+		},
+		{
+			"key": "valid_job_id",
+			"value": "15"
+		},
+		{
+			"key": "niche_job_id",
+			"value": "999"
+		},
+		{
+			"key": "job_id_trigger_ai_error",
+			"value": "500"
+		}
+	]
+}

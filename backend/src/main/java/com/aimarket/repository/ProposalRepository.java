@@ -91,5 +91,11 @@ public interface ProposalRepository extends JpaRepository<Proposal, Long> {
             @Param("newStatus") ProposalStatus newStatus,
             @Param("currentStatuses") List<ProposalStatus> currentStatuses,
             @Param("excludeId") Long excludeId);
+
+    long countByJobIdAndStatusIn(Long jobId, List<ProposalStatus> statuses);
+
+    @Modifying
+    @Query("DELETE FROM Proposal p WHERE p.job.id = :jobId")
+    void deleteByJobId(@Param("jobId") Long jobId);
 }
 

@@ -7,27 +7,18 @@ PASSWORD = '&UTrh@FRHRDeDq6'
 REMOTE_DIR = '/var/www/aimarket'
 LOCAL_DIR = 'd:/FPT/AI-freelanecer'
 
-files_to_upload = [
-    'backend/src/main/resources/db/migration/V13__reset_and_seed_custom_data.sql',
-    'backend/src/main/java/com/aimarket/service/EscrowService.java',
-    'backend/src/main/java/com/aimarket/service/AICVScreeningService.java',
-    'backend/src/main/java/com/aimarket/exception/GlobalExceptionHandler.java',
-    'frontend/src/hooks/useRealtimeEvents.ts',
-    'frontend/src/pages/proposals/ProposalListPage.tsx',
-    'frontend/src/components/ui/Button.tsx',
-    'frontend/src/pages/proposals/ProposalFormPage.tsx',
-    'frontend/src/pages/wallet/WalletPage.tsx',
-    'frontend/src/pages/dashboard/ClientDashboard.tsx',
-    'frontend/src/pages/dashboard/ExpertDashboard.tsx',
-    'frontend/src/pages/contracts/ContractPage.tsx',
-    'frontend/src/components/chat/ChatWidget.tsx',
-    'frontend/src/pages/jobs/JobDetailPage.tsx',
-    'frontend/src/components/cards/JobCard.tsx',
-    'frontend/src/pages/marketplace/MyServicesPage.tsx',
-    'frontend/src/pages/marketplace/MarketplacePage.tsx',
-    'frontend/src/pages/jobs/MyJobsPage.tsx',
-    'frontend/src/pages/jobs/JobsPage.tsx'
-]
+def get_all_files(directory):
+    file_paths = []
+    for root, directories, files in os.walk(directory):
+        for filename in files:
+            filepath = os.path.join(root, filename)
+            rel_path = os.path.relpath(filepath, LOCAL_DIR).replace('\\', '/')
+            file_paths.append(rel_path)
+    return file_paths
+
+files_to_upload = get_all_files(os.path.join(LOCAL_DIR, 'backend/src')) + get_all_files(os.path.join(LOCAL_DIR, 'frontend/src'))
+# Add any root level config files if needed
+files_to_upload.append('docker-compose.vps.yml')
 
 print("Connecting to VPS...")
 ssh = paramiko.SSHClient()
@@ -44,6 +35,25 @@ for file_path in files_to_upload:
     
     # Ensure remote directory exists (we assume they do since we just replace existing files, but safe to check if it wasn't)
     try:
+        remote_dir_path = os.path.dirname(remote_path)
+        try:
+            sftp.stat(remote_dir_path)
+        except IOError:
+            # Create directories recursively
+            dirs_to_create = []
+            curr_dir = remote_dir_path
+            while curr_dir != '/' and curr_dir != '':
+                try:
+                    sftp.stat(curr_dir)
+                    break
+                except IOError:
+                    dirs_to_create.insert(0, curr_dir)
+                    curr_dir = os.path.dirname(curr_dir).replace('\\', '/')
+            for d in dirs_to_create:
+                try:
+                    sftp.mkdir(d)
+                except Exception:
+                    pass
         sftp.put(local_path, remote_path)
         print(f"Success: {file_path}")
     except Exception as e:

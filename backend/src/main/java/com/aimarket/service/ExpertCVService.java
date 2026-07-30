@@ -39,6 +39,10 @@ public class ExpertCVService {
     private final EmbeddingService embeddingService;
     private final ObjectMapper objectMapper;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private ExpertCVService self;
+
     // ── Upsert (tạo mới hoặc cập nhật) ───────────────────────
 
     @Transactional
@@ -68,7 +72,7 @@ public class ExpertCVService {
         // Rebuild profile embedding cho AI Recommendation
         aiRecommendationService.updateExpertEmbedding(userId);
         // Rebuild CV embedding cho vector-based CV Screening
-        buildCvEmbeddingAsync(saved.getId(), buildCvText(userId));
+        self.buildCvEmbeddingAsync(saved.getId(), buildCvText(userId));
 
         log.info("CV upserted for user {}", userId);
         return toResponse(saved);

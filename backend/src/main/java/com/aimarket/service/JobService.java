@@ -40,6 +40,16 @@ public class JobService {
     private final SkillRepository skillRepository;
     private final EmbeddingService embeddingService;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private JobService self;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.aimarket.repository.ProposalRepository proposalRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.aimarket.service.NotificationService notificationService;
+
     // ─── Create Job ───────────────────────────────────────
     @Transactional
     public JobResponse createJob(CreateJobRequest request, Long clientId) {
@@ -97,14 +107,35 @@ public class JobService {
         if (job.getStatus() != JobStatus.DRAFT && job.getStatus() != JobStatus.OPEN) {
             throw new BusinessException("Cannot delete job with status: " + job.getStatus());
         }
+
+        if (job.getStatus() == JobStatus.OPEN) {
+            // Define statuses that mean the proposal is "empty" (rejected, withdrawn, or failed AI)
+            List<com.aimarket.entity.enums.ProposalStatus> inactiveStatuses = List.of(
+                    com.aimarket.entity.enums.ProposalStatus.REJECTED,
+                    com.aimarket.entity.enums.ProposalStatus.AI_FAILED,
+                    com.aimarket.entity.enums.ProposalStatus.WITHDRAWN
+            );
+            
+            // Check if there are any ACTIVE proposals (not in the inactive list)
+            long activeProposals = proposalRepository.countByJobIdAndStatusNotIn(jobId, inactiveStatuses);
+            
+            if (activeProposals > 0) {
+                throw new BusinessException("Cannot delete job because there are active proposals. Please reject them first or close the job.");
+            }
+            
+            // Delete the inactive proposals to avoid foreign key constraint violations
+            proposalRepository.deleteByJobId(jobId);
+        }
+
         jobRepository.delete(job);
+        notificationService.broadcastPublicEvent("JOB_DELETED", jobId);
     }
 
     // ─── Get Job Detail ───────────────────────────────────
     @Transactional
     public JobResponse getJob(Long jobId) {
         Job job = findJobOrThrow(jobId);
-        incrementViewCountAsync(jobId);
+        self.incrementViewCountAsync(jobId);
         return toResponse(job);
     }
 
@@ -124,7 +155,7 @@ public class JobService {
         job.setStatus(JobStatus.OPEN);
         Job saved = jobRepository.save(job);
         // Cache JD embedding ngay khi publish → tưँ bắt embedding API khi có Proposal
-        buildJdEmbeddingAsync(saved);
+        self.buildJdEmbeddingAsync(saved);
         return toResponse(saved);
     }
 

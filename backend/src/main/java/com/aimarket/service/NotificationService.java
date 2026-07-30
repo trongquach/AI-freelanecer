@@ -88,6 +88,23 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Broadcast an event to ALL users via /topic/public.
+     * Used for marketplace-wide updates (e.g. new job posted).
+     */
+    @Async
+    public void broadcastPublicEvent(String eventType, Long referenceId) {
+        try {
+            messagingTemplate.convertAndSend(
+                    "/topic/public",
+                    Map.of("type", eventType, "referenceId", referenceId != null ? referenceId : 0)
+            );
+            log.debug("Broadcast public event: {}", eventType);
+        } catch (Exception e) {
+            log.warn("Failed to broadcast public event {}: {}", eventType, e.getMessage());
+        }
+    }
+
     @Transactional(readOnly = true)
     public Page<Notification> list(Long userId, int page, int size) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));

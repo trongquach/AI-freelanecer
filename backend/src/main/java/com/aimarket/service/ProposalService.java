@@ -72,6 +72,8 @@ public class ProposalService {
 
         // Trigger AI CV screening bất đồng bộ
         triggerAIScreening(saved, job, expert);
+        
+        notificationService.sendEvent(expertId, "PROPOSAL_SUBMITTED", saved.getId());
 
         return toResponse(saved);
     }
